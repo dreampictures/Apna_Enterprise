@@ -1,0 +1,94 @@
+Redesign the entire website UI/theme to match the premium luxury style of the uploaded “Apna Enterprise” logo.
+
+IMPORTANT:
+- Keep ALL existing website functionality exactly the same.
+- Do NOT change backend logic, database structure, forms, admin panel, APIs, routing, or service functionality.
+- Only redesign the frontend UI/UX and visual styling.
+
+Theme Style Requirements:
+Create a modern premium corporate luxury theme inspired by the logo colors and design.
+
+Primary Colors:
+- Deep Navy Blue (#071B4A or similar)
+- Metallic Gold (#D4A017 / #F2C14E)
+- White accents
+- Soft dark gradients
+
+Overall Feel:
+- Premium
+- Elegant
+- Glossy
+- Modern corporate
+- Luxury business branding
+- High-end service company look
+
+Apply the new theme across:
+- Navbar
+- Footer
+- Homepage
+- Service cards
+- Contact page
+- Forms
+- Buttons
+- Hero sections
+- Admin login UI
+- Apply form pages
+- All sections and components
+
+Navbar Requirements:
+- Sticky premium navbar
+- Dark navy glass effect background
+- Gold hover animations
+- Logo on left
+- Smooth modern transitions
+- Active menu underline in gold
+
+Hero Sections:
+- Large luxury gradients
+- Soft glowing effects
+- Gold accent lines
+- Modern typography
+- Premium spacing
+
+Buttons:
+- Metallic gold gradient buttons
+- Smooth hover glow
+- Rounded modern corners
+- Premium shadow effects
+
+Cards & Containers:
+- Glassmorphism + soft shadows
+- Dark navy backgrounds with gold borders
+- Hover animation lift effect
+
+Footer:
+- Premium dark footer
+- Gold separators
+- Elegant typography
+- Better spacing/layout
+- Professional contact section
+
+Typography:
+Use modern premium fonts like:
+- Poppins
+- Montserrat
+- Inter
+
+Animations:
+- Smooth fade animations
+- Hover glow effects
+- Elegant transitions
+- Professional motion only (not flashy)
+
+UI Improvements:
+- Improve spacing consistency
+- Improve mobile responsiveness
+- Improve section alignment
+- Modernize forms and inputs
+- Improve readability
+
+Keep website fast and optimized.
+Avoid overdesign.
+Maintain clean professional business appearance.
+
+Use the uploaded logo as the main visual identity reference for the whole website theme.

@@ -1,0 +1,363 @@
+openapi: 3.1.0
+info:
+  # Do not change the title, if the title changes, the import paths will be broken
+  title: Api
+  version: 0.1.0
+  description: API specification for Global Enterprise
+servers:
+  - url: /api
+    description: Base API path
+tags:
+  - name: health
+    description: Health operations
+  - name: applications
+    description: Service applications
+  - name: admin
+    description: Admin authentication and dashboard
+  - name: visitors
+    description: Visitor tracking
+
+paths:
+  /healthz:
+    get:
+      operationId: healthCheck
+      tags: [health]
+      summary: Health check
+      responses:
+        "200":
+          description: Healthy
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HealthStatus"
+
+  /applications:
+    post:
+      operationId: createApplication
+      tags: [applications]
+      summary: Submit a service application
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateApplicationBody"
+      responses:
+        "201":
+          description: Application created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Application"
+        "400":
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+    get:
+      operationId: listApplications
+      tags: [applications]
+      summary: List all applications (admin only)
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: service
+          in: query
+          schema:
+            type: string
+          description: Filter by service type
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 50
+        - name: offset
+          in: query
+          schema:
+            type: integer
+            default: 0
+      responses:
+        "200":
+          description: List of applications
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApplicationListResponse"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /applications/export:
+    get:
+      operationId: exportApplicationsCsv
+      tags: [applications]
+      summary: Export applications as CSV (admin only)
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: service
+          in: query
+          schema:
+            type: string
+      responses:
+        "200":
+          description: CSV file
+          content:
+            text/csv:
+              schema:
+                type: string
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /admin/login:
+    post:
+      operationId: adminLogin
+      tags: [admin]
+      summary: Admin login
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AdminLoginBody"
+      responses:
+        "200":
+          description: Login successful
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AdminLoginResponse"
+        "401":
+          description: Invalid credentials
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /admin/dashboard:
+    get:
+      operationId: getDashboardStats
+      tags: [admin]
+      summary: Get dashboard statistics
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Dashboard stats
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DashboardStats"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /visitors/track:
+    post:
+      operationId: trackVisitor
+      tags: [visitors]
+      summary: Increment visitor count
+      responses:
+        "200":
+          description: Visit tracked
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/VisitorCount"
+
+  /visitors/count:
+    get:
+      operationId: getVisitorCount
+      tags: [visitors]
+      summary: Get total visitor count
+      responses:
+        "200":
+          description: Visitor count
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/VisitorCount"
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  schemas:
+    HealthStatus:
+      type: object
+      properties:
+        status:
+          type: string
+      required:
+        - status
+
+    ErrorResponse:
+      type: object
+      properties:
+        error:
+          type: string
+      required:
+        - error
+
+    CreateApplicationBody:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 2
+          maxLength: 100
+        phone:
+          type: string
+          minLength: 10
+          maxLength: 15
+        service:
+          type: string
+          enum:
+            - Air Ticket Booking
+            - Train Ticket Booking
+            - International Parcel Booking
+            - PAN Card Apply
+            - Aadhaar Card Services
+            - Voter Card Apply
+            - Passport Apply
+            - Learning License
+            - Driving License
+            - UDID Certificate Apply
+            - E-Shram Card
+            - Schedule Caste Certificate
+            - Punjab Resident Certificate
+            - Income Certificate
+            - UDYAM Certificate (MSME)
+            - GST Registration
+            - Job Application Forms (Govt Naukri)
+            - College Admission Forms
+            - School Admission Forms
+            - Competitive Exam Forms
+            - Scholarship Forms
+            - General Online Form Filling
+            - Document Scanning
+            - Printing Services
+            - Website Design Services
+            - AEPS (Aadhaar Enabled Payment System)
+            - Online Payments
+        message:
+          type: string
+          maxLength: 1000
+      required:
+        - name
+        - phone
+        - service
+
+    Application:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        phone:
+          type: string
+        service:
+          type: string
+        message:
+          type: string
+          nullable: true
+        createdAt:
+          type: string
+          format: date-time
+      required:
+        - id
+        - name
+        - phone
+        - service
+        - createdAt
+
+    ApplicationListResponse:
+      type: object
+      properties:
+        applications:
+          type: array
+          items:
+            $ref: "#/components/schemas/Application"
+        total:
+          type: integer
+      required:
+        - applications
+        - total
+
+    AdminLoginBody:
+      type: object
+      properties:
+        username:
+          type: string
+        password:
+          type: string
+      required:
+        - username
+        - password
+
+    AdminLoginResponse:
+      type: object
+      properties:
+        token:
+          type: string
+        username:
+          type: string
+      required:
+        - token
+        - username
+
+    DashboardStats:
+      type: object
+      properties:
+        totalApplications:
+          type: integer
+        recentApplications:
+          type: array
+          items:
+            $ref: "#/components/schemas/Application"
+        applicationsByService:
+          type: array
+          items:
+            $ref: "#/components/schemas/ServiceCount"
+        visitorCount:
+          type: integer
+      required:
+        - totalApplications
+        - recentApplications
+        - applicationsByService
+        - visitorCount
+
+    ServiceCount:
+      type: object
+      properties:
+        service:
+          type: string
+        count:
+          type: integer
+      required:
+        - service
+        - count
+
+    VisitorCount:
+      type: object
+      properties:
+        count:
+          type: integer
+      required:
+        - count

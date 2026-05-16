@@ -1,0 +1,217 @@
+Add a new advanced “Updates & Announcements” module into the existing web app.
+
+IMPORTANT:
+
+* Keep ALL existing APIs, backend logic, routes, services, forms, admin system, database structure, and current features COMPLETELY UNTOUCHED.
+* Do NOT modify any existing functionality.
+* Only ADD this new module professionally into the current architecture.
+
+MAIN PURPOSE:
+This section will be used for:
+
+* Government Jobs
+* Admit Cards
+* Results
+* Govt Schemes
+* Govt Notices
+* Public Announcements
+* Offers/Updates
+
+DESIGN REQUIREMENTS:
+Create a premium professional govt-notification portal style layout inspired by:
+
+* Sarkari Result
+* FreeJobAlert
+* modern govt portals
+
+But with:
+
+* cleaner UI
+* better spacing
+* premium navy + gold branding
+* responsive modern layout
+
+IMPORTANT:
+
+* NO IMAGE STORAGE
+* NO PHOTO UPLOADS
+* Use TEXT-ONLY optimized system
+* Keep Neon free storage usage very low
+* Only URLs/links and text data should be stored
+
+TOP BREAKING NEWS TICKER:
+Add a breaking news marquee/ticker below navbar:
+
+* Auto scrolling latest updates
+* Urgent notices
+* Important announcements
+* Clicking ticker item opens full details page
+
+AUTO STATUS SYSTEM:
+If last date expires:
+
+* Automatically show:
+  “Closed”
+* Hide Apply button automatically if expired
+* Show “Expired” badge
+
+ANNOUNCEMENT LIST PAGE:
+Create professional card/list design.
+
+Each post should support:
+
+* Title
+* Short description
+* Category
+* Publish date
+* Department
+* Starting date
+* Last date
+* Vacancy count
+* Official website
+* Official notification link
+* Apply link
+* Status badge
+* Important badge
+* Share on WhatsApp button
+* Know More button
+
+Only show fields that admin filled.
+If any field is empty:
+
+* Do NOT show empty rows/sections.
+
+JOB DETAILS PAGE (“Know More” Page):
+Create a professional dynamic details page similar to the uploaded references.
+
+IMPORTANT:
+The details page should support:
+
+* Professional tables
+* Structured sections
+* Dynamic rows
+* Multi-section content
+* Rich formatted content
+* Important dates table
+* Vacancy table
+* Eligibility table
+* Application fee table
+* Selection process table
+* Important links section
+
+ADMIN SHOULD BE ABLE TO:
+
+1. Create custom sections manually
+2. Create custom tables manually
+3. Add/remove rows manually
+4. Add direct links
+5. Add buttons dynamically
+6. Add headings/subheadings
+7. Reorder sections
+
+ADMIN PANEL FEATURES:
+Add full management system inside admin dashboard.
+
+Admin can:
+
+* Create/update/delete announcements
+* Publish/unpublish posts
+* Mark urgent
+* Mark featured
+* Select category
+* Add custom sections
+* Add manual tables
+* Add rich content
+* Add custom buttons
+* Add official links
+
+ADMIN INPUT FIELDS:
+Basic Details:
+
+* Title
+* Slug/URL
+* Short description
+* Category
+* Department
+* Publish date
+* Start date
+* Last date
+* Vacancy count
+* Status
+
+Links:
+
+* Official website URL
+* Official notification URL
+* Apply online URL
+* WhatsApp share enable/disable
+
+Buttons Toggle:
+
+* Show Apply button
+* Show Know More button
+* Show Official Website button
+* Show Notification button
+
+DYNAMIC TABLE BUILDER:
+Admin can create custom tables like:
+
+* Important Dates
+* Vacancy Details
+* Eligibility
+* Fee Structure
+* Important Links
+* Exam Pattern
+
+Admin should:
+
+* Add columns manually
+* Add rows manually
+* Delete rows
+* Rearrange rows
+
+DETAIL PAGE FEATURES:
+
+* Clean professional typography
+* Responsive tables
+* Sticky action buttons
+* Back to Home button
+* Back to Updates button
+* Related posts section
+
+PERFORMANCE REQUIREMENTS:
+
+* Lightweight architecture
+* Optimized database usage
+* No unnecessary storage
+* No image uploads
+* No heavy libraries
+* Mobile optimized
+* Fast loading
+
+DATABASE OPTIMIZATION:
+Use lightweight structure:
+
+* Separate announcements table
+* Separate dynamic sections table
+* Separate table rows structure if needed
+* Avoid storing unnecessary data
+
+SEO:
+
+* SEO friendly URLs
+* Dynamic metadata
+* OpenGraph support
+* Proper titles/descriptions
+
+SECURITY:
+
+* Admin-only edit access
+* Validation for all URLs
+* Input sanitization
+* XSS protection
+
+FINAL IMPORTANT NOTE:
+Keep ALL current APIs and existing features untouched.
+Do NOT break current system behavior.
+Only integrate this module cleanly and professionally into the current web app.

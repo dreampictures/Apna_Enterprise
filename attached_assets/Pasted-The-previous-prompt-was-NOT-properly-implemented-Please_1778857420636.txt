@@ -1,0 +1,148 @@
+The previous prompt was NOT properly implemented.
+
+Please now ACTUALLY IMPLEMENT these UI/UX upgrades into the existing Updates & Announcements system.
+
+IMPORTANT:
+Do not just explain.
+Do not summarize.
+Do not partially implement.
+Actually modify the existing frontend components and admin UI.
+
+Specifically update:
+
+* Announcement detail page
+* Announcement cards
+* Admin announcement builder
+* Dynamic table renderer
+* Dynamic text renderer
+* Action buttons UI
+
+IMPLEMENT THESE CHANGES NOW:
+
+1. PROFESSIONAL TEXT BLOCK RENDERING
+
+Current output still looks plain.
+
+Update the renderer so that:
+
+* bullet points become styled lists
+* labels become bold automatically
+* spacing is improved
+* typography looks premium
+* sections look visually separated
+* paragraphs render professionally
+
+Example:
+“Age Limit: 18-30”
+should automatically render:
+Bold label + clean aligned value.
+
+2. PROFESSIONAL TABLE UI
+
+Current tables still look basic.
+
+Actually redesign tables with:
+
+* premium responsive layout
+* modern borders
+* spacing
+* styled headers
+* proper padding
+* mobile scrolling
+* zebra/light row styling
+* better typography
+
+Apply this to ALL announcement detail tables.
+
+3. CLICKABLE TEXT LINKS INSIDE TABLES
+
+This feature is missing.
+
+IMPLEMENT:
+Each table cell/value should support:
+
+* display text
+* optional hidden URL
+
+If URL exists:
+
+* only display text visible
+* text becomes clickable
+* open in new tab
+* URL itself hidden
+
+Example:
+Display:
+Download PDF
+
+Actual hidden URL:
+https://....
+
+4. ADMIN PANEL IMPROVEMENTS
+
+Actually add:
+
+* optional URL field for table values
+* preview mode
+* better spacing
+* section cards
+* cleaner inputs
+* professional builder layout
+
+5. BUTTON REDESIGN
+
+Current buttons still look simple.
+
+Actually redesign:
+
+* Apply Now
+* Official Website
+* Notification
+* Download PDF
+* Know More
+
+Requirements:
+
+* navy/gold premium theme
+* hover animation
+* rounded modern design
+* proper shadows
+* responsive layout
+* professional alignment
+
+6. AUTO CLEAN DISPLAY
+
+Currently empty rows/sections are still rendering.
+
+Fix this:
+
+* hide empty rows
+* hide empty sections
+* hide empty buttons
+* hide unused headings automatically
+
+7. KEEP LIGHTWEIGHT
+
+Do NOT add:
+
+* heavy editors
+* image uploads
+* unnecessary libraries
+
+Keep optimized for:
+
+* Neon free tier
+* Fly.io deployment
+* fast loading
+
+8. FINAL REQUIREMENT
+
+After implementation:
+
+* show which files/components were modified
+* show completed feature list
+* verify frontend rendering was updated successfully
+
+IMPORTANT:
+Keep ALL existing APIs and functionality untouched.
+Only improve the announcement/details rendering and admin builder professionally.

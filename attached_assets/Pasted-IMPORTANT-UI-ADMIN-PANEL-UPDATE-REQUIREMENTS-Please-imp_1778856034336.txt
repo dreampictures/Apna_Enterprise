@@ -1,0 +1,162 @@
+IMPORTANT UI/ADMIN PANEL UPDATE REQUIREMENTS
+
+Please implement these important improvements in the new “Updates & Announcements” module.
+
+1. PROFESSIONAL DETAILS BLOCK DESIGN
+
+Current admin panel creates plain/simple output.
+Improve it to generate professional styled blocks automatically.
+
+REFERENCE:
+The uploaded screenshots show:
+
+* “Before” = current simple/plain design
+* “My Need” = desired professional design
+
+REQUIREMENTS:
+
+TEXT BLOCKS:
+When admin creates a text section like:
+
+* Quick Information
+* Important Instructions
+* Eligibility
+  etc.
+
+The frontend should automatically:
+
+* Convert plain text into professional formatted bullet layout
+* Add spacing/alignment automatically
+* Highlight labels in bold
+* Make section visually professional
+* Use clean typography and proper padding
+
+TABLE BLOCKS:
+When admin creates a table:
+
+* Automatically render professional styled responsive table
+* Proper borders
+* Equal spacing
+* Modern clean layout
+* Mobile responsive
+* Zebra/light hover effect optional
+
+IMPORTANT:
+Admin should only enter data.
+Frontend should automatically generate professional UI.
+
+2. PROFESSIONAL BUTTON DESIGN
+
+Current button design is too basic.
+
+Make buttons:
+
+* Premium
+* Modern
+* Clean
+* Center aligned
+* Responsive
+
+BUTTON STYLE:
+
+* Soft navy background or premium gold gradient
+* Rounded corners
+* Smooth hover effect
+* Proper padding
+* Professional shadow
+* Elegant typography
+* Mobile friendly
+
+Examples:
+
+* Apply Now
+* Download Admit Card
+* Official Notification
+* Official Website
+* Know More
+
+IMPORTANT:
+Buttons should look premium like modern govt portal / SaaS design.
+
+3. CLICKABLE TEXT LINKS INSIDE TABLES
+
+VERY IMPORTANT FEATURE:
+
+Inside any table row,
+admin should be able to add:
+
+* Label
+* Value/Text
+* Optional URL
+
+Example:
+Official Website → joinindianarmy.nic.in
+Official Notification → Download PDF
+
+If URL exists:
+
+* Text should become clickable automatically
+* URL itself should NOT be visible
+* Only text should show
+* Open link in new tab
+
+Example Output:
+Official Website → joinindianarmy.nic.in (clickable)
+Notification PDF → Download PDF (clickable)
+
+ADMIN PANEL REQUIREMENT:
+Add optional “Link URL” field for every table cell/value.
+
+4. DYNAMIC CONTENT FORMATTING
+
+If admin enters:
+
+* Bullet points
+* numbered steps
+* headings
+* links
+* paragraphs
+
+Frontend should automatically:
+
+* format them professionally
+* preserve structure
+* improve readability
+
+5. AUTO CLEAN DISPLAY
+
+If:
+
+* row empty
+* value empty
+* link empty
+* section empty
+
+Then:
+
+* automatically hide it from frontend
+
+Do NOT show blank rows or empty sections.
+
+6. LIGHTWEIGHT REQUIREMENT
+
+IMPORTANT:
+Keep everything lightweight and Neon free-tier friendly.
+
+Avoid:
+
+* image storage
+* unnecessary JSON blobs
+* heavy editors
+* large libraries
+
+Use:
+
+* optimized relational structure
+* lightweight rendering
+* reusable components
+
+FINAL IMPORTANT NOTE:
+Do NOT modify existing APIs or business logic.
+Do NOT break current working functionality.
+Only improve the new announcement/details system professionally.
