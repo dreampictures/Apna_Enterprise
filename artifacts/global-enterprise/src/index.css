@@ -237,6 +237,7 @@
   background: rgba(7, 27, 74, 0.04);
   border: 1.5px solid #d1d9e8;
   border-radius: 10px;
+  color: #ffffff;
   transition: border-color 0.2s, box-shadow 0.2s;
 }
 .glass-input:focus {
