@@ -64,13 +64,34 @@ const HIGHLIGHT_AMBER = ["soon", "upcoming", "pending", "expected"];
 function highlightValue(val: string) {
   const lower = val.trim().toLowerCase();
   if (HIGHLIGHT_GREEN.some((k) => lower === k || lower.startsWith(k + " "))) {
-    return <span className="font-bold" style={{ color: "#16a34a" }}>{val}</span>;
+    return (
+      <span
+        className="inline-block text-xs font-bold px-2.5 py-0.5 rounded-full"
+        style={{ background: "#dcfce7", color: "#15803d" }}
+      >
+        {val}
+      </span>
+    );
   }
   if (HIGHLIGHT_RED.some((k) => lower === k || lower.startsWith(k + " "))) {
-    return <span className="font-bold text-red-600">{val}</span>;
+    return (
+      <span
+        className="inline-block text-xs font-bold px-2.5 py-0.5 rounded-full"
+        style={{ background: "#fee2e2", color: "#dc2626" }}
+      >
+        {val}
+      </span>
+    );
   }
   if (HIGHLIGHT_AMBER.some((k) => lower === k || lower.startsWith(k + " "))) {
-    return <span className="font-bold text-amber-600">{val}</span>;
+    return (
+      <span
+        className="inline-block text-xs font-bold px-2.5 py-0.5 rounded-full"
+        style={{ background: "#fef3c7", color: "#d97706" }}
+      >
+        {val}
+      </span>
+    );
   }
   return <>{val}</>;
 }
@@ -348,11 +369,10 @@ export default function UpdateDetail() {
                                           href={url}
                                           target="_blank"
                                           rel="noreferrer"
-                                          className="inline-flex items-center gap-1 font-semibold hover:underline"
-                                          style={{ color: "#1d4ed8" }}
+                                          className="inline-flex items-center gap-1 text-xs font-bold rounded-full hover:opacity-80 transition-opacity"
+                                          style={{ background: "#dbeafe", color: "#1d4ed8", padding: "4px 12px" }}
                                         >
-                                          {val}
-                                          <FaExternalLinkAlt className="text-xs opacity-60" />
+                                          {val} <FaExternalLinkAlt className="text-xs opacity-70" />
                                         </a>
                                       ) : (
                                         ci === 0 ? val : highlightValue(val)

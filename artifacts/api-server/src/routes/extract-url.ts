@@ -68,6 +68,108 @@ function resolveHref(href: string, base: string): string {
   }
 }
 
+function deriveStatus(link: { label: string; url: string; tag: string }): string {
+  const lc = link.label.toLowerCase();
+  if (lc.includes("upcoming") || lc.includes("expected") || lc.includes("soon") || lc.includes("not yet") || lc.includes("will be")) return "Upcoming";
+  if (lc.includes("closed") || lc.includes("expired") || lc.includes("over") || lc.includes("ended")) return "Closed";
+  if (link.tag === "apply") return "Active";
+  return "Available";
+}
+
+const SKIP_HEADING_WORDS = [
+  "related", "advertisement", "comment", "popular", "trending",
+  "also read", "more from", "tags", "share", "follow", "subscribe",
+  "menu", "navigation", "sidebar", "footer", "header", "cookie",
+  "privacy", "disclaimer", "contact us", "about us", "social media",
+];
+
+const NOISE_SELECTORS = [
+  "nav", "header", "footer", ".sidebar", ".widget", "#sidebar",
+  ".related-posts", ".related", ".ads", ".advertisement", ".ad-box",
+  "#comments", ".comments", "script", "style", "noscript", ".breadcrumb",
+  ".social-share", ".share-buttons", ".tags", ".tag-list", ".author-box",
+  ".newsletter", ".popup", ".modal", "#cookie", ".cookie",
+];
+
+const MAIN_CONTENT_SELECTORS = [
+  "article", "main", ".post-content", ".entry-content", ".post-body",
+  ".content-area", "#content", ".article-body", ".single-content",
+  ".job-content", ".post", ".blog-post", "#main-content",
+];
+
+function extractHeadingSections(
+  $: cheerio.CheerioAPI,
+  url: string
+): ExtractedSection[] {
+  NOISE_SELECTORS.forEach((sel) => $(sel).remove());
+
+  let $content: cheerio.Cheerio<any> = $("body");
+  for (const sel of MAIN_CONTENT_SELECTORS) {
+    if ($(sel).length) {
+      $content = $(sel).first();
+      break;
+    }
+  }
+
+  const sections: ExtractedSection[] = [];
+
+  $content.find("h2, h3, h4").each((_, heading) => {
+    const headingText = $(heading).text().trim().replace(/\s+/g, " ");
+    if (!headingText || headingText.length < 4 || headingText.length > 120) return;
+
+    const lc = headingText.toLowerCase();
+    if (SKIP_HEADING_WORDS.some((w) => lc.includes(w))) return;
+
+    const lines: string[] = [];
+    let el = $(heading).next();
+    let limit = 15;
+
+    while (el.length && limit-- > 0) {
+      const tag = el.prop("tagName")?.toLowerCase() || "";
+      if (["h1", "h2", "h3", "h4", "h5", "hr", "table"].includes(tag)) break;
+
+      if (tag === "ul" || tag === "ol") {
+        el.find("li").each((_, li) => {
+          const text = $(li).text().trim().replace(/\s+/g, " ").slice(0, 400);
+          if (text.length > 5 && text.length < 400) lines.push(text);
+        });
+      } else if (tag === "p") {
+        const text = el.text().trim().replace(/\s+/g, " ");
+        if (text.length > 15 && text.length < 800) lines.push(text);
+      } else if (tag === "div") {
+        const directText = el
+          .clone()
+          .children("ul,ol,h1,h2,h3,h4,h5,table,div")
+          .remove()
+          .end()
+          .text()
+          .trim()
+          .replace(/\s+/g, " ");
+        if (directText.length > 15 && directText.length < 500) lines.push(directText);
+        el.find("li").each((_, li) => {
+          const text = $(li).text().trim().replace(/\s+/g, " ").slice(0, 400);
+          if (text.length > 5) lines.push(text);
+        });
+      }
+
+      el = el.next();
+    }
+
+    if (lines.length > 0) {
+      const cleanLines = [...new Set(lines)].filter((l) => l.length > 5);
+      if (cleanLines.length > 0) {
+        sections.push({
+          type: "text",
+          title: headingText,
+          content: cleanLines.join("\n"),
+        });
+      }
+    }
+  });
+
+  return sections.slice(0, 6);
+}
+
 function genericExtract(html: string, url: string): ExtractedData {
   const $ = cheerio.load(html);
   const result: ExtractedData = { sections: [] };
@@ -94,14 +196,12 @@ function genericExtract(html: string, url: string): ExtractedData {
   const bodyText = $("body").text().replace(/\s+/g, " ");
   result.vacancyCount = extractVacancy(bodyText);
 
-  // Date extraction from labeled rows/cells
   const START_LABELS = ["start date", "starting date", "application begin", "apply from", "online begin"];
   const LAST_LABELS = ["last date", "closing date", "apply before", "apply last date", "end date", "last day", "submission date", "apply up to"];
 
   $("td, li, p, span").each((_, el) => {
     const text = $(el).text().toLowerCase().replace(/\s+/g, " ").trim();
     const full = $(el).text() + " " + $(el).next().text() + " " + $(el).parent().text();
-
     if (!result.startDate) {
       for (const label of START_LABELS) {
         if (text.includes(label)) {
@@ -120,7 +220,6 @@ function genericExtract(html: string, url: string): ExtractedData {
     }
   });
 
-  // PDF notification link
   $("a[href]").each((_, el) => {
     if (result.officialNotificationUrl) return;
     const href = $(el).attr("href") || "";
@@ -131,7 +230,6 @@ function genericExtract(html: string, url: string): ExtractedData {
     }
   });
 
-  // Apply link
   $("a[href]").each((_, el) => {
     if (result.applyUrl) return;
     const href = $(el).attr("href") || "";
@@ -154,9 +252,9 @@ function genericExtract(html: string, url: string): ExtractedData {
         const href = $(td).find("a[href]").first().attr("href") || "";
         cells.push({ value: val, url: href ? resolveHref(href, url) : "" });
       });
-      if (cells.length === 0 || cells.every(c => !c.value)) return;
+      if (cells.length === 0 || cells.every((c) => !c.value)) return;
       if (ri === 0 && isTh) {
-        headerRow = cells.map(c => c.value);
+        headerRow = cells.map((c) => c.value);
       } else {
         rows.push(cells);
       }
@@ -178,21 +276,27 @@ function genericExtract(html: string, url: string): ExtractedData {
     result.sections.push({
       type: "table",
       title: heading,
-      columns: cols.map(c => c.slice(0, 50)),
-      rows: dataRows.map(r => r.map(c => ({ value: c.value, url: c.url }))),
+      columns: cols.map((c) => c.slice(0, 50)),
+      rows: dataRows.map((r) => r.map((c) => ({ value: c.value, url: c.url }))),
     });
   });
 
-  // Important links section
+  // Heading-based content sections (Overview, How to Apply, Eligibility, etc.)
+  const headingSections = extractHeadingSections($, url);
+  result.sections.push(...headingSections);
+
+  // Important Links → rendered as a clean table with Document Name / Status / Direct Link
   const seen = new Set<string>();
   const importantLinks: { label: string; url: string; tag: string }[] = [];
-  const LINK_KEYWORDS = ["apply", "notification", "advt", "advertisement", "syllabus", "admit", "result", "download", "official", "vacancy", "recruitment", "form"];
+  const LINK_KEYWORDS = ["apply", "notification", "advt", "advertisement", "syllabus", "admit", "result", "download", "official", "vacancy", "recruitment", "form", "merit", "scorecard", "answer key"];
+  const SKIP_LINK_LABELS = ["click here", "here", "link", "read more", "know more", "home", "back", "next", "prev", "more"];
 
   $("a[href]").each((_, el) => {
     const href = $(el).attr("href") || "";
     const label = $(el).text().trim().replace(/\s+/g, " ");
-    if (!label || label.length < 4 || label.length > 100) return;
+    if (!label || label.length < 4 || label.length > 120) return;
     if (!href.startsWith("http") && !href.startsWith("/")) return;
+    if (SKIP_LINK_LABELS.some((s) => label.toLowerCase() === s)) return;
 
     const resolved = resolveHref(href, url);
     if (seen.has(resolved)) return;
@@ -200,23 +304,30 @@ function genericExtract(html: string, url: string): ExtractedData {
 
     const lcLabel = label.toLowerCase();
     const lcHref = href.toLowerCase();
-    const isRelevant = LINK_KEYWORDS.some(k => lcLabel.includes(k)) || lcHref.endsWith(".pdf");
+    const isRelevant = LINK_KEYWORDS.some((k) => lcLabel.includes(k)) || lcHref.endsWith(".pdf");
     if (!isRelevant) return;
 
     const tag = lcLabel.includes("apply") ? "apply"
       : (lcLabel.includes("notification") || lcLabel.includes("advt") || lcHref.endsWith(".pdf")) ? "notification"
       : lcLabel.includes("result") ? "result"
       : lcLabel.includes("admit") ? "admit"
+      : lcLabel.includes("syllabus") ? "syllabus"
       : "default";
 
     importantLinks.push({ label, url: resolved, tag });
   });
 
   if (importantLinks.length > 0) {
+    const top = importantLinks.slice(0, 20);
     result.sections.push({
-      type: "links",
+      type: "table",
       title: "Important Links",
-      links: importantLinks.slice(0, 20),
+      columns: ["Document Name", "Status", "Direct Link"],
+      rows: top.map((link) => [
+        { value: link.label, url: "" },
+        { value: deriveStatus(link), url: "" },
+        { value: "Check Here ↗", url: link.url },
+      ]),
     });
   }
 
@@ -230,7 +341,7 @@ function sarkariResultExtract(html: string, url: string): ExtractedData {
   const extraSections: ExtractedSection[] = [];
   $(".border-box, .tb1, table.table-bordered").each((i, el) => {
     const caption = $(el).find("caption, .head").text().trim();
-    if (base.sections.some(s => s.title === caption)) return;
+    if (base.sections.some((s) => s.title === caption)) return;
     const rows: { value: string; url: string }[][] = [];
     $(el).find("tr").each((_, tr) => {
       const cells: { value: string; url: string }[] = [];
@@ -246,7 +357,7 @@ function sarkariResultExtract(html: string, url: string): ExtractedData {
         type: "table",
         title: caption || `Details ${i + 1}`,
         columns: ["Particulars", "Details"],
-        rows: rows.map(r => [r[0], r[1] ?? { value: "", url: "" }]),
+        rows: rows.map((r) => [r[0], r[1] ?? { value: "", url: "" }]),
       });
     }
   });
@@ -325,7 +436,7 @@ router.post("/admin/extract-url", requireAuth, async (req, res) => {
       extracted = genericExtract(html, url);
     }
 
-    extracted.sections = extracted.sections.slice(0, 10);
+    extracted.sections = extracted.sections.slice(0, 12);
 
     res.json({ success: true, data: extracted, sourceUrl: url });
   } catch (err: any) {
