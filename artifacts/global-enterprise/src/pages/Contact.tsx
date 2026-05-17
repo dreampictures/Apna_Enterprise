@@ -144,7 +144,7 @@ export default function Contact() {
               >
                 <iframe
                   title="Apna Enterprise Location"
-                  src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3431.0!2d74.6117!3d30.9353!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x391736c0b0b0b0b0%3A0x0!2sFirozpur%2C%20Punjab!5e0!3m2!1sen!2sin!4v1620000000000!5m2!1sen!2sin"
+                  src="https://maps.google.com/maps?q=31.105486,75.0642315&z=17&output=embed"
                   width="100%"
                   height="320"
                   style={{ border: 0, display: "block" }}
@@ -152,6 +152,19 @@ export default function Contact() {
                   loading="lazy"
                   referrerPolicy="no-referrer-when-downgrade"
                 />
+                <div className="px-5 py-3 border-t border-slate-100 flex items-center justify-between">
+                  <p className="text-xs text-slate-500 font-medium">Dharamkot Road Jogewala, Firozepur</p>
+                  <a
+                    href="https://www.google.com/maps/dir/?api=1&destination=31.105486,75.0642315"
+                    target="_blank"
+                    rel="noreferrer"
+                    className="inline-flex items-center gap-1.5 text-xs font-bold px-3 py-1.5 rounded-lg text-white transition-opacity hover:opacity-90"
+                    style={{ background: "#071B4A" }}
+                  >
+                    <FaMapMarkerAlt className="text-xs" style={{ color: GOLD }} />
+                    Get Directions
+                  </a>
+                </div>
               </div>
 
               {/* Quick assistance card */}

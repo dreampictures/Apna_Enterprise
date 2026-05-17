@@ -241,14 +241,21 @@ export default function AdminAnnouncements({ token }: { token: string | null }) 
   }
 
   // Section helpers
-  function addSection(type: SectionType) {
+  function addSection(type: SectionType, afterId?: string) {
     const s: Section = {
       id: uid(), type, title: "", content: "",
       columns: ["Column 1", "Column 2"],
       rows: [[emptyCell(), emptyCell()]],
       links: [{ label: "", url: "", tag: "default" }],
     };
-    setForm((p) => ({ ...p, sections: [...p.sections, s] }));
+    setForm((p) => {
+      if (!afterId) return { ...p, sections: [...p.sections, s] };
+      const idx = p.sections.findIndex((sec) => sec.id === afterId);
+      if (idx === -1) return { ...p, sections: [...p.sections, s] };
+      const arr = [...p.sections];
+      arr.splice(idx + 1, 0, s);
+      return { ...p, sections: arr };
+    });
   }
   function updateSection(id: string, patch: Partial<Section>) {
     setForm((p) => ({ ...p, sections: p.sections.map((s) => s.id === id ? { ...s, ...patch } : s) }));
@@ -857,6 +864,24 @@ export default function AdminAnnouncements({ token }: { token: string | null }) 
                       </button>
                     </div>
                   )}
+                </div>
+
+                {/* ── Insert Below Buttons ── */}
+                <div className="flex items-center gap-1.5 px-4 py-2.5 border-t border-slate-100" style={{ background: "#f8fafd" }}>
+                  <span className="text-xs text-slate-400 font-medium mr-0.5">Insert below:</span>
+                  {([
+                    { type: "text" as SectionType, icon: FaAlignLeft, label: "Text" },
+                    { type: "table" as SectionType, icon: FaTable, label: "Table" },
+                    { type: "links" as SectionType, icon: FaLink, label: "Links" },
+                  ]).map(({ type, icon: Icon, label }) => (
+                    <button
+                      key={type}
+                      onClick={() => addSection(type, sec.id)}
+                      className="flex items-center gap-1 text-xs font-semibold px-2.5 py-1 rounded-lg border border-slate-200 text-slate-500 hover:border-blue-300 hover:text-blue-600 hover:bg-blue-50 transition-colors"
+                    >
+                      <Icon className="text-xs" /> + {label}
+                    </button>
+                  ))}
                 </div>
               </div>
             ))}
