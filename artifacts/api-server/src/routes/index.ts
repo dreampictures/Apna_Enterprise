@@ -6,6 +6,7 @@ import visitorsRouter from "./visitors";
 import leadsRouter from "./leads";
 import pageviewsRouter from "./pageviews";
 import announcementsRouter from "./announcements";
+import extractUrlRouter from "./extract-url";
 
 const router: IRouter = Router();
 
@@ -16,5 +17,6 @@ router.use(visitorsRouter);
 router.use(leadsRouter);
 router.use(pageviewsRouter);
 router.use(announcementsRouter);
+router.use(extractUrlRouter);
 
 export default router;

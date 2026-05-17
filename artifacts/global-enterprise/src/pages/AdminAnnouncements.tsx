@@ -5,6 +5,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import {
   FaPlus, FaEdit, FaTrash, FaArrowLeft, FaSave, FaEye, FaEyeSlash,
   FaFire, FaStar, FaArrowUp, FaArrowDown, FaTable, FaAlignLeft, FaLink,
+  FaMagic, FaTimes, FaCheckCircle, FaExclamationTriangle, FaSpinner,
 } from "react-icons/fa";
 
 const GOLD = "#D4A017";
@@ -91,6 +92,13 @@ export default function AdminAnnouncements({ token }: { token: string | null }) 
   const [error, setError] = useState("");
   const [expandedCells, setExpandedCells] = useState<Set<string>>(new Set());
 
+  // Import from URL state
+  const [importModal, setImportModal] = useState(false);
+  const [importUrl, setImportUrl] = useState("");
+  const [importing, setImporting] = useState(false);
+  const [importError, setImportError] = useState("");
+  const [importSuccess, setImportSuccess] = useState("");
+
   const authHeaders = { "Content-Type": "application/json", Authorization: `Bearer ${token}` };
 
   const loadList = useCallback(() => {
@@ -103,6 +111,66 @@ export default function AdminAnnouncements({ token }: { token: string | null }) 
   }, []);
 
   useEffect(() => { loadList(); }, [loadList]);
+
+  async function handleImport() {
+    if (!importUrl.trim()) { setImportError("Please enter a URL."); return; }
+    setImporting(true);
+    setImportError("");
+    setImportSuccess("");
+    try {
+      const res = await fetch("/api/admin/extract-url", {
+        method: "POST",
+        headers: authHeaders,
+        body: JSON.stringify({ url: importUrl.trim() }),
+      });
+      const data = await res.json();
+      if (!res.ok) { setImportError(data.error || "Extraction failed."); return; }
+      const d = data.data;
+      const base = emptyForm();
+      const merged = {
+        ...base,
+        title: d.title || "",
+        slug: slugify(d.title || ""),
+        shortDesc: d.shortDesc || "",
+        department: d.department || "",
+        category: "Government Job",
+        startDate: d.startDate || "",
+        lastDate: d.lastDate || "",
+        vacancyCount: d.vacancyCount ?? undefined,
+        officialWebsite: d.officialWebsite || "",
+        officialNotificationUrl: d.officialNotificationUrl || "",
+        applyUrl: d.applyUrl || "",
+        sections: (d.sections || []).map((s: any) => ({
+          id: uid(),
+          type: s.type,
+          title: s.title || "",
+          content: s.content || "",
+          columns: s.columns || ["Column 1", "Column 2"],
+          rows: (s.rows || []).map((row: any[]) =>
+            row.map((cell: any) => typeof cell === "string" ? { value: cell, url: "" } : { value: cell.value || "", url: cell.url || "" })
+          ),
+          links: (s.links || []).map((l: any) => ({ label: l.label || "", url: l.url || "", tag: l.tag || "default" })),
+        })),
+        isPublished: false,
+        isUrgent: false,
+        isFeatured: false,
+      };
+      setForm(merged);
+      setEditId(null);
+      setExpandedCells(new Set());
+      setImportSuccess(`Extracted ${d.sections?.length || 0} section(s). Review the draft below and publish when ready.`);
+      setTimeout(() => {
+        setImportModal(false);
+        setImportUrl("");
+        setImportSuccess("");
+        setView("form");
+      }, 1800);
+    } catch {
+      setImportError("Network error. Check your connection and try again.");
+    } finally {
+      setImporting(false);
+    }
+  }
 
   function openCreate() {
     setForm(emptyForm());
@@ -263,11 +331,144 @@ export default function AdminAnnouncements({ token }: { token: string | null }) 
   if (view === "list") {
     return (
       <div>
+        {/* ── Import from URL Modal ── */}
+        {importModal && (
+          <div
+            className="fixed inset-0 z-[9999] flex items-center justify-center p-4"
+            style={{ background: "rgba(1,6,15,0.70)", backdropFilter: "blur(6px)" }}
+            onClick={(e) => { if (e.target === e.currentTarget) { setImportModal(false); setImportError(""); setImportUrl(""); } }}
+          >
+            <div
+              className="w-full max-w-lg rounded-2xl shadow-2xl overflow-hidden"
+              style={{
+                background: "#071B4A",
+                border: "1px solid rgba(212,160,23,0.35)",
+                boxShadow: "0 0 60px rgba(212,160,23,0.12), 0 24px 60px rgba(0,0,0,0.7)",
+              }}
+            >
+              {/* Gold accent bar */}
+              <div style={{ height: "3px", background: "linear-gradient(90deg,#D4A017,#F2C14E,#D4A017)" }} />
+
+              <div className="p-6">
+                {/* Header */}
+                <div className="flex items-start justify-between mb-5">
+                  <div>
+                    <p className="text-xs font-bold uppercase tracking-widest mb-1" style={{ color: "#F2C14E" }}>
+                      Smart Import
+                    </p>
+                    <h3 className="text-white font-bold text-lg leading-tight flex items-center gap-2">
+                      <FaMagic style={{ color: "#F2C14E" }} /> Import from URL
+                    </h3>
+                    <p className="text-slate-400 text-sm mt-1">
+                      Paste a job/recruitment URL — fields will auto-fill as a draft for your review.
+                    </p>
+                  </div>
+                  <button
+                    onClick={() => { setImportModal(false); setImportError(""); setImportUrl(""); }}
+                    className="text-slate-500 hover:text-white transition-colors mt-1 ml-3 flex-shrink-0"
+                  >
+                    <FaTimes className="text-lg" />
+                  </button>
+                </div>
+
+                {/* Supported sites */}
+                <div className="flex flex-wrap gap-2 mb-5">
+                  {["FreeJobAlert", "SarkariResult", "NCS / Govt sites", "Any public URL"].map((s) => (
+                    <span
+                      key={s}
+                      className="text-xs font-semibold px-2.5 py-1 rounded-full"
+                      style={{ background: "rgba(212,160,23,0.15)", color: "#F2C14E", border: "1px solid rgba(212,160,23,0.3)" }}
+                    >
+                      {s}
+                    </span>
+                  ))}
+                </div>
+
+                {importSuccess ? (
+                  <div className="flex flex-col items-center py-6 gap-3 text-center">
+                    <FaCheckCircle className="text-5xl" style={{ color: "#F2C14E" }} />
+                    <p className="text-white font-semibold text-base">Data Extracted!</p>
+                    <p className="text-slate-400 text-sm">{importSuccess}</p>
+                  </div>
+                ) : (
+                  <div className="space-y-4">
+                    <div>
+                      <label className="block text-xs font-semibold text-slate-400 mb-2 uppercase tracking-wider">
+                        Page URL
+                      </label>
+                      <input
+                        type="url"
+                        value={importUrl}
+                        onChange={(e) => { setImportUrl(e.target.value); setImportError(""); }}
+                        onKeyDown={(e) => { if (e.key === "Enter") handleImport(); }}
+                        placeholder="https://freejobAlert.com/..."
+                        disabled={importing}
+                        className="w-full rounded-xl px-4 py-3 text-sm text-white placeholder-slate-500 outline-none transition-all"
+                        style={{
+                          background: "rgba(255,255,255,0.06)",
+                          border: "1.5px solid rgba(212,160,23,0.3)",
+                          caretColor: "#F2C14E",
+                        }}
+                        onFocus={(e) => { e.currentTarget.style.borderColor = "#F2C14E"; }}
+                        onBlur={(e) => { e.currentTarget.style.borderColor = "rgba(212,160,23,0.3)"; }}
+                      />
+                    </div>
+
+                    {importError && (
+                      <div className="flex items-start gap-2 rounded-xl px-4 py-3" style={{ background: "rgba(239,68,68,0.12)", border: "1px solid rgba(239,68,68,0.3)" }}>
+                        <FaExclamationTriangle className="text-red-400 mt-0.5 flex-shrink-0" />
+                        <p className="text-red-400 text-sm">{importError}</p>
+                      </div>
+                    )}
+
+                    <div className="rounded-xl px-4 py-3 text-xs text-slate-500" style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)" }}>
+                      <p className="font-semibold text-slate-400 mb-1">How it works</p>
+                      <ul className="space-y-0.5 list-disc list-inside">
+                        <li>Server fetches the page and extracts structured data</li>
+                        <li>Fields auto-fill — you review and edit before publishing</li>
+                        <li>Nothing is saved until you click Save</li>
+                      </ul>
+                    </div>
+
+                    <button
+                      onClick={handleImport}
+                      disabled={importing || !importUrl.trim()}
+                      className="w-full py-3 rounded-xl font-bold text-sm flex items-center justify-center gap-2 transition-all disabled:opacity-50"
+                      style={{ background: "linear-gradient(135deg,#D4A017,#F2C14E)", color: "#071B4A" }}
+                    >
+                      {importing ? (
+                        <>
+                          <FaSpinner className="animate-spin" />
+                          Fetching & Extracting…
+                        </>
+                      ) : (
+                        <>
+                          <FaMagic />
+                          Extract & Fill Draft
+                        </>
+                      )}
+                    </button>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
+
         <div className="flex items-center justify-between mb-5">
           <h2 className="text-lg font-bold text-slate-900">Announcements ({total})</h2>
-          <Button onClick={openCreate} className="gap-2 text-sm" style={{ background: GOLD, color: "#fff" }}>
-            <FaPlus /> New Post
-          </Button>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => { setImportModal(true); setImportError(""); setImportUrl(""); }}
+              className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold transition-all"
+              style={{ background: "rgba(212,160,23,0.1)", color: "#B8891A", border: "1.5px solid rgba(212,160,23,0.35)" }}
+            >
+              <FaMagic className="text-xs" /> Import from URL
+            </button>
+            <Button onClick={openCreate} className="gap-2 text-sm" style={{ background: GOLD, color: "#fff" }}>
+              <FaPlus /> New Post
+            </Button>
+          </div>
         </div>
 
         {loading ? (
