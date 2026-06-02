@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Link } from "wouter";
+import { Link, useLocation } from "wouter";
 import Seo from "@/components/Seo";
 import {
   FaBriefcase, FaFileAlt, FaCheckCircle, FaHandHoldingUsd,
@@ -80,6 +80,7 @@ function SkeletonCard() {
 }
 
 export default function Updates() {
+  const [, navigate] = useLocation();
   const [activeCategory, setActiveCategory] = useState("All");
   const [items, setItems] = useState<Announcement[]>([]);
   const [total, setTotal] = useState(0);
@@ -187,7 +188,8 @@ export default function Updates() {
                   return (
                     <div
                       key={item.id}
-                      className="bg-white rounded-2xl flex flex-col overflow-hidden transition-all duration-200 hover:-translate-y-1"
+                      onClick={() => navigate(`/updates/${item.slug}`)}
+                      className="bg-white rounded-2xl flex flex-col overflow-hidden transition-all duration-200 hover:-translate-y-1 cursor-pointer"
                       style={{
                         border: item.isUrgent ? "2px solid #ef4444" : "1px solid #e2e8f0",
                         boxShadow: item.isUrgent
@@ -281,7 +283,10 @@ export default function Updates() {
                       </div>
 
                       {/* Action Buttons */}
-                      <div className="px-4 pb-4 pt-3 border-t border-slate-50 flex gap-2 items-center">
+                      <div
+                        className="px-4 pb-4 pt-3 border-t border-slate-50 flex gap-2 items-center"
+                        onClick={(e) => e.stopPropagation()}
+                      >
                         <Link
                           href={`/updates/${item.slug}`}
                           className="flex-1 flex items-center justify-center gap-1.5 text-xs font-bold py-2.5 px-3 rounded-xl transition-all duration-200 hover:opacity-90 hover:-translate-y-0.5"
