@@ -1,4 +1,5 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
+import Layout from "../components/Layout";
 import {
   FaBook, FaPlus, FaTrash, FaWhatsapp, FaArrowLeft,
   FaUser, FaPhone, FaRupeeSign, FaTimes,
@@ -61,17 +62,20 @@ function PinScreen({ onUnlock }: { onUnlock: () => void }) {
   const [pin, setPin] = useState("");
   const [shake, setShake] = useState(false);
   const [error, setError] = useState(false);
+  const inputRef = useRef<HTMLInputElement>(null);
 
-  function press(k: string) {
+  useEffect(() => {
+    setTimeout(() => inputRef.current?.focus(), 100);
+  }, []);
+
+  function handleInput(val: string) {
     if (shake) return;
+    const digits = val.replace(/\D/g, "").slice(0, 4);
+    setPin(digits);
     setError(false);
-    if (k === "del") { setPin(p => p.slice(0, -1)); return; }
-    if (pin.length >= 4) return;
-    const next = pin + k;
-    setPin(next);
-    if (next.length === 4) {
+    if (digits.length === 4) {
       setTimeout(() => {
-        if (next === CORRECT_PIN) {
+        if (digits === CORRECT_PIN) {
           sessionStorage.setItem("khaata_auth", "1");
           onUnlock();
         } else {
@@ -83,22 +87,37 @@ function PinScreen({ onUnlock }: { onUnlock: () => void }) {
     }
   }
 
-  const keys = ["1","2","3","4","5","6","7","8","9","","0","del"];
-
   return (
-    <>
+    <Layout>
       <style>{GLOBAL_CSS}</style>
-      <div className="min-h-screen flex flex-col items-center justify-center px-4"
-        style={{ background: `linear-gradient(160deg, #071B4A 0%, #0f2d7a 55%, #0a2258 100%)` }}>
+      <div
+        className="flex-1 flex flex-col items-center justify-center px-4 py-16"
+        style={{ background: `linear-gradient(160deg, #071B4A 0%, #0f2d7a 55%, #0a2258 100%)` }}
+        onClick={() => inputRef.current?.focus()}
+      >
+        {/* Hidden keyboard input */}
+        <input
+          ref={inputRef}
+          type="password"
+          inputMode="numeric"
+          pattern="[0-9]*"
+          maxLength={4}
+          value={pin}
+          onChange={e => handleInput(e.target.value)}
+          autoFocus
+          autoComplete="off"
+          className="absolute opacity-0 pointer-events-none w-0 h-0"
+          aria-label="PIN input"
+        />
 
         {/* Card */}
         <div className="kh-pop bg-white rounded-3xl shadow-2xl w-full max-w-[320px] overflow-hidden">
           {/* Top stripe */}
           <div className="h-1.5 w-full" style={{ background: "linear-gradient(90deg,#D4A017,#f0c040,#D4A017)" }} />
 
-          <div className="px-8 pt-8 pb-6">
+          <div className="px-8 pt-8 pb-8">
             {/* Icon */}
-            <div className="flex flex-col items-center mb-6">
+            <div className="flex flex-col items-center mb-7">
               <div className="w-16 h-16 rounded-2xl flex items-center justify-center shadow-lg mb-4"
                 style={{ background: `linear-gradient(135deg, ${NAVY} 0%, #1a3a8f 100%)` }}>
                 <FaBook className="text-2xl text-white" />
@@ -108,50 +127,35 @@ function PinScreen({ onUnlock }: { onUnlock: () => void }) {
             </div>
 
             {/* Dots */}
-            <div className={`flex justify-center gap-3.5 mb-2 ${shake ? "kh-shake" : ""}`}>
+            <div className={`flex justify-center gap-4 mb-3 ${shake ? "kh-shake" : ""}`}>
               {[0,1,2,3].map(i => (
                 <div key={i}
-                  className="w-3.5 h-3.5 rounded-full border-2 transition-all duration-200"
+                  className="w-4 h-4 rounded-full border-2 transition-all duration-200"
                   style={{
                     background: i < pin.length ? NAVY : "transparent",
                     borderColor: i < pin.length ? NAVY : "#cbd5e1",
-                    transform: i < pin.length ? "scale(1.2)" : "scale(1)",
+                    transform: i < pin.length ? "scale(1.25)" : "scale(1)",
+                    boxShadow: i < pin.length ? `0 0 8px ${NAVY}55` : "none",
                   }}
                 />
               ))}
             </div>
 
             {/* Error text */}
-            <div className="h-6 flex items-center justify-center mb-4">
-              {error && (
-                <p className="text-xs font-bold text-red-500 kh-fadein">
-                  ❌ Galat PIN — dobara try karo
-                </p>
-              )}
+            <div className="h-6 flex items-center justify-center mb-5">
+              {error
+                ? <p className="text-xs font-bold text-red-500 kh-fadein">❌ Galat PIN — dobara try karo</p>
+                : <p className="text-xs text-slate-400 font-medium">⌨️ Keyboard se PIN type karo</p>
+              }
             </div>
 
-            {/* Keypad */}
-            <div className="grid grid-cols-3 gap-2.5">
-              {keys.map((k, idx) => (
-                <button key={idx} onClick={() => k && press(k)}
-                  className={`h-[52px] rounded-2xl font-bold text-lg transition-all duration-100 select-none
-                    ${!k ? "invisible" : "active:scale-90"}
-                    ${k === "del" ? "bg-slate-100 text-slate-500 hover:bg-red-50 hover:text-red-500 text-sm"
-                      : k ? "hover:opacity-75" : ""}`}
-                  style={k && k !== "del" ? { background: "#EEF2FF", color: NAVY, boxShadow: "0 2px 0 #dde4ff" } : {}}
-                >
-                  {k === "del" ? "⌫" : k}
-                </button>
-              ))}
-            </div>
-
-            <p className="text-center text-xs text-slate-300 mt-5 font-medium">
+            <p className="text-center text-xs text-slate-300 font-medium">
               <FaLock className="inline mr-1 text-[10px]" />Private — Sirf aapke liye
             </p>
           </div>
         </div>
       </div>
-    </>
+    </Layout>
   );
 }
 
@@ -331,9 +335,9 @@ function ClientDetail({ client, onBack, onClientUpdated, onClientDeleted }:
   const bal = totalD - totalC;
 
   return (
-    <>
+    <Layout>
       <style>{GLOBAL_CSS}</style>
-      <div className="min-h-screen flex flex-col" style={{ background: "#f0f4fb" }}>
+      <div className="flex-1 flex flex-col" style={{ background: "#f0f4fb" }}>
         {showAddTxn && <AddTxnModal client={client} onClose={() => setShowAddTxn(false)}
           onAdded={t => {
             setTxns(p => [t, ...p]);
@@ -464,7 +468,7 @@ function ClientDetail({ client, onBack, onClientUpdated, onClientDeleted }:
           )}
         </div>
       </div>
-    </>
+    </Layout>
   );
 }
 
@@ -510,11 +514,11 @@ export default function KhaataBook() {
   );
 
   return (
-    <>
+    <Layout>
       <style>{GLOBAL_CSS}</style>
       {showAdd && <AddClientModal onClose={() => setShowAdd(false)} onAdded={c => setClients(p => [{ ...c, totalDebit: 0, totalCredit: 0, balance: 0 }, ...p])} />}
 
-      <div className="min-h-screen flex flex-col" style={{ background: "#f0f4fb" }}>
+      <div className="flex-1 flex flex-col" style={{ background: "#f0f4fb" }}>
 
         {/* ── Header ── */}
         <div className="text-white px-4 pt-5 pb-16"
@@ -665,7 +669,7 @@ export default function KhaataBook() {
           )}
         </div>
       </div>
-    </>
+    </Layout>
   );
 }
 
