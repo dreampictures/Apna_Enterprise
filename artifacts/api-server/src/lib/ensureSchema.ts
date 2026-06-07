@@ -85,6 +85,51 @@ export async function ensureSchema() {
         date TIMESTAMP DEFAULT NOW() NOT NULL,
         created_at TIMESTAMP DEFAULT NOW() NOT NULL
       );
+
+      CREATE TABLE IF NOT EXISTS cameti_groups (
+        id SERIAL PRIMARY KEY,
+        name TEXT NOT NULL,
+        daily_amount INTEGER NOT NULL DEFAULT 300,
+        total_members INTEGER NOT NULL DEFAULT 12,
+        started_on DATE NOT NULL DEFAULT CURRENT_DATE,
+        pin TEXT NOT NULL DEFAULT '1103',
+        created_at TIMESTAMP DEFAULT NOW() NOT NULL
+      );
+
+      CREATE TABLE IF NOT EXISTS cameti_members (
+        id SERIAL PRIMARY KEY,
+        group_id INTEGER NOT NULL REFERENCES cameti_groups(id) ON DELETE CASCADE,
+        name TEXT NOT NULL,
+        phone TEXT NOT NULL,
+        has_taken BOOLEAN NOT NULL DEFAULT false,
+        sort_order INTEGER NOT NULL DEFAULT 0,
+        created_at TIMESTAMP DEFAULT NOW() NOT NULL
+      );
+
+      CREATE TABLE IF NOT EXISTS cameti_months (
+        id SERIAL PRIMARY KEY,
+        group_id INTEGER NOT NULL REFERENCES cameti_groups(id) ON DELETE CASCADE,
+        month_number INTEGER NOT NULL,
+        year INTEGER NOT NULL,
+        month INTEGER NOT NULL,
+        winner_member_id INTEGER REFERENCES cameti_members(id) ON DELETE SET NULL,
+        bid_amount INTEGER,
+        profit_per_member INTEGER,
+        daily_reduction INTEGER,
+        status TEXT NOT NULL DEFAULT 'open',
+        created_at TIMESTAMP DEFAULT NOW() NOT NULL
+      );
+
+      CREATE TABLE IF NOT EXISTS cameti_collections (
+        id SERIAL PRIMARY KEY,
+        group_id INTEGER NOT NULL REFERENCES cameti_groups(id) ON DELETE CASCADE,
+        member_id INTEGER NOT NULL REFERENCES cameti_members(id) ON DELETE CASCADE,
+        collected_date DATE NOT NULL,
+        amount INTEGER NOT NULL,
+        month_id INTEGER REFERENCES cameti_months(id) ON DELETE SET NULL,
+        note TEXT,
+        created_at TIMESTAMP DEFAULT NOW() NOT NULL
+      );
     `);
 
     logger.info("Database schema verified / created successfully");

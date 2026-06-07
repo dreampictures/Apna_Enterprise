@@ -8,6 +8,7 @@ import pageviewsRouter from "./pageviews";
 import announcementsRouter from "./announcements";
 import extractUrlRouter from "./extract-url";
 import khaataRouter from "./khaata";
+import cametiRouter from "./cameti";
 
 const router: IRouter = Router();
 
@@ -20,5 +21,6 @@ router.use(pageviewsRouter);
 router.use(announcementsRouter);
 router.use(extractUrlRouter);
 router.use(khaataRouter);
+router.use(cametiRouter);
 
 export default router;

@@ -230,6 +230,17 @@ export default function AdminDashboard() {
                 <FaBook className="text-sm" />
                 <span className="hidden sm:inline">Khaata Book</span>
               </a>
+              <a
+                href="/cameti"
+                target="_blank"
+                rel="noreferrer"
+                className="flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm font-bold transition-all hover:opacity-90 active:scale-95"
+                style={{ background: "#16a34a", color: "white" }}
+                title="Daily Cameti kholo"
+              >
+                <FaUsers className="text-sm" />
+                <span className="hidden sm:inline">Cameti</span>
+              </a>
               <Button
                 variant="outline"
                 size="sm"

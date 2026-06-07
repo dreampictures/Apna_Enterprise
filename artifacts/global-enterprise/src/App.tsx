@@ -16,6 +16,7 @@ import UpdateDetail from "./pages/UpdateDetail";
 import AdminLogin from "./pages/AdminLogin";
 import AdminDashboard from "./pages/AdminDashboard";
 import KhaataBook from "./pages/KhaataBook";
+import Cameti from "./pages/Cameti";
 import Layout from "./components/Layout";
 import LeadPopup from "./components/LeadPopup";
 
@@ -92,6 +93,14 @@ function Router() {
     return (
       <Switch>
         <Route path="/khaata" component={KhaataBook} />
+      </Switch>
+    );
+  }
+
+  if (location === "/cameti") {
+    return (
+      <Switch>
+        <Route path="/cameti" component={Cameti} />
       </Switch>
     );
   }
