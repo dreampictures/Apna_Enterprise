@@ -15,6 +15,7 @@ import Updates from "./pages/Updates";
 import UpdateDetail from "./pages/UpdateDetail";
 import AdminLogin from "./pages/AdminLogin";
 import AdminDashboard from "./pages/AdminDashboard";
+import KhaataBook from "./pages/KhaataBook";
 import Layout from "./components/Layout";
 import LeadPopup from "./components/LeadPopup";
 
@@ -85,6 +86,16 @@ function PageViewTracker() {
 }
 
 function Router() {
+  const [location] = useLocation();
+
+  if (location === "/khaata") {
+    return (
+      <Switch>
+        <Route path="/khaata" component={KhaataBook} />
+      </Switch>
+    );
+  }
+
   return (
     <Layout>
       <Switch>

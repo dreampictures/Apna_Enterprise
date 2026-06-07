@@ -52,6 +52,28 @@ export const pageViewsTable = pgTable("page_views", {
 
 export type PageView = typeof pageViewsTable.$inferSelect;
 
+export const khaataClientsTable = pgTable("khaata_clients", {
+  id: serial("id").primaryKey(),
+  name: text("name").notNull(),
+  phone: text("phone").notNull(),
+  note: text("note"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+export type KhaataClient = typeof khaataClientsTable.$inferSelect;
+
+export const khaataTransactionsTable = pgTable("khaata_transactions", {
+  id: serial("id").primaryKey(),
+  clientId: integer("client_id").notNull(),
+  amount: integer("amount").notNull(),
+  type: text("type").notNull(), // "debit" = client owes us | "credit" = client paid / advance
+  description: text("description"),
+  date: timestamp("date").defaultNow().notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+export type KhaataTransaction = typeof khaataTransactionsTable.$inferSelect;
+
 export const announcementsTable = pgTable("announcements", {
   id: serial("id").primaryKey(),
   title: text("title").notNull(),

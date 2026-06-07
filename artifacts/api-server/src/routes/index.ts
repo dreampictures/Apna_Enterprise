@@ -7,6 +7,7 @@ import leadsRouter from "./leads";
 import pageviewsRouter from "./pageviews";
 import announcementsRouter from "./announcements";
 import extractUrlRouter from "./extract-url";
+import khaataRouter from "./khaata";
 
 const router: IRouter = Router();
 
@@ -18,5 +19,6 @@ router.use(leadsRouter);
 router.use(pageviewsRouter);
 router.use(announcementsRouter);
 router.use(extractUrlRouter);
+router.use(khaataRouter);
 
 export default router;

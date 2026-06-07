@@ -67,6 +67,24 @@ export async function ensureSchema() {
         sections TEXT DEFAULT '[]' NOT NULL,
         created_at TIMESTAMP DEFAULT NOW() NOT NULL
       );
+
+      CREATE TABLE IF NOT EXISTS khaata_clients (
+        id SERIAL PRIMARY KEY,
+        name TEXT NOT NULL,
+        phone TEXT NOT NULL,
+        note TEXT,
+        created_at TIMESTAMP DEFAULT NOW() NOT NULL
+      );
+
+      CREATE TABLE IF NOT EXISTS khaata_transactions (
+        id SERIAL PRIMARY KEY,
+        client_id INTEGER NOT NULL REFERENCES khaata_clients(id) ON DELETE CASCADE,
+        amount INTEGER NOT NULL,
+        type TEXT NOT NULL,
+        description TEXT,
+        date TIMESTAMP DEFAULT NOW() NOT NULL,
+        created_at TIMESTAMP DEFAULT NOW() NOT NULL
+      );
     `);
 
     logger.info("Database schema verified / created successfully");
