@@ -18,7 +18,7 @@ import {
   FaSignOutAlt, FaFileDownload, FaUsers, FaClipboardList,
   FaFilter, FaBuilding, FaEye, FaTag, FaWhatsapp,
   FaMobileAlt, FaDesktop, FaChartBar, FaPhoneAlt, FaBullhorn,
-  FaCheck, FaHourglassHalf,
+  FaCheck, FaHourglassHalf, FaBook,
 } from "react-icons/fa";
 import { SERVICE_CATEGORIES, SERVICE_TO_CATEGORY, ALL_SERVICE_IDS } from "@/lib/services";
 import AdminAnnouncements from "./AdminAnnouncements";
@@ -215,10 +215,21 @@ export default function AdminDashboard() {
                 <span className="text-primary-foreground/70 text-xs ml-2">Admin Panel</span>
               </div>
             </div>
-            <div className="flex items-center gap-4">
+            <div className="flex items-center gap-3">
               <span className="text-sm text-primary-foreground/80 hidden sm:block">
                 Welcome, <strong>{username}</strong>
               </span>
+              <a
+                href="/khaata"
+                target="_blank"
+                rel="noreferrer"
+                className="flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm font-bold transition-all hover:opacity-90 active:scale-95"
+                style={{ background: "#D4A017", color: "#071B4A" }}
+                title="Khaata Book kholo"
+              >
+                <FaBook className="text-sm" />
+                <span className="hidden sm:inline">Khaata Book</span>
+              </a>
               <Button
                 variant="outline"
                 size="sm"
