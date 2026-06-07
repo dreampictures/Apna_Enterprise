@@ -1,4 +1,4 @@
-modules = ["nodejs-24", "postgresql-16"]
+modules = ["nodejs-20", "web"]
 
 [deployment]
 router = "application"
@@ -29,16 +29,24 @@ outputType = "webview"
 
 [[workflows.workflow.tasks]]
 task = "shell.exec"
-args = "PORT=22654 BASE_PATH=/ pnpm --filter @workspace/global-enterprise run dev"
-waitForPort = 22654
+args = "bash scripts/dev.sh"
+waitForPort = 5000
 
 [agent]
-stack = "PNPM_WORKSPACE"
+stack = "BEST_EFFORT_FALLBACK"
 expertMode = true
 
 [postMerge]
 path = "scripts/post-merge.sh"
 timeoutMs = 20000
+
+[[ports]]
+localPort = 3001
+externalPort = 3003
+
+[[ports]]
+localPort = 5000
+externalPort = 80
 
 [[ports]]
 localPort = 8080
@@ -69,6 +77,8 @@ externalPort = 3000
 [userenv.shared]
 JWT_SECRET = "global-enterprise-jwt-secret-2024-secure-key"
 FLY_API_TOKEN = "FlyV1 fm2_lJPECAAAAAAAFBJ/xBD22ZPD9gPC3xz5ShGoTcMOwrVodHRwczovL2FwaS5mbHkuaW8vdjGWAJLOABkOgB8Lk7lodHRwczovL2FwaS5mbHkuaW8vYWFhL3YxxDyrnSnSCRAci9/J+xJeZGhzesJ9R50a332vp0pYQdc69z9jg5uKnR6+KBWtK4+LrY/B4aqofcOS52BCuorETnRVlZPDFh9xrPlD+Br350ZpqpKwioE5NTloVR44jDQYW11jP2PaR5E3MTQqj5PbIVBDRo9uFTQEBtFajVbjjXO8G54FwwZPxlamdEsdWw2SlAORgc4BEuoCHwWRgqdidWlsZGVyH6J3Zx8BxCDt0586Uyj1JyUP15F6IdT6nDyYjW2m2R7znrEVKNUuhQ==,fm2_lJPETnRVlZPDFh9xrPlD+Br350ZpqpKwioE5NTloVR44jDQYW11jP2PaR5E3MTQqj5PbIVBDRo9uFTQEBtFajVbjjXO8G54FwwZPxlamdEsdW8QQaU1pSA1nga8H080Hh8Pqy8O5aHR0cHM6Ly9hcGkuZmx5LmlvL2FhYS92MZgEks5qCc+kzwAAAAEmAe3CF84AGAGeCpHOABgBngzEECnvllPxfyDZbPgPc0AAl+rEIAp+r8zFRtMmBmkOoC3eY1jCzrLu5pX0Cm0KPR+V5aZK"
+API_PORT = "3001"
+BASE_PATH = "/"
 
 [nix]
 channel = "stable-25_05"
