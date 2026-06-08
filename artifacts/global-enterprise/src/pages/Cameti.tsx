@@ -241,6 +241,11 @@ function GroupDetail({ groupId, onBack }: { groupId: number; onBack: () => void 
   const [delMember, setDelMember] = useState<Member | null>(null);
   const [delCollection, setDelCollection] = useState<number | null>(null);
 
+  // Quick inline collection
+  const [inlineCollect, setInlineCollect] = useState<number | null>(null);
+  const [inlineAmount, setInlineAmount] = useState<string>("");
+  const [inlineSaving, setInlineSaving] = useState(false);
+
   const load = useCallback(async () => {
     setLoading(true);
     try {
@@ -330,6 +335,27 @@ function GroupDetail({ groupId, onBack }: { groupId: number; onBack: () => void 
       body: JSON.stringify({ month_number: nextNum, year: now.getFullYear(), month: now.getMonth() + 1 }),
     });
     await load();
+  }
+
+  /* ── quick single-member collect ── */
+  async function collectSingle(memberId: number, amount: number) {
+    await ensureMonth();
+    setInlineSaving(true);
+    try {
+      await fetch(`/api/cameti/groups/${group!.id}/collections`, {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          entries: [{
+            member_id: memberId,
+            amount,
+            collected_date: todayISO(),
+            month_id: currentMonth?.id ?? null,
+          }],
+        }),
+      });
+      setInlineCollect(null);
+      await load();
+    } finally { setInlineSaving(false); }
   }
 
   /* ── ensure current month exists ── */
@@ -507,9 +533,42 @@ function GroupDetail({ groupId, onBack }: { groupId: number; onBack: () => void 
                           <FaTrash className="text-xs" />
                         </button>
                       </div>
+                    ) : inlineCollect === m.id ? (
+                      <div className="flex items-center gap-1.5 flex-shrink-0">
+                        <div className="flex items-center gap-1 border-2 border-blue-200 rounded-xl px-2 py-1.5 bg-blue-50">
+                          <FaRupeeSign className="text-blue-400 text-xs flex-shrink-0" />
+                          <input
+                            type="number"
+                            value={inlineAmount}
+                            onChange={e => setInlineAmount(e.target.value)}
+                            className="w-14 text-sm font-bold outline-none text-slate-700 bg-transparent"
+                            autoFocus
+                            onKeyDown={e => {
+                              if (e.key === "Enter") collectSingle(m.id, Number(inlineAmount) || effectiveDaily);
+                              if (e.key === "Escape") setInlineCollect(null);
+                            }}
+                          />
+                        </div>
+                        <button
+                          disabled={inlineSaving}
+                          onClick={() => collectSingle(m.id, Number(inlineAmount) || effectiveDaily)}
+                          className="px-3 py-1.5 rounded-xl text-xs font-extrabold text-white transition-all active:scale-95 disabled:opacity-60"
+                          style={{ background: "linear-gradient(135deg,#16a34a,#15803d)" }}>
+                          {inlineSaving ? "…" : "✓ OK"}
+                        </button>
+                        <button onClick={() => setInlineCollect(null)}
+                          className="w-7 h-7 flex items-center justify-center rounded-xl text-slate-300 hover:text-slate-500 transition-colors">
+                          <FaTimes className="text-xs" />
+                        </button>
+                      </div>
                     ) : (
                       <div className="flex items-center gap-1.5 flex-shrink-0">
-                        <span className="text-[10px] font-bold bg-red-50 text-red-500 px-2 py-1 rounded-full">Pending</span>
+                        <button
+                          onClick={() => { setInlineCollect(m.id); setInlineAmount(String(effectiveDaily)); }}
+                          className="flex items-center gap-1 px-3 py-1.5 rounded-xl text-xs font-extrabold text-white transition-all active:scale-95 shadow-sm"
+                          style={{ background: "linear-gradient(135deg,#16a34a,#15803d)" }}>
+                          <FaCheckCircle className="text-[10px]" /> Received
+                        </button>
                         {m.phone && (
                           <a href={waHref} target="_blank" rel="noreferrer"
                             className="w-7 h-7 flex items-center justify-center rounded-xl text-white transition-all active:scale-90"
