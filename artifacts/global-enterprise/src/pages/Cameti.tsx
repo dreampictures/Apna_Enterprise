@@ -272,6 +272,23 @@ function GroupDetail({ groupId, onBack }: { groupId: number; onBack: () => void 
   const reduction = latestClosed?.daily_reduction ?? 0;
   const effectiveDaily = group.daily_amount - reduction;
 
+  /* ── Cumulative stats ── */
+  const startDate = new Date(group.started_on + "T00:00:00");
+  const daysElapsed = Math.max(1, Math.floor((Date.now() - startDate.getTime()) / 86400000) + 1);
+  const totalExpected = daysElapsed * effectiveDaily * group.members.length;
+  const totalCollected = summary.reduce((s, m) => s + (m.total_paid ?? 0), 0);
+  const totalPending = Math.max(0, totalExpected - totalCollected);
+  const collectionPct = totalExpected > 0 ? Math.min(100, (totalCollected / totalExpected) * 100) : 0;
+  const memberPending = summary
+    .map(m => ({
+      ...m,
+      expected: daysElapsed * effectiveDaily,
+      pending: Math.max(0, daysElapsed * effectiveDaily - (m.total_paid ?? 0)),
+      pendingDays: Math.max(0, daysElapsed - Math.round((m.total_paid ?? 0) / effectiveDaily)),
+    }))
+    .filter(m => m.pending > 0)
+    .sort((a, b) => b.pending - a.pending);
+
   /* ── add member ── */
   async function addMember(name: string, phone: string) {
     const r = await fetch(`/api/cameti/groups/${group!.id}/members`, {
@@ -366,6 +383,96 @@ function GroupDetail({ groupId, onBack }: { groupId: number; onBack: () => void 
 
         {/* ── Content ── */}
         <div className="px-4 -mt-8 max-w-3xl mx-auto w-full">
+
+          {/* ── Cumulative Overview Card ── */}
+          {group.members.length > 0 && (
+            <div className="ct-up bg-white rounded-3xl shadow-sm mb-4 overflow-hidden" style={{ border: "1.5px solid #e2e8f0" }}>
+              {/* Header */}
+              <div className="px-4 py-3 flex items-center justify-between" style={{ borderBottom: "1px solid #f1f5f9" }}>
+                <p className="text-xs font-extrabold text-slate-600 uppercase tracking-wider">📊 Poori Cameti Ka Hisaab</p>
+                <span className="text-[10px] font-bold px-2.5 py-1 rounded-full" style={{ background: "#EEF2FF", color: NAVY }}>
+                  {daysElapsed} din chalu
+                </span>
+              </div>
+
+              {/* Progress bar */}
+              <div className="px-4 pt-3">
+                <div className="flex items-center justify-between mb-1.5">
+                  <p className="text-[11px] font-bold text-slate-400">Jama / Kul Expected</p>
+                  <p className="text-[11px] font-extrabold" style={{ color: NAVY }}>
+                    {fmt(totalCollected)} / {fmt(totalExpected)}
+                  </p>
+                </div>
+                <div className="h-3 bg-slate-100 rounded-full overflow-hidden mb-1">
+                  <div className="h-full rounded-full transition-all duration-700"
+                    style={{
+                      width: `${collectionPct}%`,
+                      background: collectionPct >= 90
+                        ? `linear-gradient(90deg,${GREEN},#22c55e)`
+                        : collectionPct >= 60
+                          ? `linear-gradient(90deg,#f59e0b,#fbbf24)`
+                          : `linear-gradient(90deg,${RED},#f87171)`,
+                    }} />
+                </div>
+                <p className="text-right text-[9px] font-bold text-slate-400 mb-3">{collectionPct.toFixed(1)}% complete</p>
+
+                {/* 3 stat boxes */}
+                <div className="grid grid-cols-3 gap-2 pb-3">
+                  {[
+                    { label: "Jama Hua", val: fmt(totalCollected), color: GREEN, bg: "#dcfce7" },
+                    { label: "Pending", val: fmt(totalPending), color: RED, bg: "#fee2e2" },
+                    { label: "Din / Expected", val: `${daysElapsed} × ${fmt(effectiveDaily)}`, color: NAVY, bg: "#EEF2FF" },
+                  ].map(({ label, val, color, bg }) => (
+                    <div key={label} className="rounded-2xl py-2.5 px-1 text-center" style={{ background: bg }}>
+                      <p className="text-sm font-black leading-tight" style={{ color }}>{val}</p>
+                      <p className="text-[9px] font-bold text-slate-500 uppercase mt-0.5">{label}</p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Per-member pending list */}
+              {memberPending.length > 0 && (
+                <div style={{ borderTop: "1px solid #f1f5f9" }} className="px-4 py-3">
+                  <p className="text-[10px] font-extrabold uppercase tracking-wider mb-2.5" style={{ color: RED }}>
+                    Jinhe Dena Baaki Hai ({memberPending.length} log)
+                  </p>
+                  <div className="space-y-1.5">
+                    {memberPending.map((m, idx) => (
+                      <div key={m.id}
+                        className="ct-up flex items-center justify-between rounded-2xl px-3 py-2.5"
+                        style={{ background: "#fff5f5", border: "1px solid #fee2e2", animationDelay: `${idx * 20}ms` }}>
+                        <div className="flex items-center gap-2.5">
+                          <div className="w-8 h-8 rounded-xl flex items-center justify-center font-black text-xs flex-shrink-0"
+                            style={{ background: "#fee2e2", color: RED }}>
+                            {initials(m.name)}
+                          </div>
+                          <div>
+                            <p className="text-xs font-extrabold text-slate-800">{m.name}</p>
+                            <p className="text-[9px] font-bold text-slate-400">
+                              {m.pendingDays} din baaki · Paid {m.days_paid} din
+                            </p>
+                          </div>
+                        </div>
+                        <div className="text-right flex-shrink-0">
+                          <p className="text-sm font-black" style={{ color: RED }}>{fmt(m.pending)}</p>
+                          <p className="text-[9px] text-slate-400 font-semibold">pending</p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* All paid banner */}
+              {memberPending.length === 0 && totalExpected > 0 && (
+                <div style={{ borderTop: "1px solid #f1f5f9" }} className="px-4 py-3 flex items-center gap-2 justify-center">
+                  <FaCheckCircle className="text-green-500" />
+                  <p className="text-sm font-extrabold text-green-600">Sab ne puri cameti di hai! 🎉</p>
+                </div>
+              )}
+            </div>
+          )}
 
           {/* Tabs */}
           <div className="flex gap-2 mb-5 overflow-x-auto pb-1">
