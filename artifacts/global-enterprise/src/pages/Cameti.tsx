@@ -3,9 +3,9 @@ import Layout from "../components/Layout";
 import {
   FaUsers, FaPlus, FaTrash, FaWhatsapp, FaArrowLeft,
   FaPhone, FaRupeeSign, FaTimes, FaCalendarAlt,
-  FaCheckCircle, FaLock, FaGavel, FaChartBar,
-  FaUserCheck, FaMoneyBillWave, FaStickyNote,
-  FaExclamationTriangle, FaEdit,
+  FaCheckCircle, FaLock, FaGavel,
+  FaStickyNote,
+  FaExclamationTriangle, FaEdit, FaSave,
 } from "react-icons/fa";
 
 /* ── Tokens ─────────────────────────────────────────────────── */
@@ -230,32 +230,23 @@ function ConfirmDialog({ msg, sub, onConfirm, onCancel }: {
 function GroupDetail({ groupId, onBack }: { groupId: number; onBack: () => void }) {
   const [group, setGroup] = useState<GroupDetail | null>(null);
   const [summary, setSummary] = useState<Member[]>([]);
-  const [todayCollections, setTodayCollections] = useState<Collection[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<"aaj" | "members" | "months" | "boli">("aaj");
 
   // Modals
   const [showAddMember, setShowAddMember] = useState(false);
-  const [showCollect, setShowCollect] = useState(false);
   const [showBoli, setShowBoli] = useState(false);
   const [delMember, setDelMember] = useState<Member | null>(null);
-  const [delCollection, setDelCollection] = useState<number | null>(null);
-
-  // Quick inline collection
-  const [inlineCollect, setInlineCollect] = useState<number | null>(null);
-  const [inlineAmount, setInlineAmount] = useState<string>("");
-  const [inlineSaving, setInlineSaving] = useState(false);
 
   const load = useCallback(async () => {
     setLoading(true);
     try {
-      const [gRes, sRes, cRes] = await Promise.all([
+      const [gRes, sRes] = await Promise.all([
         fetch(`/api/cameti/groups/${groupId}`),
         fetch(`/api/cameti/groups/${groupId}/summary`),
-        fetch(`/api/cameti/groups/${groupId}/collections?date=${todayISO()}`),
       ]);
-      const [g, s, c] = await Promise.all([gRes.json(), sRes.json(), cRes.json()]);
-      setGroup(g); setSummary(s); setTodayCollections(c);
+      const [g, s] = await Promise.all([gRes.json(), sRes.json()]);
+      setGroup(g); setSummary(s);
     } catch { /* silent */ }
     finally { setLoading(false); }
   }, [groupId]);
@@ -280,9 +271,6 @@ function GroupDetail({ groupId, onBack }: { groupId: number; onBack: () => void 
   const latestClosed = [...group.months].filter(m => m.status === "closed").pop() ?? null;
   const reduction = latestClosed?.daily_reduction ?? 0;
   const effectiveDaily = group.daily_amount - reduction;
-  const todayCollected = todayCollections.reduce((s, c) => s + c.amount, 0);
-  const membersPaidToday = new Set(todayCollections.map(c => c.member_id));
-  const totalExpected = group.total_members * effectiveDaily;
 
   /* ── add member ── */
   async function addMember(name: string, phone: string) {
@@ -300,26 +288,6 @@ function GroupDetail({ groupId, onBack }: { groupId: number; onBack: () => void 
     setDelMember(null); await load();
   }
 
-  /* ── delete collection ── */
-  async function doDeleteCollection(id: number) {
-    await fetch(`/api/cameti/collections/${id}`, { method: "DELETE" });
-    setDelCollection(null); await load();
-  }
-
-  /* ── collect today ── */
-  async function collectToday(entries: { member_id: number; amount: number }[]) {
-    await fetch(`/api/cameti/groups/${group!.id}/collections`, {
-      method: "POST", headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        entries: entries.map(e => ({
-          ...e, collected_date: todayISO(),
-          month_id: currentMonth?.id ?? null,
-        })),
-      }),
-    });
-    await load();
-  }
-
   /* ── boli ── */
   async function recordBoli(winner_member_id: number, bid_amount: number) {
     if (!currentMonth) return;
@@ -327,7 +295,6 @@ function GroupDetail({ groupId, onBack }: { groupId: number; onBack: () => void 
       method: "PATCH", headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ winner_member_id, bid_amount, total_members: group!.total_members }),
     });
-    // open next month
     const nextNum = (currentMonth.month_number ?? 0) + 1;
     const now = new Date();
     await fetch(`/api/cameti/groups/${group!.id}/months`, {
@@ -337,53 +304,10 @@ function GroupDetail({ groupId, onBack }: { groupId: number; onBack: () => void 
     await load();
   }
 
-  /* ── quick single-member collect ── */
-  async function collectSingle(memberId: number, amount: number) {
-    await ensureMonth();
-    setInlineSaving(true);
-    try {
-      await fetch(`/api/cameti/groups/${group!.id}/collections`, {
-        method: "POST", headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          entries: [{
-            member_id: memberId,
-            amount,
-            collected_date: todayISO(),
-            month_id: currentMonth?.id ?? null,
-          }],
-        }),
-      });
-      setInlineCollect(null);
-      await load();
-    } finally { setInlineSaving(false); }
-  }
-
-  /* ── ensure current month exists ── */
-  async function ensureMonth() {
-    if (!currentMonth) {
-      const now = new Date();
-      await fetch(`/api/cameti/groups/${group!.id}/months`, {
-        method: "POST", headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ month_number: 1, year: now.getFullYear(), month: now.getMonth() + 1 }),
-      });
-      await load();
-    }
-  }
-
   return (
     <Layout>
       <style>{CSS}</style>
       {showAddMember && <AddMemberModal onClose={() => setShowAddMember(false)} onAdd={addMember} />}
-      {showCollect && (
-        <CollectModal
-          groupId={group.id}
-          members={group.members}
-          effectiveDaily={effectiveDaily}
-          currentMonthId={currentMonth?.id ?? null}
-          onClose={() => setShowCollect(false)}
-          onDone={async () => { await load(); setShowCollect(false); }}
-        />
-      )}
       {showBoli && (
         <BoliModal
           members={group.members}
@@ -398,15 +322,11 @@ function GroupDetail({ groupId, onBack }: { groupId: number; onBack: () => void 
           sub="All their collections will also be deleted."
           onConfirm={() => doDeleteMember(delMember.id)} onCancel={() => setDelMember(null)} />
       )}
-      {delCollection !== null && (
-        <ConfirmDialog msg="Delete this collection?" sub="This cannot be undone."
-          onConfirm={() => doDeleteCollection(delCollection)} onCancel={() => setDelCollection(null)} />
-      )}
 
       <div className="flex-1 flex flex-col" style={{ background: "#f4f6fb" }}>
 
         {/* ── Hero Header ── */}
-        <div className="relative overflow-hidden pb-24 pt-7 px-4"
+        <div className="relative overflow-hidden pb-20 pt-7 px-4"
           style={{ background: `linear-gradient(145deg,${NAVY} 0%,#1e3a8a 60%,#1e40af 100%)` }}>
           <div className="absolute inset-0 opacity-[0.04] pointer-events-none" aria-hidden
             style={{ backgroundImage: "radial-gradient(circle,white 1px,transparent 1px)", backgroundSize: "30px 30px" }} />
@@ -425,14 +345,16 @@ function GroupDetail({ groupId, onBack }: { groupId: number; onBack: () => void 
             </div>
 
             {/* Stats row */}
-            <div className="grid grid-cols-4 gap-2">
+            <div className="grid grid-cols-3 gap-2">
               {[
                 { label: "Members", val: group.members.length, icon: FaUsers, c: "rgba(255,255,255,0.12)" },
-                { label: "Today Collected", val: fmt(todayCollected), icon: FaMoneyBillWave, c: "rgba(34,197,94,0.2)" },
-                { label: "Daily Amt", val: fmt(effectiveDaily), icon: FaRupeeSign, c: "rgba(212,160,23,0.2)" },
-                { label: "Pending", val: `${group.members.length - membersPaidToday.size}`, icon: FaUserCheck, c: "rgba(239,68,68,0.2)" },
-              ].map(({ label, val, icon: Icon, c }) => (
-                <div key={label} className="rounded-2xl p-3 text-center" style={{ background: c, border: "1px solid rgba(255,255,255,0.1)" }}>
+                { label: "Daily Amount", val: fmt(effectiveDaily), icon: FaRupeeSign, c: "rgba(212,160,23,0.2)" },
+                { label: "Boli Button →", val: "Record", icon: FaGavel, c: "rgba(212,160,23,0.15)", onClick: () => setShowBoli(true) },
+              ].map(({ label, val, icon: Icon, c, onClick }) => (
+                <div key={label}
+                  className={`rounded-2xl p-3 text-center ${onClick ? "cursor-pointer hover:opacity-80 active:scale-95 transition-all" : ""}`}
+                  style={{ background: c, border: "1px solid rgba(255,255,255,0.1)" }}
+                  onClick={onClick}>
                   <Icon className="text-white/50 text-sm mx-auto mb-1" />
                   <p className="text-white font-black text-base leading-none">{val}</p>
                   <p className="text-white/50 text-[9px] font-bold uppercase mt-0.5">{label}</p>
@@ -443,29 +365,15 @@ function GroupDetail({ groupId, onBack }: { groupId: number; onBack: () => void 
         </div>
 
         {/* ── Content ── */}
-        <div className="px-4 -mt-12 max-w-3xl mx-auto w-full">
-
-          {/* CTA Buttons */}
-          <div className="flex gap-3 mb-5">
-            <button onClick={async () => { await ensureMonth(); setShowCollect(true); }}
-              className="flex-1 flex items-center justify-center gap-2 py-3.5 rounded-2xl font-extrabold text-sm text-white shadow-lg transition-all hover:opacity-90 active:scale-[0.98]"
-              style={{ background: `linear-gradient(135deg,${NAVY},#1e40af)` }}>
-              <FaPlus /> Add Collection
-            </button>
-            <button onClick={() => setShowBoli(true)}
-              className="flex items-center gap-2 py-3.5 px-5 rounded-2xl font-extrabold text-sm text-white shadow-lg transition-all hover:opacity-90 active:scale-[0.98]"
-              style={{ background: `linear-gradient(135deg,${GOLD},#b8860b)` }}>
-              <FaGavel /> Boli
-            </button>
-          </div>
+        <div className="px-4 -mt-8 max-w-3xl mx-auto w-full">
 
           {/* Tabs */}
           <div className="flex gap-2 mb-5 overflow-x-auto pb-1">
             {[
-              { key: "aaj", label: "🗓 Today" },
+              { key: "aaj", label: "💰 Collection" },
               { key: "members", label: "👥 Members" },
               { key: "months", label: "📅 Months" },
-              { key: "boli", label: "🏆 Auction History" },
+              { key: "boli", label: "🏆 Auction" },
             ].map(t => (
               <button key={t.key} onClick={() => setActiveTab(t.key as typeof activeTab)}
                 className="flex-shrink-0 px-4 py-2 rounded-2xl font-extrabold text-xs transition-all active:scale-95"
@@ -477,114 +385,22 @@ function GroupDetail({ groupId, onBack }: { groupId: number; onBack: () => void 
             ))}
           </div>
 
-          {/* ── Tab: Today ── */}
+          {/* ── Tab: Collection (Aaj) ── */}
           {activeTab === "aaj" && (
-            <div className="space-y-3 pb-10">
-              <div className="flex items-center justify-between mb-2">
-                <p className="text-xs font-extrabold text-slate-500 uppercase tracking-widest">
-                  {new Date().toLocaleDateString("en-IN",{day:"numeric",month:"long",year:"numeric"})}
-                </p>
-                <span className="text-xs font-bold text-slate-400 bg-white px-3 py-1 rounded-full border border-slate-100">
-                  {fmt(todayCollected)} / {fmt(totalExpected)}
-                </span>
-              </div>
-
-              {/* Progress bar */}
-              <div className="h-2 bg-slate-200 rounded-full overflow-hidden mb-4">
-                <div className="h-full rounded-full transition-all duration-500"
-                  style={{
-                    width: `${Math.min(100, totalExpected > 0 ? (todayCollected / totalExpected) * 100 : 0)}%`,
-                    background: `linear-gradient(90deg,${GREEN},#22c55e)`,
-                  }} />
-              </div>
-
-              {/* Member status grid */}
-              {group.members.map((m, idx) => {
-                const paid = membersPaidToday.has(m.id);
-                const col = todayCollections.find(c => c.member_id === m.id);
-                const waMsg = encodeURIComponent(`Hi ${m.name} Ji 🙏\nApna Enterprise - Daily Cameti Reminder\nToday's payment of ₹${effectiveDaily} is pending.\nPlease pay at the earliest. 🙏\nApna Enterprise, Firozepur`);
-                const waHref = `https://wa.me/91${m.phone.replace(/\D/g,'')}?text=${waMsg}`;
-                return (
-                  <div key={m.id}
-                    className="ct-up bg-white rounded-2xl flex items-center gap-3 px-4 py-3.5 shadow-sm"
-                    style={{
-                      border: `1.5px solid ${paid ? "#bbf7d0" : "#fee2e2"}`,
-                      animationDelay: `${idx * 30}ms`,
-                    }}>
-                    <div className="w-1 self-stretch rounded-full flex-shrink-0" style={{ background: paid ? GREEN : RED }} />
-                    <div className="w-10 h-10 rounded-2xl flex items-center justify-center font-black text-sm flex-shrink-0"
-                      style={{ background: paid ? "#dcfce7" : "#fee2e2", color: paid ? GREEN : RED }}>
-                      {initials(m.name)}
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="font-extrabold text-sm text-slate-800 truncate">{m.name}</p>
-                      <p className="text-[10px] text-slate-400 font-medium flex items-center gap-1 mt-0.5">
-                        <FaPhone className="text-[8px]" />{m.phone}
-                      </p>
-                    </div>
-                    {paid && col ? (
-                      <div className="flex items-center gap-2 flex-shrink-0">
-                        <div className="text-right">
-                          <p className="text-sm font-black text-green-600">+{fmt(col.amount)}</p>
-                          <span className="text-[9px] font-bold bg-green-50 text-green-600 px-1.5 py-0.5 rounded-full">Paid ✓</span>
-                        </div>
-                        <button onClick={() => setDelCollection(col.id)}
-                          className="w-7 h-7 flex items-center justify-center rounded-xl text-slate-200 hover:text-red-400 hover:bg-red-50 transition-all">
-                          <FaTrash className="text-xs" />
-                        </button>
-                      </div>
-                    ) : inlineCollect === m.id ? (
-                      <div className="flex items-center gap-1.5 flex-shrink-0">
-                        <div className="flex items-center gap-1 border-2 border-blue-200 rounded-xl px-2 py-1.5 bg-blue-50">
-                          <FaRupeeSign className="text-blue-400 text-xs flex-shrink-0" />
-                          <input
-                            type="number"
-                            value={inlineAmount}
-                            onChange={e => setInlineAmount(e.target.value)}
-                            className="w-14 text-sm font-bold outline-none text-slate-700 bg-transparent"
-                            autoFocus
-                            onKeyDown={e => {
-                              if (e.key === "Enter") collectSingle(m.id, Number(inlineAmount) || effectiveDaily);
-                              if (e.key === "Escape") setInlineCollect(null);
-                            }}
-                          />
-                        </div>
-                        <button
-                          disabled={inlineSaving}
-                          onClick={() => collectSingle(m.id, Number(inlineAmount) || effectiveDaily)}
-                          className="px-3 py-1.5 rounded-xl text-xs font-extrabold text-white transition-all active:scale-95 disabled:opacity-60"
-                          style={{ background: "linear-gradient(135deg,#16a34a,#15803d)" }}>
-                          {inlineSaving ? "…" : "✓ OK"}
-                        </button>
-                        <button onClick={() => setInlineCollect(null)}
-                          className="w-7 h-7 flex items-center justify-center rounded-xl text-slate-300 hover:text-slate-500 transition-colors">
-                          <FaTimes className="text-xs" />
-                        </button>
-                      </div>
-                    ) : (
-                      <div className="flex items-center gap-1.5 flex-shrink-0">
-                        <button
-                          onClick={() => { setInlineCollect(m.id); setInlineAmount(String(effectiveDaily)); }}
-                          className="flex items-center gap-1 px-3 py-1.5 rounded-xl text-xs font-extrabold text-white transition-all active:scale-95 shadow-sm"
-                          style={{ background: "linear-gradient(135deg,#16a34a,#15803d)" }}>
-                          <FaCheckCircle className="text-[10px]" /> Received
-                        </button>
-                        {m.phone && (
-                          <a href={waHref} target="_blank" rel="noreferrer"
-                            className="w-7 h-7 flex items-center justify-center rounded-xl text-white transition-all active:scale-90"
-                            style={{ background: "linear-gradient(135deg,#22c55e,#16a34a)" }}
-                            title="Send WhatsApp Reminder">
-                            <FaWhatsapp className="text-sm" />
-                          </a>
-                        )}
-                      </div>
-                    )}
-                  </div>
-                );
-              })}
-
-              {group.members.length === 0 && <EmptyState icon={FaUsers} title="No members yet" sub="Add members from the Members tab" />}
-            </div>
+            <CollectionSession
+              groupId={group.id}
+              members={group.members}
+              effectiveDaily={effectiveDaily}
+              currentMonthId={currentMonth?.id ?? null}
+              onMonthNeeded={async () => {
+                const now = new Date();
+                await fetch(`/api/cameti/groups/${group!.id}/months`, {
+                  method: "POST", headers: { "Content-Type": "application/json" },
+                  body: JSON.stringify({ month_number: 1, year: now.getFullYear(), month: now.getMonth() + 1 }),
+                });
+                await load();
+              }}
+            />
           )}
 
           {/* ── Tab: Members ── */}
@@ -725,6 +541,350 @@ function GroupDetail({ groupId, onBack }: { groupId: number; onBack: () => void 
   );
 }
 
+/* ══════════════════════════════════════════════════════════════
+   COLLECTION SESSION — inline panel (no modal needed)
+══════════════════════════════════════════════════════════════ */
+function CollectionSession({ groupId, members, effectiveDaily, currentMonthId, onMonthNeeded }: {
+  groupId: number;
+  members: Member[];
+  effectiveDaily: number;
+  currentMonthId: number | null;
+  onMonthNeeded: () => Promise<void>;
+}) {
+  const [date, setDate] = useState(todayISO());
+  const [existing, setExisting] = useState<Collection[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [saved, setSaved] = useState(false);
+
+  // per-member state: selected + amount
+  const [checked, setChecked] = useState<Record<number, boolean>>({});
+  const [amounts, setAmounts] = useState<Record<number, string>>({});
+
+  const fetchExisting = useCallback(async (d: string) => {
+    setLoading(true);
+    try {
+      const r = await fetch(`/api/cameti/groups/${groupId}/collections?date=${d}`);
+      const cols: Collection[] = await r.json();
+      setExisting(cols);
+      // init checked/amounts for members not yet paid on this date
+      const paidIds = new Set(cols.map(c => c.member_id));
+      const newChecked: Record<number, boolean> = {};
+      const newAmounts: Record<number, string> = {};
+      members.forEach(m => {
+        if (!paidIds.has(m.id)) {
+          newChecked[m.id] = true;
+          newAmounts[m.id] = String(effectiveDaily);
+        }
+      });
+      setChecked(newChecked);
+      setAmounts(newAmounts);
+    } catch { /* silent */ }
+    finally { setLoading(false); }
+  }, [groupId, members, effectiveDaily]);
+
+  useEffect(() => { fetchExisting(date); setSaved(false); }, [date, fetchExisting]);
+
+  const paidIds = new Set(existing.map(c => c.member_id));
+  const unpaidMembers = members.filter(m => !paidIds.has(m.id));
+  const paidMembers = members.filter(m => paidIds.has(m.id));
+  const selectedCount = Object.values(checked).filter(Boolean).length;
+  const total = members
+    .filter(m => !paidIds.has(m.id) && checked[m.id])
+    .reduce((s, m) => s + (Number(amounts[m.id]) || 0), 0);
+  const totalExpected = members.length * effectiveDaily;
+  const todayCollected = existing.reduce((s, c) => s + c.amount, 0);
+
+  function toggleAll() {
+    const allChecked = unpaidMembers.every(m => checked[m.id]);
+    const next: Record<number, boolean> = {};
+    unpaidMembers.forEach(m => { next[m.id] = !allChecked; });
+    setChecked(prev => ({ ...prev, ...next }));
+  }
+
+  async function saveRound() {
+    const entries = unpaidMembers
+      .filter(m => checked[m.id] && Number(amounts[m.id]) > 0)
+      .map(m => ({ member_id: m.id, amount: Number(amounts[m.id]), collected_date: date, month_id: currentMonthId }));
+    if (!entries.length) return;
+
+    if (!currentMonthId) await onMonthNeeded();
+
+    setSaving(true);
+    try {
+      await fetch(`/api/cameti/groups/${groupId}/collections`, {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ entries }),
+      });
+      setSaved(true);
+      await fetchExisting(date);
+    } finally { setSaving(false); }
+  }
+
+  async function deleteEntry(id: number) {
+    await fetch(`/api/cameti/collections/${id}`, { method: "DELETE" });
+    await fetchExisting(date);
+  }
+
+  const isToday = date === todayISO();
+  const dateLabel = isToday
+    ? new Date().toLocaleDateString("en-IN", { day: "numeric", month: "long", year: "numeric" })
+    : new Date(date + "T00:00:00").toLocaleDateString("en-IN", { day: "numeric", month: "long", year: "numeric" });
+
+  return (
+    <div className="pb-20">
+      {/* ── Date + Summary bar ── */}
+      <div className="bg-white rounded-3xl shadow-sm mb-4 overflow-hidden" style={{ border: "1.5px solid #e2e8f0" }}>
+        <div className="px-4 py-3 border-b border-slate-100">
+          <div className="flex items-center gap-2">
+            <FaCalendarAlt className="text-slate-400 text-sm flex-shrink-0" />
+            <input
+              type="date" value={date} max={todayISO()}
+              onChange={e => { setDate(e.target.value); setSaved(false); }}
+              className="flex-1 text-sm font-bold outline-none text-slate-700 bg-transparent"
+            />
+            {!isToday && (
+              <span className="text-[10px] font-extrabold bg-amber-100 text-amber-700 px-2 py-0.5 rounded-full flex-shrink-0">
+                Pehle Ki Date
+              </span>
+            )}
+            <button onClick={() => setDate(todayISO())}
+              className="text-[10px] font-extrabold px-2.5 py-1 rounded-xl transition-colors"
+              style={{ background: isToday ? "#EEF2FF" : "#f1f5f9", color: NAVY }}>
+              Aaj
+            </button>
+          </div>
+        </div>
+
+        {/* Progress */}
+        <div className="px-4 pt-3 pb-1">
+          <div className="flex items-center justify-between mb-1.5">
+            <p className="text-xs font-extrabold text-slate-500">{dateLabel} — Collection</p>
+            <p className="text-xs font-extrabold" style={{ color: NAVY }}>
+              {fmt(todayCollected)} / {fmt(totalExpected)}
+            </p>
+          </div>
+          <div className="h-2.5 bg-slate-100 rounded-full overflow-hidden mb-3">
+            <div className="h-full rounded-full transition-all duration-700"
+              style={{
+                width: `${Math.min(100, totalExpected > 0 ? (todayCollected / totalExpected) * 100 : 0)}%`,
+                background: `linear-gradient(90deg,${GREEN},#22c55e)`,
+              }} />
+          </div>
+          <div className="grid grid-cols-3 gap-2 pb-3">
+            {[
+              { label: "Jama", val: fmt(todayCollected), color: GREEN, bg: "#dcfce7" },
+              { label: "Baaki", val: `${unpaidMembers.length} log`, color: RED, bg: "#fee2e2" },
+              { label: "Kul", val: `${paidIds.size}/${members.length}`, color: NAVY, bg: "#EEF2FF" },
+            ].map(({ label, val, color, bg }) => (
+              <div key={label} className="rounded-2xl py-2 text-center" style={{ background: bg }}>
+                <p className="text-sm font-black" style={{ color }}>{val}</p>
+                <p className="text-[9px] font-bold text-slate-500 uppercase mt-0.5">{label}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {loading ? (
+        <div className="flex items-center justify-center py-10">
+          <div className="w-7 h-7 rounded-full border-2 border-slate-200 border-t-blue-500 animate-spin" />
+        </div>
+      ) : (
+        <>
+          {/* ── PENDING MEMBERS ── */}
+          {unpaidMembers.length > 0 && (
+            <div className="mb-4">
+              {/* Section header with select-all */}
+              <div className="flex items-center justify-between mb-2 px-1">
+                <div className="flex items-center gap-2">
+                  <div className="w-2 h-2 rounded-full" style={{ background: RED }} />
+                  <p className="text-xs font-extrabold text-slate-600 uppercase tracking-wider">
+                    Baaki / Pending ({unpaidMembers.length})
+                  </p>
+                </div>
+                <button onClick={toggleAll}
+                  className="text-[10px] font-extrabold px-3 py-1 rounded-xl border transition-all active:scale-95"
+                  style={{ borderColor: "#e2e8f0", color: NAVY, background: "white" }}>
+                  {unpaidMembers.every(m => checked[m.id]) ? "✗ Sab Hatao" : "✓ Sab Select"}
+                </button>
+              </div>
+
+              <div className="space-y-2">
+                {unpaidMembers.map((m, idx) => {
+                  const isChecked = !!checked[m.id];
+                  const waMsg = encodeURIComponent(`Hi ${m.name} Ji 🙏\nApna Enterprise - Daily Cameti Reminder\nToday's payment of ₹${effectiveDaily} is pending.\nPlease pay at the earliest. 🙏\nApna Enterprise, Firozepur`);
+                  const waHref = `https://wa.me/91${m.phone.replace(/\D/g, '')}?text=${waMsg}`;
+                  return (
+                    <div key={m.id}
+                      className="ct-up bg-white rounded-2xl shadow-sm overflow-hidden transition-all"
+                      style={{
+                        border: `1.5px solid ${isChecked ? "#bfdbfe" : "#f1f5f9"}`,
+                        background: isChecked ? "#f0f9ff" : "white",
+                        animationDelay: `${idx * 25}ms`,
+                      }}>
+                      <div className="flex items-center gap-3 px-3 py-3">
+                        {/* Checkbox */}
+                        <button
+                          onClick={() => setChecked(p => ({ ...p, [m.id]: !p[m.id] }))}
+                          className="w-6 h-6 rounded-lg border-2 flex items-center justify-center flex-shrink-0 transition-all"
+                          style={{
+                            borderColor: isChecked ? "#3b82f6" : "#cbd5e1",
+                            background: isChecked ? "#3b82f6" : "white",
+                          }}>
+                          {isChecked && <span className="text-white text-[10px] font-black">✓</span>}
+                        </button>
+
+                        {/* Avatar */}
+                        <div className="w-9 h-9 rounded-xl flex items-center justify-center font-black text-sm flex-shrink-0"
+                          style={{ background: isChecked ? "#dbeafe" : "#fee2e2", color: isChecked ? "#1d4ed8" : RED }}>
+                          {initials(m.name)}
+                        </div>
+
+                        {/* Name */}
+                        <div className="flex-1 min-w-0">
+                          <p className="font-extrabold text-sm text-slate-800 truncate">{m.name}</p>
+                          <p className="text-[10px] text-slate-400 font-medium">{m.phone}</p>
+                        </div>
+
+                        {/* Amount input */}
+                        <div className={`flex items-center gap-1 border-2 rounded-xl px-2 py-1.5 transition-all ${isChecked ? "border-blue-200 bg-white" : "border-slate-100 bg-slate-50 opacity-50"}`}>
+                          <FaRupeeSign className="text-slate-400 text-[10px] flex-shrink-0" />
+                          <input
+                            type="number"
+                            disabled={!isChecked}
+                            value={amounts[m.id] ?? effectiveDaily}
+                            onChange={e => setAmounts(p => ({ ...p, [m.id]: e.target.value }))}
+                            className="w-14 text-sm font-extrabold outline-none text-slate-700 bg-transparent disabled:text-slate-300"
+                          />
+                        </div>
+
+                        {/* WhatsApp */}
+                        {m.phone && (
+                          <a href={waHref} target="_blank" rel="noreferrer"
+                            className="w-8 h-8 flex items-center justify-center rounded-xl text-white flex-shrink-0 transition-all active:scale-90"
+                            style={{ background: "linear-gradient(135deg,#22c55e,#16a34a)" }}
+                            title="WhatsApp Reminder">
+                            <FaWhatsapp className="text-sm" />
+                          </a>
+                        )}
+                      </div>
+
+                      {/* Multi-day hint */}
+                      {isChecked && Number(amounts[m.id]) !== effectiveDaily && Number(amounts[m.id]) > 0 && (
+                        <div className="px-3 pb-2.5">
+                          <div className="flex items-center gap-1.5 bg-amber-50 rounded-xl px-2.5 py-1.5">
+                            <FaStickyNote className="text-amber-400 text-[10px]" />
+                            <p className="text-[10px] font-bold text-amber-700">
+                              {Number(amounts[m.id]) > effectiveDaily
+                                ? `${Math.round(Number(amounts[m.id]) / effectiveDaily)} din ki cameti (custom amount)`
+                                : "Custom amount"}
+                            </p>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+
+              {/* Save button */}
+              {selectedCount > 0 && (
+                <div className="mt-4">
+                  <div className="flex items-center justify-between bg-blue-50 rounded-2xl px-4 py-3 mb-3 border border-blue-100">
+                    <p className="text-sm font-bold text-blue-700">{selectedCount} member — Total</p>
+                    <p className="text-base font-black" style={{ color: NAVY }}>{fmt(total)}</p>
+                  </div>
+                  <button
+                    disabled={saving}
+                    onClick={saveRound}
+                    className="w-full py-4 rounded-2xl font-extrabold text-base text-white shadow-lg transition-all hover:opacity-90 active:scale-[0.98] disabled:opacity-60 flex items-center justify-center gap-2"
+                    style={{ background: `linear-gradient(135deg,${GREEN},#15803d)` }}>
+                    <FaSave />
+                    {saving ? "Save ho rha hai..." : `✓ Collection Save Karo (${fmt(total)})`}
+                  </button>
+                  {saved && (
+                    <div className="mt-2 flex items-center justify-center gap-2 text-green-600 font-bold text-sm">
+                      <FaCheckCircle /> Saved! Collection record ho gayi.
+                    </div>
+                  )}
+                </div>
+              )}
+              {selectedCount === 0 && unpaidMembers.length > 0 && (
+                <div className="mt-3 text-center text-slate-400 text-sm font-semibold py-2">
+                  Kisi member ko select karo upar se
+                </div>
+              )}
+            </div>
+          )}
+
+          {unpaidMembers.length === 0 && members.length > 0 && (
+            <div className="text-center py-8 bg-white rounded-3xl mb-4" style={{ border: "1.5px solid #bbf7d0" }}>
+              <FaCheckCircle className="text-4xl text-green-500 mx-auto mb-3" />
+              <p className="font-extrabold text-slate-700 text-base">Sab ne de di! 🎉</p>
+              <p className="text-slate-400 text-sm mt-1">{dateLabel} ki saari collection ho gayi.</p>
+            </div>
+          )}
+
+          {members.length === 0 && (
+            <EmptyState icon={FaUsers} title="Koi member nahi" sub="Members tab se member add karo" />
+          )}
+
+          {/* ── PAID MEMBERS ── */}
+          {paidMembers.length > 0 && (
+            <div>
+              <div className="flex items-center gap-2 mb-2 px-1">
+                <div className="w-2 h-2 rounded-full" style={{ background: GREEN }} />
+                <p className="text-xs font-extrabold text-slate-600 uppercase tracking-wider">
+                  Jama Ho Gayi ({paidMembers.length})
+                </p>
+              </div>
+              <div className="space-y-2">
+                {paidMembers.map((m, idx) => {
+                  const col = existing.find(c => c.member_id === m.id);
+                  return (
+                    <div key={m.id}
+                      className="ct-up bg-white rounded-2xl flex items-center gap-3 px-4 py-3.5 shadow-sm"
+                      style={{ border: "1.5px solid #bbf7d0", animationDelay: `${idx * 25}ms` }}>
+                      <div className="w-9 h-9 rounded-xl flex items-center justify-center font-black text-sm flex-shrink-0"
+                        style={{ background: "#dcfce7", color: GREEN }}>
+                        {initials(m.name)}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="font-extrabold text-sm text-slate-800 truncate">{m.name}</p>
+                        <p className="text-[10px] text-slate-400 font-medium">{m.phone}</p>
+                      </div>
+                      <div className="text-right flex-shrink-0">
+                        <p className="text-sm font-black text-green-600">{fmt(col?.amount ?? 0)}</p>
+                        {col && col.amount !== effectiveDaily && (
+                          <span className="text-[9px] font-bold text-amber-600 bg-amber-50 px-1.5 py-0.5 rounded-full">
+                            Custom
+                          </span>
+                        )}
+                        {col && col.amount === effectiveDaily && (
+                          <span className="text-[9px] font-bold text-green-600 bg-green-50 px-1.5 py-0.5 rounded-full">
+                            ✓ Paid
+                          </span>
+                        )}
+                      </div>
+                      {col && (
+                        <button onClick={() => deleteEntry(col.id)}
+                          className="w-7 h-7 flex items-center justify-center rounded-xl text-slate-200 hover:text-red-400 hover:bg-red-50 transition-all flex-shrink-0">
+                          <FaTrash className="text-xs" />
+                        </button>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+        </>
+      )}
+    </div>
+  );
+}
+
 /* ── Add Member Modal ── */
 function AddMemberModal({ onClose, onAdd }: { onClose: () => void; onAdd: (n: string, p: string) => Promise<void> }) {
   const [name, setName] = useState(""); const [phone, setPhone] = useState("");
@@ -744,123 +904,6 @@ function AddMemberModal({ onClose, onAdd }: { onClose: () => void; onAdd: (n: st
         {err && <ErrMsg>{err}</ErrMsg>}
         <PrimaryBtn loading={saving} label="✓ Add Member" loadingLabel="Adding..." />
       </form>
-    </Modal>
-  );
-}
-
-/* ── Collect Modal ── */
-function CollectModal({ groupId, members, effectiveDaily, currentMonthId, onClose, onDone }: {
-  groupId: number; members: Member[]; effectiveDaily: number; currentMonthId: number | null;
-  onClose: () => void;
-  onDone: () => void;
-}) {
-  const [date, setDate] = useState(todayISO());
-  const [paidSet, setPaidSet] = useState<Set<number>>(new Set());
-  const [fetching, setFetching] = useState(false);
-  const [amounts, setAmounts] = useState<Record<number, string>>({});
-  const [selected, setSelected] = useState<Set<number>>(new Set());
-  const [saving, setSaving] = useState(false);
-
-  // Fetch who has paid on the selected date
-  useEffect(() => {
-    let cancelled = false;
-    async function fetchPaid() {
-      setFetching(true);
-      try {
-        const r = await fetch(`/api/cameti/groups/${groupId}/collections?date=${date}`);
-        const cols: Collection[] = await r.json();
-        if (!cancelled) {
-          const paid = new Set(cols.map((c: Collection) => c.member_id));
-          setPaidSet(paid);
-          const unpaidMembers = members.filter(m => !paid.has(m.id));
-          const init: Record<number, string> = {};
-          unpaidMembers.forEach(m => { init[m.id] = String(effectiveDaily); });
-          setAmounts(init);
-          setSelected(new Set(unpaidMembers.map(m => m.id)));
-        }
-      } catch { /* silent */ } finally { if (!cancelled) setFetching(false); }
-    }
-    fetchPaid();
-    return () => { cancelled = true; };
-  }, [date, groupId, members, effectiveDaily]);
-
-  const unpaid = members.filter(m => !paidSet.has(m.id));
-  const total = [...selected].reduce((s, id) => s + (Number(amounts[id]) || 0), 0);
-
-  async function submit() {
-    const entries = [...selected].map(id => ({ member_id: id, amount: Number(amounts[id]) || effectiveDaily, collected_date: date, month_id: currentMonthId ?? null }));
-    if (!entries.length) { onDone(); return; }
-    setSaving(true);
-    try {
-      await fetch(`/api/cameti/groups/${groupId}/collections`, {
-        method: "POST", headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ entries }),
-      });
-      onDone();
-    } finally { setSaving(false); }
-  }
-
-  const dateLabel = date === todayISO() ? "Today" : new Date(date + "T00:00:00").toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" });
-
-  return (
-    <Modal title="Add Collection" subtitle={`Daily: ${fmt(effectiveDaily)} per member`} onClose={onClose} wide>
-      {/* Date picker */}
-      <div className="mb-4">
-        <label className="text-[10px] font-extrabold text-slate-400 uppercase tracking-wider block mb-1.5">Select Date</label>
-        <div className="flex items-center gap-2 border-2 border-slate-100 rounded-2xl px-3 py-2.5 bg-white">
-          <FaCalendarAlt className="text-slate-300 text-sm flex-shrink-0" />
-          <input type="date" value={date} max={todayISO()}
-            onChange={e => setDate(e.target.value)}
-            className="flex-1 text-sm font-bold outline-none text-slate-700 bg-transparent" />
-          {date !== todayISO() && (
-            <span className="text-[10px] font-extrabold bg-amber-100 text-amber-700 px-2 py-0.5 rounded-full flex-shrink-0">Past Date</span>
-          )}
-        </div>
-      </div>
-
-      {fetching ? (
-        <div className="flex items-center justify-center py-8">
-          <div className="w-6 h-6 rounded-full border-2 border-slate-200 border-t-blue-500 animate-spin" />
-        </div>
-      ) : unpaid.length === 0 ? (
-        <div className="text-center py-8">
-          <FaCheckCircle className="text-4xl text-green-500 mx-auto mb-3" />
-          <p className="font-extrabold text-slate-700">All paid for {dateLabel}!</p>
-          <p className="text-slate-400 text-sm mt-1">All members have paid for this date.</p>
-        </div>
-      ) : (
-        <>
-          <div className="space-y-2 mb-4 max-h-56 overflow-y-auto">
-            {unpaid.map(m => (
-              <div key={m.id} className="flex items-center gap-3 p-3 rounded-2xl border-2 transition-all"
-                style={{ borderColor: selected.has(m.id) ? "#bfdbfe" : "#f1f5f9", background: selected.has(m.id) ? "#eff6ff" : "white" }}>
-                <input type="checkbox" checked={selected.has(m.id)}
-                  onChange={e => {
-                    const s = new Set(selected);
-                    e.target.checked ? s.add(m.id) : s.delete(m.id);
-                    setSelected(s);
-                  }}
-                  className="w-4 h-4 rounded" />
-                <div className="flex-1 min-w-0">
-                  <p className="font-extrabold text-sm text-slate-800 truncate">{m.name}</p>
-                  <p className="text-[10px] text-slate-400">{m.phone}</p>
-                </div>
-                <div className="flex items-center gap-1 border-2 border-slate-100 rounded-xl px-2 py-1.5 bg-white">
-                  <FaRupeeSign className="text-slate-300 text-xs" />
-                  <input type="number" value={amounts[m.id] ?? effectiveDaily}
-                    onChange={e => setAmounts(p => ({ ...p, [m.id]: e.target.value }))}
-                    className="w-16 text-sm font-bold outline-none text-slate-700" />
-                </div>
-              </div>
-            ))}
-          </div>
-          <div className="flex items-center justify-between bg-slate-50 rounded-2xl px-4 py-3 mb-3 border border-slate-100">
-            <p className="text-sm font-bold text-slate-500">{selected.size} member — Total</p>
-            <p className="text-base font-black" style={{ color: NAVY }}>{fmt(total)}</p>
-          </div>
-          <PrimaryBtn loading={saving} label={`✓ Collect ${fmt(total)}`} loadingLabel="Saving..." type="button" onClick={submit} />
-        </>
-      )}
     </Modal>
   );
 }
