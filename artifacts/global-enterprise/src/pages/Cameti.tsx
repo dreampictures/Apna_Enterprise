@@ -215,9 +215,9 @@ function ConfirmDialog({ msg, sub, onConfirm, onCancel }: {
         <p className="font-extrabold text-slate-800 text-center text-base mb-1">{msg}</p>
         <p className="text-sm text-slate-400 text-center mb-6">{sub}</p>
         <div className="flex gap-3">
-          <button onClick={onCancel} className="flex-1 py-3 rounded-2xl border-2 border-slate-200 text-sm font-bold text-slate-600 hover:bg-slate-50 transition-colors">Nahi</button>
+          <button onClick={onCancel} className="flex-1 py-3 rounded-2xl border-2 border-slate-200 text-sm font-bold text-slate-600 hover:bg-slate-50 transition-colors">No</button>
           <button onClick={onConfirm} className="flex-1 py-3 rounded-2xl text-sm font-extrabold text-white transition-all hover:opacity-90 active:scale-95"
-            style={{ background: "linear-gradient(135deg,#ef4444,#b91c1c)" }}>Haan, Delete</button>
+            style={{ background: "linear-gradient(135deg,#ef4444,#b91c1c)" }}>Yes, Delete</button>
         </div>
       </div>
     </div>
@@ -264,7 +264,7 @@ function GroupDetail({ groupId, onBack }: { groupId: number; onBack: () => void 
         <div className="flex-1 flex items-center justify-center" style={{ background: "#f4f6fb" }}>
           <div className="text-center">
             <div className="w-12 h-12 ct-skeleton rounded-2xl mx-auto mb-3" />
-            <p className="text-slate-400 font-semibold text-sm">Load ho raha hai...</p>
+            <p className="text-slate-400 font-semibold text-sm">Loading...</p>
           </div>
         </div>
       </Layout>
@@ -350,11 +350,12 @@ function GroupDetail({ groupId, onBack }: { groupId: number; onBack: () => void 
       {showAddMember && <AddMemberModal onClose={() => setShowAddMember(false)} onAdd={addMember} />}
       {showCollect && (
         <CollectModal
+          groupId={group.id}
           members={group.members}
-          membersPaidToday={membersPaidToday}
           effectiveDaily={effectiveDaily}
+          currentMonthId={currentMonth?.id ?? null}
           onClose={() => setShowCollect(false)}
-          onCollect={async entries => { await collectToday(entries); setShowCollect(false); }}
+          onDone={async () => { await load(); setShowCollect(false); }}
         />
       )}
       {showBoli && (
@@ -367,12 +368,12 @@ function GroupDetail({ groupId, onBack }: { groupId: number; onBack: () => void 
         />
       )}
       {delMember && (
-        <ConfirmDialog msg={`${delMember.name} ko delete karein?`}
-          sub="Unki saari collections bhi delete ho jayengi."
+        <ConfirmDialog msg={`Delete ${delMember.name}?`}
+          sub="All their collections will also be deleted."
           onConfirm={() => doDeleteMember(delMember.id)} onCancel={() => setDelMember(null)} />
       )}
       {delCollection !== null && (
-        <ConfirmDialog msg="Yeh collection delete karein?" sub="Yeh undo nahi ho sakta."
+        <ConfirmDialog msg="Delete this collection?" sub="This cannot be undone."
           onConfirm={() => doDeleteCollection(delCollection)} onCancel={() => setDelCollection(null)} />
       )}
 
@@ -389,7 +390,7 @@ function GroupDetail({ groupId, onBack }: { groupId: number; onBack: () => void 
               <button onClick={onBack}
                 className="flex items-center gap-2 text-sm font-bold px-4 py-2.5 rounded-2xl transition-all active:scale-95"
                 style={{ background: "rgba(255,255,255,0.12)", border: "1px solid rgba(255,255,255,0.1)" }}>
-                <FaArrowLeft className="text-xs" /> Wapas
+                <FaArrowLeft className="text-xs" /> Back
               </button>
               <div className="text-right">
                 <p className="text-[10px] font-bold uppercase tracking-widest" style={{ color: `${GOLD}bb` }}>Daily Cameti</p>
@@ -401,9 +402,9 @@ function GroupDetail({ groupId, onBack }: { groupId: number; onBack: () => void 
             <div className="grid grid-cols-4 gap-2">
               {[
                 { label: "Members", val: group.members.length, icon: FaUsers, c: "rgba(255,255,255,0.12)" },
-                { label: "Aaj Collected", val: fmt(todayCollected), icon: FaMoneyBillWave, c: "rgba(34,197,94,0.2)" },
+                { label: "Today Collected", val: fmt(todayCollected), icon: FaMoneyBillWave, c: "rgba(34,197,94,0.2)" },
                 { label: "Daily Amt", val: fmt(effectiveDaily), icon: FaRupeeSign, c: "rgba(212,160,23,0.2)" },
-                { label: "Aaj Baki", val: `${group.members.length - membersPaidToday.size}`, icon: FaUserCheck, c: "rgba(239,68,68,0.2)" },
+                { label: "Pending", val: `${group.members.length - membersPaidToday.size}`, icon: FaUserCheck, c: "rgba(239,68,68,0.2)" },
               ].map(({ label, val, icon: Icon, c }) => (
                 <div key={label} className="rounded-2xl p-3 text-center" style={{ background: c, border: "1px solid rgba(255,255,255,0.1)" }}>
                   <Icon className="text-white/50 text-sm mx-auto mb-1" />
@@ -423,7 +424,7 @@ function GroupDetail({ groupId, onBack }: { groupId: number; onBack: () => void 
             <button onClick={async () => { await ensureMonth(); setShowCollect(true); }}
               className="flex-1 flex items-center justify-center gap-2 py-3.5 rounded-2xl font-extrabold text-sm text-white shadow-lg transition-all hover:opacity-90 active:scale-[0.98]"
               style={{ background: `linear-gradient(135deg,${NAVY},#1e40af)` }}>
-              <FaPlus /> Aaj ki Collection
+              <FaPlus /> Add Collection
             </button>
             <button onClick={() => setShowBoli(true)}
               className="flex items-center gap-2 py-3.5 px-5 rounded-2xl font-extrabold text-sm text-white shadow-lg transition-all hover:opacity-90 active:scale-[0.98]"
@@ -435,10 +436,10 @@ function GroupDetail({ groupId, onBack }: { groupId: number; onBack: () => void 
           {/* Tabs */}
           <div className="flex gap-2 mb-5 overflow-x-auto pb-1">
             {[
-              { key: "aaj", label: "🗓 Aaj", },
+              { key: "aaj", label: "🗓 Today" },
               { key: "members", label: "👥 Members" },
               { key: "months", label: "📅 Months" },
-              { key: "boli", label: "🏆 Boli History" },
+              { key: "boli", label: "🏆 Auction History" },
             ].map(t => (
               <button key={t.key} onClick={() => setActiveTab(t.key as typeof activeTab)}
                 className="flex-shrink-0 px-4 py-2 rounded-2xl font-extrabold text-xs transition-all active:scale-95"
@@ -450,12 +451,12 @@ function GroupDetail({ groupId, onBack }: { groupId: number; onBack: () => void 
             ))}
           </div>
 
-          {/* ── Tab: Aaj ── */}
+          {/* ── Tab: Today ── */}
           {activeTab === "aaj" && (
             <div className="space-y-3 pb-10">
               <div className="flex items-center justify-between mb-2">
                 <p className="text-xs font-extrabold text-slate-500 uppercase tracking-widest">
-                  {new Date().toLocaleDateString("en-IN",{day:"numeric",month:"long",year:"numeric"})} ki Collection
+                  {new Date().toLocaleDateString("en-IN",{day:"numeric",month:"long",year:"numeric"})}
                 </p>
                 <span className="text-xs font-bold text-slate-400 bg-white px-3 py-1 rounded-full border border-slate-100">
                   {fmt(todayCollected)} / {fmt(totalExpected)}
@@ -475,6 +476,8 @@ function GroupDetail({ groupId, onBack }: { groupId: number; onBack: () => void 
               {group.members.map((m, idx) => {
                 const paid = membersPaidToday.has(m.id);
                 const col = todayCollections.find(c => c.member_id === m.id);
+                const waMsg = encodeURIComponent(`Hi ${m.name} Ji 🙏\nApna Enterprise - Daily Cameti Reminder\nToday's payment of ₹${effectiveDaily} is pending.\nPlease pay at the earliest. 🙏\nApna Enterprise, Firozepur`);
+                const waHref = `https://wa.me/91${m.phone.replace(/\D/g,'')}?text=${waMsg}`;
                 return (
                   <div key={m.id}
                     className="ct-up bg-white rounded-2xl flex items-center gap-3 px-4 py-3.5 shadow-sm"
@@ -505,13 +508,23 @@ function GroupDetail({ groupId, onBack }: { groupId: number; onBack: () => void 
                         </button>
                       </div>
                     ) : (
-                      <span className="text-[10px] font-bold bg-red-50 text-red-500 px-2 py-1 rounded-full flex-shrink-0">Baki</span>
+                      <div className="flex items-center gap-1.5 flex-shrink-0">
+                        <span className="text-[10px] font-bold bg-red-50 text-red-500 px-2 py-1 rounded-full">Pending</span>
+                        {m.phone && (
+                          <a href={waHref} target="_blank" rel="noreferrer"
+                            className="w-7 h-7 flex items-center justify-center rounded-xl text-white transition-all active:scale-90"
+                            style={{ background: "linear-gradient(135deg,#22c55e,#16a34a)" }}
+                            title="Send WhatsApp Reminder">
+                            <FaWhatsapp className="text-sm" />
+                          </a>
+                        )}
+                      </div>
                     )}
                   </div>
                 );
               })}
 
-              {group.members.length === 0 && <EmptyState icon={FaUsers} title="Koi member nahi hai" sub="Members tab se member jodo" />}
+              {group.members.length === 0 && <EmptyState icon={FaUsers} title="No members yet" sub="Add members from the Members tab" />}
             </div>
           )}
 
@@ -525,7 +538,7 @@ function GroupDetail({ groupId, onBack }: { groupId: number; onBack: () => void 
                 <button onClick={() => setShowAddMember(true)}
                   className="flex items-center gap-1.5 text-xs font-extrabold px-4 py-2 rounded-2xl text-white transition-all active:scale-95"
                   style={{ background: `linear-gradient(135deg,${NAVY},#1e40af)` }}>
-                  <FaPlus /> Member Jodo
+                  <FaPlus /> Add Member
                 </button>
               </div>
               <div className="space-y-2.5">
@@ -544,7 +557,7 @@ function GroupDetail({ groupId, onBack }: { groupId: number; onBack: () => void 
                         <p className="font-extrabold text-sm text-slate-800 truncate">{m.name}</p>
                         {m.has_taken && (
                           <span className="text-[9px] font-extrabold bg-yellow-100 text-yellow-800 px-2 py-0.5 rounded-full flex-shrink-0">
-                            🏆 Le Chuka
+                            🏆 Won
                           </span>
                         )}
                       </div>
@@ -562,7 +575,7 @@ function GroupDetail({ groupId, onBack }: { groupId: number; onBack: () => void 
                     </button>
                   </div>
                 ))}
-                {summary.length === 0 && <EmptyState icon={FaUsers} title="Koi member nahi hai" sub="Upar button se member jodo" />}
+                {summary.length === 0 && <EmptyState icon={FaUsers} title="No members yet" sub="Use the button above to add members" />}
               </div>
             </div>
           )}
@@ -571,7 +584,7 @@ function GroupDetail({ groupId, onBack }: { groupId: number; onBack: () => void 
           {activeTab === "months" && (
             <div className="pb-10 space-y-3">
               {group.months.length === 0 && (
-                <EmptyState icon={FaCalendarAlt} title="Koi month nahi hai" sub="'Aaj ki Collection' se shuru karo" />
+                <EmptyState icon={FaCalendarAlt} title="No months yet" sub="Start by adding a collection" />
               )}
               {[...group.months].reverse().map((mn, idx) => (
                 <div key={mn.id}
@@ -581,7 +594,7 @@ function GroupDetail({ groupId, onBack }: { groupId: number; onBack: () => void 
                     <div className="flex items-center gap-2">
                       <span className="text-lg font-black" style={{ color: NAVY }}>Month {mn.month_number}</span>
                       <span className={`text-[10px] font-extrabold px-2.5 py-1 rounded-full ${mn.status === "open" ? "bg-blue-100 text-blue-700" : "bg-green-100 text-green-700"}`}>
-                        {mn.status === "open" ? "🟢 Chal Raha" : "✅ Band"}
+                        {mn.status === "open" ? "🟢 Active" : "✅ Closed"}
                       </span>
                     </div>
                     <p className="text-xs text-slate-400 font-semibold">
@@ -617,7 +630,7 @@ function GroupDetail({ groupId, onBack }: { groupId: number; onBack: () => void 
           {activeTab === "boli" && (
             <div className="pb-10 space-y-3">
               {group.members.filter(m => m.has_taken).length === 0 && (
-                <EmptyState icon={FaGavel} title="Abhi koi boli nahi hui" sub="'Boli' button se record karo" />
+                <EmptyState icon={FaGavel} title="No auctions yet" sub="Use the 'Boli' button to record one" />
               )}
               {group.months.filter(m => m.status === "closed").map((mn, idx) => (
                 <div key={mn.id}
@@ -635,7 +648,7 @@ function GroupDetail({ groupId, onBack }: { groupId: number; onBack: () => void 
                   </div>
                   <div className="mt-3 flex gap-3">
                     <div className="flex-1 bg-green-50 rounded-2xl p-2.5 text-center">
-                      <p className="text-[9px] font-bold text-green-700 uppercase">Har Member ka Profit</p>
+                      <p className="text-[9px] font-bold text-green-700 uppercase">Profit per Member</p>
                       <p className="text-base font-black text-green-700">{fmt(mn.profit_per_member ?? 0)}</p>
                     </div>
                     <div className="flex-1 bg-red-50 rounded-2xl p-2.5 text-center">
@@ -659,59 +672,106 @@ function AddMemberModal({ onClose, onAdd }: { onClose: () => void; onAdd: (n: st
   const [saving, setSaving] = useState(false); const [err, setErr] = useState("");
   async function submit(e: React.FormEvent) {
     e.preventDefault();
-    if (!name.trim() || !phone.trim()) { setErr("Naam aur phone zaroori hai"); return; }
+    if (!name.trim() || !phone.trim()) { setErr("Name and phone are required"); return; }
     setSaving(true); setErr("");
     try { await onAdd(name, phone); onClose(); }
-    catch { setErr("Kuch gadbad hui."); } finally { setSaving(false); }
+    catch { setErr("Something went wrong. Please try again."); } finally { setSaving(false); }
   }
   return (
-    <Modal title="Member Jodo" onClose={onClose}>
+    <Modal title="Add Member" onClose={onClose}>
       <form onSubmit={submit} className="flex flex-col gap-3">
-        <InputField icon={FaUsers} placeholder="Member ka naam" value={name} onChange={setName} />
+        <InputField icon={FaUsers} placeholder="Member's name" value={name} onChange={setName} />
         <InputField icon={FaPhone} placeholder="Phone number" value={phone} onChange={setPhone} type="tel" />
         {err && <ErrMsg>{err}</ErrMsg>}
-        <PrimaryBtn loading={saving} label="✓ Jodo" loadingLabel="Jod raha hai..." />
+        <PrimaryBtn loading={saving} label="✓ Add Member" loadingLabel="Adding..." />
       </form>
     </Modal>
   );
 }
 
 /* ── Collect Modal ── */
-function CollectModal({ members, membersPaidToday, effectiveDaily, onClose, onCollect }: {
-  members: Member[]; membersPaidToday: Set<number>; effectiveDaily: number;
+function CollectModal({ groupId, members, effectiveDaily, currentMonthId, onClose, onDone }: {
+  groupId: number; members: Member[]; effectiveDaily: number; currentMonthId: number | null;
   onClose: () => void;
-  onCollect: (entries: { member_id: number; amount: number }[]) => Promise<void>;
+  onDone: () => void;
 }) {
-  const unpaid = members.filter(m => !membersPaidToday.has(m.id));
-  const [amounts, setAmounts] = useState<Record<number, string>>(() => {
-    const init: Record<number, string> = {};
-    unpaid.forEach(m => { init[m.id] = String(effectiveDaily); });
-    return init;
-  });
-  const [selected, setSelected] = useState<Set<number>>(new Set(unpaid.map(m => m.id)));
+  const [date, setDate] = useState(todayISO());
+  const [paidSet, setPaidSet] = useState<Set<number>>(new Set());
+  const [fetching, setFetching] = useState(false);
+  const [amounts, setAmounts] = useState<Record<number, string>>({});
+  const [selected, setSelected] = useState<Set<number>>(new Set());
   const [saving, setSaving] = useState(false);
 
+  // Fetch who has paid on the selected date
+  useEffect(() => {
+    let cancelled = false;
+    async function fetchPaid() {
+      setFetching(true);
+      try {
+        const r = await fetch(`/api/cameti/groups/${groupId}/collections?date=${date}`);
+        const cols: Collection[] = await r.json();
+        if (!cancelled) {
+          const paid = new Set(cols.map((c: Collection) => c.member_id));
+          setPaidSet(paid);
+          const unpaidMembers = members.filter(m => !paid.has(m.id));
+          const init: Record<number, string> = {};
+          unpaidMembers.forEach(m => { init[m.id] = String(effectiveDaily); });
+          setAmounts(init);
+          setSelected(new Set(unpaidMembers.map(m => m.id)));
+        }
+      } catch { /* silent */ } finally { if (!cancelled) setFetching(false); }
+    }
+    fetchPaid();
+    return () => { cancelled = true; };
+  }, [date, groupId, members, effectiveDaily]);
+
+  const unpaid = members.filter(m => !paidSet.has(m.id));
   const total = [...selected].reduce((s, id) => s + (Number(amounts[id]) || 0), 0);
 
   async function submit() {
-    const entries = [...selected].map(id => ({ member_id: id, amount: Number(amounts[id]) || effectiveDaily }));
-    if (!entries.length) { onClose(); return; }
+    const entries = [...selected].map(id => ({ member_id: id, amount: Number(amounts[id]) || effectiveDaily, collected_date: date, month_id: currentMonthId ?? null }));
+    if (!entries.length) { onDone(); return; }
     setSaving(true);
-    try { await onCollect(entries); }
-    finally { setSaving(false); }
+    try {
+      await fetch(`/api/cameti/groups/${groupId}/collections`, {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ entries }),
+      });
+      onDone();
+    } finally { setSaving(false); }
   }
 
+  const dateLabel = date === todayISO() ? "Today" : new Date(date + "T00:00:00").toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" });
+
   return (
-    <Modal title="Aaj ki Collection" subtitle={`Daily: ${fmt(effectiveDaily)} per member`} onClose={onClose} wide>
-      {unpaid.length === 0 ? (
+    <Modal title="Add Collection" subtitle={`Daily: ${fmt(effectiveDaily)} per member`} onClose={onClose} wide>
+      {/* Date picker */}
+      <div className="mb-4">
+        <label className="text-[10px] font-extrabold text-slate-400 uppercase tracking-wider block mb-1.5">Select Date</label>
+        <div className="flex items-center gap-2 border-2 border-slate-100 rounded-2xl px-3 py-2.5 bg-white">
+          <FaCalendarAlt className="text-slate-300 text-sm flex-shrink-0" />
+          <input type="date" value={date} max={todayISO()}
+            onChange={e => setDate(e.target.value)}
+            className="flex-1 text-sm font-bold outline-none text-slate-700 bg-transparent" />
+          {date !== todayISO() && (
+            <span className="text-[10px] font-extrabold bg-amber-100 text-amber-700 px-2 py-0.5 rounded-full flex-shrink-0">Past Date</span>
+          )}
+        </div>
+      </div>
+
+      {fetching ? (
+        <div className="flex items-center justify-center py-8">
+          <div className="w-6 h-6 rounded-full border-2 border-slate-200 border-t-blue-500 animate-spin" />
+        </div>
+      ) : unpaid.length === 0 ? (
         <div className="text-center py-8">
           <FaCheckCircle className="text-4xl text-green-500 mx-auto mb-3" />
-          <p className="font-extrabold text-slate-700">Aaj sabne de diya!</p>
-          <p className="text-slate-400 text-sm mt-1">Saare members ka aaj ka payment ho gaya.</p>
+          <p className="font-extrabold text-slate-700">All paid for {dateLabel}!</p>
+          <p className="text-slate-400 text-sm mt-1">All members have paid for this date.</p>
         </div>
       ) : (
         <>
-          <div className="space-y-2 mb-4 max-h-64 overflow-y-auto">
+          <div className="space-y-2 mb-4 max-h-56 overflow-y-auto">
             {unpaid.map(m => (
               <div key={m.id} className="flex items-center gap-3 p-3 rounded-2xl border-2 transition-all"
                 style={{ borderColor: selected.has(m.id) ? "#bfdbfe" : "#f1f5f9", background: selected.has(m.id) ? "#eff6ff" : "white" }}>
@@ -736,10 +796,10 @@ function CollectModal({ members, membersPaidToday, effectiveDaily, onClose, onCo
             ))}
           </div>
           <div className="flex items-center justify-between bg-slate-50 rounded-2xl px-4 py-3 mb-3 border border-slate-100">
-            <p className="text-sm font-bold text-slate-500">{selected.size} member — Kul</p>
+            <p className="text-sm font-bold text-slate-500">{selected.size} member — Total</p>
             <p className="text-base font-black" style={{ color: NAVY }}>{fmt(total)}</p>
           </div>
-          <PrimaryBtn loading={saving} label={`✓ ${fmt(total)} Ikatha Karo`} loadingLabel="Save ho raha hai..." type="button" onClick={submit} />
+          <PrimaryBtn loading={saving} label={`✓ Collect ${fmt(total)}`} loadingLabel="Saving..." type="button" onClick={submit} />
         </>
       )}
     </Modal>
@@ -762,19 +822,19 @@ function BoliModal({ members, dailyAmount, totalMembers, onClose, onConfirm }: {
   const newDaily = dailyAmount - dailyReduction;
 
   async function submit() {
-    if (!winnerId) { setErr("Winner chunna zaroori hai"); return; }
-    if (bid <= 0) { setErr("Boli amount daalo"); return; }
+    if (!winnerId) { setErr("Please select a winner"); return; }
+    if (bid <= 0) { setErr("Enter the auction amount"); return; }
     setSaving(true); setErr("");
     try { await onConfirm(winnerId, bid); onClose(); }
-    catch { setErr("Kuch gadbad hui."); } finally { setSaving(false); }
+    catch { setErr("Something went wrong."); } finally { setSaving(false); }
   }
 
   return (
-    <Modal title="🏆 Boli Record Karo" subtitle="Is mahine ki boli" onClose={onClose} wide>
+    <Modal title="🏆 Record Auction" subtitle="This month's auction" onClose={onClose} wide>
       <div className="flex flex-col gap-4">
         {/* Winner select */}
         <div>
-          <p className="text-xs font-extrabold text-slate-500 uppercase tracking-wider mb-2">Winner Chunno</p>
+          <p className="text-xs font-extrabold text-slate-500 uppercase tracking-wider mb-2">Select Winner</p>
           <div className="grid grid-cols-2 gap-2 max-h-40 overflow-y-auto">
             {eligible.map(m => (
               <button key={m.id} type="button"
@@ -793,7 +853,7 @@ function BoliModal({ members, dailyAmount, totalMembers, onClose, onConfirm }: {
             ))}
           </div>
           {eligible.length === 0 && (
-            <p className="text-sm text-slate-400 font-medium text-center py-3">Saare members le chuke hain!</p>
+            <p className="text-sm text-slate-400 font-medium text-center py-3">All members have already won!</p>
           )}
         </div>
 
@@ -819,7 +879,7 @@ function BoliModal({ members, dailyAmount, totalMembers, onClose, onConfirm }: {
         )}
 
         {err && <ErrMsg>{err}</ErrMsg>}
-        <PrimaryBtn loading={saving} label="✓ Boli Confirm Karo" loadingLabel="Save ho raha hai..."
+        <PrimaryBtn loading={saving} label="✓ Confirm Auction" loadingLabel="Saving..."
           type="button" onClick={submit}
           color={`linear-gradient(135deg,${GOLD},#b8860b)`} />
       </div>
@@ -885,7 +945,7 @@ function GroupsList({ onSelect }: { onSelect: (id: number) => void }) {
                 <button onClick={() => setShowCreate(true)}
                   className="flex items-center gap-2 text-xs font-bold px-4 py-2.5 rounded-2xl transition-all active:scale-95 text-white"
                   style={{ background: `linear-gradient(135deg,${GOLD},#b8860b)` }}>
-                  <FaPlus /> Naya Group
+                  <FaPlus /> New Group
                 </button>
               </div>
             </div>
@@ -913,7 +973,7 @@ function GroupsList({ onSelect }: { onSelect: (id: number) => void }) {
               {[1,2].map(i => <div key={i} className="h-24 ct-skeleton rounded-3xl" />)}
             </div>
           ) : groups.length === 0 ? (
-            <EmptyState icon={FaUsers} title="Koi cameti group nahi hai" sub="'Naya Group' se pehla group banao" />
+            <EmptyState icon={FaUsers} title="No cameti groups yet" sub="Create your first group using 'New Group'" />
           ) : (
             <div className="space-y-3">
               {groups.map((g, idx) => (
@@ -960,20 +1020,20 @@ function CreateGroupModal({ onClose, onCreate }: {
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
-    if (!name.trim()) { setErr("Group ka naam daalo"); return; }
+    if (!name.trim()) { setErr("Please enter a group name"); return; }
     setSaving(true); setErr("");
     try { await onCreate(name, Number(daily) || 300, startDate); onClose(); }
-    catch { setErr("Kuch gadbad hui."); } finally { setSaving(false); }
+    catch { setErr("Something went wrong."); } finally { setSaving(false); }
   }
 
   return (
-    <Modal title="Naya Cameti Group" onClose={onClose}>
+    <Modal title="New Cameti Group" onClose={onClose}>
       <form onSubmit={submit} className="flex flex-col gap-3">
-        <InputField icon={FaEdit} placeholder="Group ka naam (e.g. Apna Cameti 2025)" value={name} onChange={setName} />
+        <InputField icon={FaEdit} placeholder="Group name (e.g. Apna Cameti 2025)" value={name} onChange={setName} />
         <InputField icon={FaRupeeSign} placeholder="Daily amount per member (default: 300)" value={daily} onChange={setDaily} type="number" />
         <InputField icon={FaCalendarAlt} value={startDate} onChange={setStartDate} type="date" />
         {err && <ErrMsg>{err}</ErrMsg>}
-        <PrimaryBtn loading={saving} label="✓ Group Banao" loadingLabel="Ban raha hai..." />
+        <PrimaryBtn loading={saving} label="✓ Create Group" loadingLabel="Creating..." />
       </form>
     </Modal>
   );

@@ -249,13 +249,13 @@ function AddClientModal({ onClose, onAdded }: { onClose: () => void; onAdded: (c
   }
 
   return (
-    <Modal title="Naya Client Jodo" onClose={onClose}>
+    <Modal title="Add New Client" onClose={onClose}>
       <form onSubmit={submit} className="flex flex-col gap-3">
-        <InputField icon={FaUser} placeholder="Client ka poora naam" value={name} onChange={setName} />
+        <InputField icon={FaUser} placeholder="Client's full name" value={name} onChange={setName} />
         <InputField icon={FaPhone} placeholder="Mobile number" value={phone} onChange={setPhone} type="tel" />
-        <InputField icon={FaStickyNote} placeholder="Note (optional — jaise: Delhi wale)" value={note} onChange={setNote} />
+        <InputField icon={FaStickyNote} placeholder="Note (optional)" value={note} onChange={setNote} />
         {err && <ErrMsg>{err}</ErrMsg>}
-        <PrimaryBtn loading={saving} label="✓ Client Jodo" loadingLabel="Jod raha hai..." />
+        <PrimaryBtn loading={saving} label="✓ Add Client" loadingLabel="Adding..." />
       </form>
     </Modal>
   );
@@ -285,7 +285,7 @@ function AddTxnModal({ client, onClose, onAdded }: {
   }
 
   return (
-    <Modal title="Transaction Jodo" subtitle={client.name} onClose={onClose}>
+    <Modal title="Add Transaction" subtitle={client.name} onClose={onClose}>
       <div className="grid grid-cols-2 rounded-2xl overflow-hidden border-2 border-slate-100 mb-4">
         {(["debit", "credit"] as const).map(t => (
           <button key={t} type="button" onClick={() => setType(t)}
@@ -295,16 +295,16 @@ function AddTxnModal({ client, onClose, onAdded }: {
                 ? { background: "linear-gradient(135deg,#fee2e2,#fecaca)", color: "#b91c1c" }
                 : { background: "linear-gradient(135deg,#dcfce7,#bbf7d0)", color: "#15803d" }
               : { background: "#f8fafc", color: "#94a3b8" }}>
-            {t === "debit" ? "🔴 Baki dena hai" : "🟢 Advance / Mila"}
+            {t === "debit" ? "🔴 Balance Due" : "🟢 Advance / Received"}
           </button>
         ))}
       </div>
       <form onSubmit={submit} className="flex flex-col gap-3">
-        <InputField icon={FaRupeeSign} placeholder="Amount (jaise: 500)" value={amount} onChange={setAmount} type="number" />
+        <InputField icon={FaRupeeSign} placeholder="Amount (e.g. 500)" value={amount} onChange={setAmount} type="number" />
         <InputField icon={FaCalendarAlt} value={date} onChange={setDate} type="date" />
-        <InputField icon={FaStickyNote} placeholder="Kaam ka naam (optional)" value={desc} onChange={setDesc} />
+        <InputField icon={FaStickyNote} placeholder="Description (optional)" value={desc} onChange={setDesc} />
         {err && <ErrMsg>{err}</ErrMsg>}
-        <PrimaryBtn loading={saving} label="✓ Transaction Jodo" loadingLabel="Jod raha hai..."
+        <PrimaryBtn loading={saving} label="✓ Save Transaction" loadingLabel="Saving..."
           color={type === "debit" ? "linear-gradient(135deg,#ef4444,#b91c1c)" : "linear-gradient(135deg,#22c55e,#15803d)"} />
       </form>
     </Modal>
@@ -327,12 +327,12 @@ function ConfirmDialog({ msg, sub, onConfirm, onCancel }: {
         <div className="flex gap-3">
           <button onClick={onCancel}
             className="flex-1 py-3 rounded-2xl border-2 border-slate-200 text-sm font-bold text-slate-600 hover:bg-slate-50 transition-colors">
-            Nahi
+            No
           </button>
           <button onClick={onConfirm}
             className="flex-1 py-3 rounded-2xl text-sm font-extrabold text-white transition-all hover:opacity-90 active:scale-95"
             style={{ background: "linear-gradient(135deg,#ef4444,#b91c1c)" }}>
-            Haan, Delete
+            Yes, Delete
           </button>
         </div>
       </div>
@@ -393,13 +393,13 @@ function ClientDetail({ client, onBack, onClientUpdated, onClientDeleted }: {
             }} />
         )}
         {delTxn !== null && (
-          <ConfirmDialog msg="Transaction delete karein?" sub="Yeh undo nahi ho sakta."
+          <ConfirmDialog msg="Delete this transaction?" sub="This cannot be undone."
             onConfirm={() => deleteTxn(delTxn)} onCancel={() => setDelTxn(null)} />
         )}
         {delClient && (
           <ConfirmDialog
-            msg="Client delete karein?"
-            sub={`${client.name} aur unki saari entries hamesha ke liye delete ho jayengi.`}
+            msg="Delete this client?"
+            sub={`${client.name} and all their transactions will be permanently deleted.`}
             onConfirm={deleteClient} onCancel={() => setDelClient(false)} />
         )}
 
@@ -415,7 +415,7 @@ function ClientDetail({ client, onBack, onClientUpdated, onClientDeleted }: {
               <button onClick={onBack}
                 className="flex items-center gap-2 text-sm font-bold px-4 py-2.5 rounded-2xl transition-all active:scale-95"
                 style={{ background: "rgba(255,255,255,0.12)", backdropFilter: "blur(8px)", border: "1px solid rgba(255,255,255,0.1)" }}>
-                <FaArrowLeft className="text-xs" /> Wapas Jao
+                <FaArrowLeft className="text-xs" /> Go Back
               </button>
               <button onClick={() => setDelClient(true)}
                 className="flex items-center gap-1.5 text-xs font-bold px-3.5 py-2.5 rounded-2xl transition-all active:scale-95"
@@ -472,7 +472,7 @@ function ClientDetail({ client, onBack, onClientUpdated, onClientDeleted }: {
             <button onClick={() => setShowAddTxn(true)}
               className="flex-1 flex items-center justify-center gap-2 py-3.5 rounded-2xl font-extrabold text-sm text-white shadow-lg transition-all hover:opacity-90 active:scale-[0.98]"
               style={{ background: `linear-gradient(135deg, ${NAVY}, #1e40af)` }}>
-              <FaPlus /> Transaction Jodo
+              <FaPlus /> Add Transaction
             </button>
             {bal > 0 && (
               <a href={waLink(client)} target="_blank" rel="noreferrer"
