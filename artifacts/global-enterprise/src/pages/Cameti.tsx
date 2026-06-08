@@ -1514,21 +1514,44 @@ function GroupsList({ onSelect }: { onSelect: (id: number) => void }) {
                         <div>
                           <h3 className="font-extrabold text-base text-slate-800">{g.name}</h3>
                           <p className="text-xs text-slate-400 font-medium mt-0.5">
-                            Started {fmtDate(g.started_on)} · {days} days running
+                            Started {fmtDate(g.started_on)} · {days} day{days !== 1 ? "s" : ""} running
                           </p>
                         </div>
                       </div>
                       <div className="text-right flex-shrink-0">
                         <p className="text-lg font-black" style={{ color: NAVY }}>{fmt(g.daily_amount)}</p>
-                        <p className="text-[10px] text-slate-400 font-bold">Daily/Member</p>
+                        <p className="text-[10px] text-slate-400 font-bold">Per Member / Day</p>
                       </div>
                     </div>
+
+                    {/* Estimated progress bar */}
+                    {days > 0 && (
+                      <div className="mb-3">
+                        <div className="flex items-center justify-between mb-1">
+                          <p className="text-[10px] font-bold text-slate-400">Est. Daily Target</p>
+                          <p className="text-[10px] font-extrabold" style={{ color: NAVY }}>
+                            {fmt(g.daily_amount * g.total_members)}/day
+                          </p>
+                        </div>
+                        <div className="h-2 bg-slate-100 rounded-full overflow-hidden">
+                          <div className="h-full rounded-full transition-all duration-700"
+                            style={{
+                              width: "100%",
+                              background: `linear-gradient(90deg, ${GREEN}, #22c55e)`,
+                            }} />
+                        </div>
+                      </div>
+                    )}
+
                     <div className="flex items-center gap-2 pt-3 border-t border-slate-50">
                       <span className="text-[10px] font-bold px-2.5 py-1 rounded-full bg-slate-100 text-slate-500">
-                        {g.total_members} Members
+                        👥 {g.total_members} Members
                       </span>
                       <span className="text-[10px] font-bold px-2.5 py-1 rounded-full" style={{ background: "#dcfce7", color: GREEN }}>
                         {fmt(g.daily_amount * g.total_members)}/day Group Total
+                      </span>
+                      <span className="text-[10px] font-bold px-2.5 py-1 rounded-full ml-auto" style={{ background: "#EEF2FF", color: NAVY }}>
+                        {days} days
                       </span>
                     </div>
                   </button>

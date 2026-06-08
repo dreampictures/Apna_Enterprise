@@ -127,10 +127,10 @@ function PinScreen({ onUnlock }: { onUnlock: () => void }) {
             <div className="h-7 flex items-center justify-center mb-6">
               {error
                 ? <p className="kh-fade text-sm font-bold text-red-500 bg-red-50 px-4 py-1 rounded-full">
-                    ❌ Galat PIN, dobara try karo
+                    ❌ Wrong PIN, please try again
                   </p>
                 : <p className="text-sm text-slate-400 font-medium flex items-center gap-1.5">
-                    <span>⌨️</span> Keyboard se 4-digit PIN type karo
+                    <span>⌨️</span> Type your 4-digit PIN using keyboard
                   </p>
               }
             </div>
@@ -138,7 +138,7 @@ function PinScreen({ onUnlock }: { onUnlock: () => void }) {
             {/* Lock indicator */}
             <div className="flex items-center gap-2 text-xs text-slate-300 font-semibold">
               <FaLock className="text-[11px]" />
-              <span>Private — Sirf aapke liye</span>
+              <span>Private — For your eyes only</span>
             </div>
           </div>
         </div>
@@ -159,11 +159,11 @@ function waLink(client: Client) {
   const num = client.phone.replace(/\D/g, "");
   const e164 = num.startsWith("91") || num.length === 12 ? num : "91" + num;
   const msg =
-    `Sat Sri Akal ${client.name} Ji 🙏\n\n` +
-    `Yeh Apna Enterprise, Firozepur ki taraf se yaad dilaana hai.\n\n` +
-    `Aapka *${fmt(client.balance)}* payment abhi bhi pending hai.\n\n` +
-    `Kripya jaldi se payment clear karein. 🙏\n\n` +
-    `Shukriya!\n*Apna Enterprise*\n📞 ${PHONE}`;
+    `Hello ${client.name} 🙏\n\n` +
+    `This is a reminder from *Apna Enterprise, Firozepur*.\n\n` +
+    `Your outstanding payment of *${fmt(client.balance)}* is still pending.\n\n` +
+    `Kindly clear the balance at your earliest convenience. 🙏\n\n` +
+    `Thank you!\n*Apna Enterprise*\n📞 ${PHONE}`;
   return `https://wa.me/${e164}?text=${encodeURIComponent(msg)}`;
 }
 
@@ -235,7 +235,7 @@ function AddClientModal({ onClose, onAdded }: { onClose: () => void; onAdded: (c
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
-    if (!name.trim() || !phone.trim()) { setErr("Naam aur phone zaroori hai"); return; }
+    if (!name.trim() || !phone.trim()) { setErr("Name and phone are required"); return; }
     setSaving(true); setErr("");
     try {
       const r = await fetch("/api/khaata/clients", {
@@ -244,7 +244,7 @@ function AddClientModal({ onClose, onAdded }: { onClose: () => void; onAdded: (c
       });
       if (!r.ok) throw new Error();
       onAdded(await r.json()); onClose();
-    } catch { setErr("Kuch gadbad hui. Dobara try karo."); }
+    } catch { setErr("Something went wrong. Please try again."); }
     finally { setSaving(false); }
   }
 
@@ -271,7 +271,7 @@ function AddTxnModal({ client, onClose, onAdded }: {
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
-    if (!Number(amount) || Number(amount) <= 0) { setErr("Sahi amount likho"); return; }
+    if (!Number(amount) || Number(amount) <= 0) { setErr("Please enter a valid amount"); return; }
     setSaving(true); setErr("");
     try {
       const r = await fetch(`/api/khaata/clients/${client.id}/transactions`, {
@@ -280,7 +280,7 @@ function AddTxnModal({ client, onClose, onAdded }: {
       });
       if (!r.ok) throw new Error();
       onAdded(await r.json()); onClose();
-    } catch { setErr("Kuch gadbad hui. Dobara try karo."); }
+    } catch { setErr("Something went wrong. Please try again."); }
     finally { setSaving(false); }
   }
 
@@ -447,12 +447,12 @@ function ClientDetail({ client, onBack, onClientUpdated, onClientDeleted }: {
         <div className="px-4 -mt-14 max-w-2xl mx-auto w-full">
           <div className="grid grid-cols-3 gap-3 mb-5">
             {[
-              { label: "Kul Dena", val: fmt(totalD), sub: "Debit", bg: "#fff1f2", border: "#fecdd3", text: "#be123c" },
-              { label: "Kul Lena", val: fmt(totalC), sub: "Credit", bg: "#f0fdf4", border: "#bbf7d0", text: "#15803d" },
+              { label: "Total Due", val: fmt(totalD), sub: "Debit", bg: "#fff1f2", border: "#fecdd3", text: "#be123c" },
+              { label: "Total Received", val: fmt(totalC), sub: "Credit", bg: "#f0fdf4", border: "#bbf7d0", text: "#15803d" },
               {
                 label: "Net Balance",
                 val: bal === 0 ? "Clear ✅" : fmt(bal),
-                sub: bal > 0 ? "Baaki Hai" : bal < 0 ? "Advance" : "Settled",
+                sub: bal > 0 ? "Outstanding" : bal < 0 ? "Advance" : "Settled",
                 bg: bal > 0 ? "#fff1f2" : bal < 0 ? "#f0fdf4" : "#f8fafc",
                 border: bal > 0 ? "#fecdd3" : bal < 0 ? "#bbf7d0" : "#e2e8f0",
                 text: bal > 0 ? "#be123c" : bal < 0 ? "#15803d" : "#64748b",
@@ -500,7 +500,7 @@ function ClientDetail({ client, onBack, onClientUpdated, onClientDeleted }: {
               {[1,2,3].map(i => <div key={i} className="h-16 kh-skeleton rounded-2xl" />)}
             </div>
           ) : txns.length === 0 ? (
-            <EmptyState icon={FaMoneyBillWave} title="Koi transaction nahi hai" sub="Upar button se pehli entry jodo" />
+            <EmptyState icon={FaMoneyBillWave} title="No transactions yet" sub="Use the button above to add the first entry" />
           ) : (
             <div className="space-y-2.5 pb-10">
               {txns.map((t, idx) => {
@@ -532,7 +532,7 @@ function ClientDetail({ client, onBack, onClientUpdated, onClientDeleted }: {
                         </div>
                         <div className="flex items-center gap-2 mt-0.5">
                           <span className={`text-[10px] font-extrabold px-2 py-0.5 rounded-full ${isDebit ? "bg-red-50 text-red-500" : "bg-green-50 text-green-600"}`}>
-                            {isDebit ? "Baki" : "Mila"}
+                            {isDebit ? "Due" : "Received"}
                           </span>
                           {t.description && (
                             <span className="text-xs text-slate-400 truncate font-medium">{t.description}</span>
@@ -582,6 +582,7 @@ export default function KhaataBook() {
   const [selected, setSelected] = useState<Client | null>(null);
   const [search, setSearch] = useState("");
   const [tab, setTab] = useState<FilterTab>("all");
+  const [sortBy, setSortBy] = useState<"name" | "balance_desc" | "balance_asc" | "newest">("newest");
 
   useEffect(() => { if (sessionStorage.getItem("khaata_auth") === "1") setAuthed(true); }, []);
 
@@ -609,17 +610,23 @@ export default function KhaataBook() {
   const totalPending = pending.reduce((s, c) => s + c.balance, 0);
   const totalAdvance = advance.reduce((s, c) => s + Math.abs(c.balance), 0);
 
-  /* ── Filtered ── */
+  /* ── Filtered + Sorted ── */
   const byTab = tab === "baki" ? pending : tab === "advance" ? advance : tab === "clear" ? cleared : clients;
-  const filtered = byTab.filter(c =>
-    c.name.toLowerCase().includes(search.toLowerCase()) || c.phone.includes(search)
-  );
+  const filtered = byTab
+    .filter(c => c.name.toLowerCase().includes(search.toLowerCase()) || c.phone.includes(search))
+    .slice()
+    .sort((a, b) => {
+      if (sortBy === "name") return a.name.localeCompare(b.name);
+      if (sortBy === "balance_desc") return Math.abs(b.balance) - Math.abs(a.balance);
+      if (sortBy === "balance_asc") return Math.abs(a.balance) - Math.abs(b.balance);
+      return b.id - a.id;
+    });
 
   const TABS: { key: FilterTab; label: string; count: number; color: string }[] = [
-    { key: "all",     label: "Sabhi",   count: clients.length, color: NAVY },
-    { key: "baki",    label: "Baki",    count: pending.length, color: "#dc2626" },
+    { key: "all",     label: "All",     count: clients.length, color: NAVY },
+    { key: "baki",    label: "Pending", count: pending.length, color: "#dc2626" },
     { key: "advance", label: "Advance", count: advance.length, color: "#16a34a" },
-    { key: "clear",   label: "Clear",   count: cleared.length, color: "#0284c7" },
+    { key: "clear",   label: "Settled", count: cleared.length, color: "#0284c7" },
   ];
 
   return (
@@ -668,7 +675,7 @@ export default function KhaataBook() {
 
             {/* ── STAT CARDS GRID ── */}
             <div className="grid grid-cols-2 gap-3">
-              {/* Kul Pending */}
+              {/* Total Pending */}
               <div className="rounded-3xl p-5 relative overflow-hidden"
                 style={{ background: "rgba(239,68,68,0.14)", border: "1px solid rgba(239,68,68,0.22)" }}>
                 <div className="absolute -right-4 -bottom-4 w-20 h-20 rounded-full opacity-10"
@@ -678,15 +685,15 @@ export default function KhaataBook() {
                     style={{ background: "rgba(239,68,68,0.25)" }}>
                     <FaMoneyBillWave className="text-red-300 text-xs" />
                   </div>
-                  <p className="text-[10px] font-extrabold text-red-200 uppercase tracking-wider">Kul Pending</p>
+                  <p className="text-[10px] font-extrabold text-red-200 uppercase tracking-wider">Total Pending</p>
                 </div>
                 <p className="text-3xl font-black text-red-100 leading-none mb-1.5">{fmt(totalPending)}</p>
                 <p className="text-xs text-red-300 font-semibold">
-                  {pending.length} client{pending.length !== 1 ? "s" : ""} baki hain
+                  {pending.length} client{pending.length !== 1 ? "s" : ""} outstanding
                 </p>
               </div>
 
-              {/* Kul Advance */}
+              {/* Total Advance */}
               <div className="rounded-3xl p-5 relative overflow-hidden"
                 style={{ background: "rgba(34,197,94,0.14)", border: "1px solid rgba(34,197,94,0.22)" }}>
                 <div className="absolute -right-4 -bottom-4 w-20 h-20 rounded-full opacity-10"
@@ -696,11 +703,11 @@ export default function KhaataBook() {
                     style={{ background: "rgba(34,197,94,0.25)" }}>
                     <FaHandHoldingUsd className="text-green-300 text-xs" />
                   </div>
-                  <p className="text-[10px] font-extrabold text-green-200 uppercase tracking-wider">Kul Advance</p>
+                  <p className="text-[10px] font-extrabold text-green-200 uppercase tracking-wider">Total Advance</p>
                 </div>
                 <p className="text-3xl font-black text-green-100 leading-none mb-1.5">{fmt(totalAdvance)}</p>
                 <p className="text-xs text-green-300 font-semibold">
-                  {advance.length} client{advance.length !== 1 ? "s" : ""} ka advance
+                  {advance.length} client{advance.length !== 1 ? "s" : ""} paid in advance
                 </p>
               </div>
 
@@ -736,14 +743,14 @@ export default function KhaataBook() {
         {/* ══ MAIN CONTENT ══ */}
         <div className="px-4 -mt-14 max-w-3xl mx-auto w-full">
 
-          {/* Search + Add row */}
+          {/* Search + Sort + Add row */}
           <div className="flex gap-3 mb-4">
             <div className="flex-1 flex items-center gap-3 bg-white rounded-2xl px-4 shadow-lg border border-white"
               style={{ boxShadow: "0 8px 32px rgba(7,27,74,0.1)" }}>
               <FaSearch className="text-slate-300 text-sm flex-shrink-0" />
               <input
                 className="flex-1 py-3.5 text-sm font-semibold outline-none bg-transparent placeholder-slate-300 text-slate-700"
-                placeholder="Naam ya phone se dhundho..."
+                placeholder="Search by name or phone..."
                 value={search}
                 onChange={e => setSearch(e.target.value)}
               />
@@ -753,10 +760,20 @@ export default function KhaataBook() {
                 </button>
               )}
             </div>
+            <select
+              value={sortBy}
+              onChange={e => setSortBy(e.target.value as typeof sortBy)}
+              className="bg-white rounded-2xl px-3 text-xs font-bold text-slate-600 outline-none border border-slate-100 shadow-lg flex-shrink-0 cursor-pointer"
+              style={{ boxShadow: "0 8px 32px rgba(7,27,74,0.08)" }}>
+              <option value="newest">Newest</option>
+              <option value="name">A → Z</option>
+              <option value="balance_desc">Highest Balance</option>
+              <option value="balance_asc">Lowest Balance</option>
+            </select>
             <button onClick={() => setShowAdd(true)}
               className="flex items-center gap-2 px-5 rounded-2xl font-extrabold text-sm text-white shadow-lg flex-shrink-0 transition-all hover:opacity-90 active:scale-[0.97]"
               style={{ background: `linear-gradient(135deg, ${NAVY}, #1e40af)`, boxShadow: "0 8px 24px rgba(7,27,74,0.3)" }}>
-              <FaPlus /> <span className="hidden sm:inline">Naya Client</span><span className="sm:hidden">Naya</span>
+              <FaPlus /> <span className="hidden sm:inline">New Client</span><span className="sm:hidden">New</span>
             </button>
           </div>
 
@@ -790,8 +807,8 @@ export default function KhaataBook() {
           ) : filtered.length === 0 ? (
             <EmptyState
               icon={FaUser}
-              title={search ? "Koi client nahi mila" : tab !== "all" ? "Is category mein koi nahi" : "Abhi koi client nahi hai"}
-              sub={search ? "Naam ya number check karo" : "'Naya Client' button se jodo"} />
+              title={search ? "No client found" : tab !== "all" ? "No clients in this category" : "No clients yet"}
+              sub={search ? "Check the name or phone number" : "Use 'New Client' button to add one"} />
           ) : (
             <div className="space-y-2.5 pb-10">
               {filtered.map((c, idx) => {
@@ -825,7 +842,7 @@ export default function KhaataBook() {
                       </p>
                       <span className={`inline-flex items-center gap-1 text-[9px] font-extrabold px-2 py-0.5 rounded-full mt-1.5
                         ${c.balance > 0 ? "bg-red-50 text-red-500" : c.balance < 0 ? "bg-green-50 text-green-600" : "bg-slate-50 text-slate-400"}`}>
-                        {c.balance > 0 ? "● Pending" : c.balance < 0 ? "● Advance" : "✔ Clear"}
+                        {c.balance > 0 ? "● Outstanding" : c.balance < 0 ? "● Advance" : "✔ Settled"}
                       </span>
                     </div>
 
