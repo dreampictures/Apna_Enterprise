@@ -37,6 +37,40 @@ router.post("/cameti/groups", async (req, res) => {
   }
 });
 
+// PATCH /cameti/groups/:id  — edit group settings
+router.patch("/cameti/groups/:id", async (req, res) => {
+  const id = Number(req.params.id);
+  const { name, daily_amount, started_on } = req.body;
+  if (!name?.trim()) { res.status(400).json({ error: "Name required" }); return; }
+  try {
+    const { rows } = await pool.query(
+      `UPDATE cameti_groups SET name=$1, daily_amount=$2, started_on=$3 WHERE id=$4 RETURNING *`,
+      [name.trim(), daily_amount, started_on, id]
+    );
+    res.json(rows[0]);
+  } catch (err) {
+    req.log.error({ err }, "Failed to update group");
+    res.status(500).json({ error: "Failed" });
+  }
+});
+
+// GET /cameti/groups/:id/month-stats  — per-month collection totals
+router.get("/cameti/groups/:id/month-stats", async (req, res) => {
+  const group_id = Number(req.params.id);
+  try {
+    const { rows } = await pool.query(
+      `SELECT month_id, SUM(amount)::int as total_collected, COUNT(DISTINCT member_id)::int as members_paid, COUNT(*)::int as entries
+       FROM cameti_collections WHERE group_id=$1 AND month_id IS NOT NULL
+       GROUP BY month_id`,
+      [group_id]
+    );
+    res.json(rows);
+  } catch (err) {
+    req.log.error({ err }, "Failed to get month stats");
+    res.status(500).json({ error: "Failed" });
+  }
+});
+
 // GET /cameti/groups/:id  — full group with members + months
 router.get("/cameti/groups/:id", async (req, res) => {
   const id = Number(req.params.id);
@@ -83,6 +117,23 @@ router.post("/cameti/groups/:id/members", async (req, res) => {
   }
 });
 
+// PATCH /cameti/members/:id  — edit name/phone
+router.patch("/cameti/members/:id", async (req, res) => {
+  const id = Number(req.params.id);
+  const { name, phone } = req.body;
+  if (!name?.trim() || !phone?.trim()) { res.status(400).json({ error: "Name and phone required" }); return; }
+  try {
+    const { rows } = await pool.query(
+      `UPDATE cameti_members SET name=$1, phone=$2 WHERE id=$3 RETURNING *`,
+      [name.trim(), phone.trim(), id]
+    );
+    res.json(rows[0]);
+  } catch (err) {
+    req.log.error({ err }, "Failed to update member");
+    res.status(500).json({ error: "Failed" });
+  }
+});
+
 // DELETE /cameti/members/:id
 router.delete("/cameti/members/:id", async (req, res) => {
   const id = Number(req.params.id);
@@ -91,6 +142,25 @@ router.delete("/cameti/members/:id", async (req, res) => {
     res.json({ ok: true });
   } catch (err) {
     req.log.error({ err }, "Failed to delete member");
+    res.status(500).json({ error: "Failed" });
+  }
+});
+
+// GET /cameti/members/:id/history  — all collections for a member
+router.get("/cameti/members/:id/history", async (req, res) => {
+  const member_id = Number(req.params.id);
+  try {
+    const { rows } = await pool.query(
+      `SELECT cc.*, cm.name as member_name
+       FROM cameti_collections cc
+       JOIN cameti_members cm ON cm.id = cc.member_id
+       WHERE cc.member_id=$1
+       ORDER BY cc.collected_date DESC`,
+      [member_id]
+    );
+    res.json(rows);
+  } catch (err) {
+    req.log.error({ err }, "Failed to get member history");
     res.status(500).json({ error: "Failed" });
   }
 });
