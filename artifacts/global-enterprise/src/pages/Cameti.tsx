@@ -36,7 +36,9 @@ const initials = (name: string) => name.trim().charAt(0).toUpperCase();
 const MONTH_NAMES = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
 const MONTH_NAMES_FULL = ["January","February","March","April","May","June","July","August","September","October","November","December"];
 const fmtDate = (d: string) => {
+  if (!d) return "N/A";
   const dt = new Date(d + "T00:00:00");
+  if (isNaN(dt.getTime())) return "N/A";
   return `${dt.getDate()} ${MONTH_NAMES[dt.getMonth()]} ${dt.getFullYear()}`;
 };
 
@@ -120,15 +122,15 @@ function PinScreen({ onUnlock }: { onUnlock: () => void }) {
             </div>
             {error ? (
               <p className="text-sm font-bold text-red-500 flex items-center gap-1.5">
-                <FaExclamationTriangle className="text-xs" /> Galat PIN, dobara try karo
+                <FaExclamationTriangle className="text-xs" /> Wrong PIN, please try again
               </p>
             ) : (
               <p className="text-sm text-slate-400 font-medium flex items-center gap-2">
-                <span>⌨️</span> Keyboard se 4-digit PIN type karo
+                <span>⌨️</span> Type your 4-digit PIN using the keyboard
               </p>
             )}
             <p className="text-[11px] text-slate-300 mt-3 flex items-center gap-1.5">
-              <FaLock className="text-[9px]" /> Private — Sirf aapke liye
+              <FaLock className="text-[9px]" /> Private — For your eyes only
             </p>
           </div>
         </div>
@@ -222,9 +224,9 @@ function ConfirmDialog({ msg, sub, onConfirm, onCancel }: {
         <p className="font-extrabold text-slate-800 text-center text-base mb-1">{msg}</p>
         <p className="text-sm text-slate-400 text-center mb-6">{sub}</p>
         <div className="flex gap-3">
-          <button onClick={onCancel} className="flex-1 py-3 rounded-2xl border-2 border-slate-200 text-sm font-bold text-slate-600">Nahi</button>
+          <button onClick={onCancel} className="flex-1 py-3 rounded-2xl border-2 border-slate-200 text-sm font-bold text-slate-600">No</button>
           <button onClick={onConfirm} className="flex-1 py-3 rounded-2xl text-sm font-extrabold text-white"
-            style={{ background: "linear-gradient(135deg,#ef4444,#b91c1c)" }}>Haan, Delete</button>
+            style={{ background: "linear-gradient(135deg,#ef4444,#b91c1c)" }}>Yes, Delete</button>
         </div>
       </div>
     </div>
@@ -285,8 +287,10 @@ function GroupDetail({ groupId, onBack }: { groupId: number; onBack: () => void 
   const effectiveDaily = group.daily_amount - reduction;
 
   /* ── Cumulative stats ── */
-  const startDate = new Date(group.started_on + "T00:00:00");
-  const daysElapsed = Math.max(1, Math.floor((Date.now() - startDate.getTime()) / 86400000) + 1);
+  const startDate = group.started_on ? new Date(group.started_on + "T00:00:00") : null;
+  const daysElapsed = startDate && !isNaN(startDate.getTime())
+    ? Math.max(1, Math.floor((Date.now() - startDate.getTime()) / 86400000) + 1)
+    : 0;
   const totalExpected = daysElapsed * effectiveDaily * group.members.length;
   const totalCollected = summary.reduce((s, m) => s + (m.total_paid ?? 0), 0);
   const totalPending = Math.max(0, totalExpected - totalCollected);
@@ -296,7 +300,7 @@ function GroupDetail({ groupId, onBack }: { groupId: number; onBack: () => void 
       ...m,
       expected: daysElapsed * effectiveDaily,
       pending: Math.max(0, daysElapsed * effectiveDaily - (m.total_paid ?? 0)),
-      pendingDays: Math.max(0, daysElapsed - Math.round((m.total_paid ?? 0) / effectiveDaily)),
+      pendingDays: Math.max(0, daysElapsed - Math.round((m.total_paid ?? 0) / (effectiveDaily || 1))),
     }))
     .filter(m => m.pending > 0)
     .sort((a, b) => b.pending - a.pending);
@@ -307,9 +311,9 @@ function GroupDetail({ groupId, onBack }: { groupId: number; onBack: () => void 
       `🏦 *Apna Enterprise - Daily Cameti*`,
       `📅 ${new Date().toLocaleDateString("en-IN", { day: "numeric", month: "long", year: "numeric" })}`,
       ``,
-      `📊 *${group!.name} — Poori Report*`,
-      `⏳ Din Chale: ${daysElapsed} din`,
-      `💰 Jama: ${fmt(totalCollected)}`,
+      `📊 *${group!.name} — Full Report*`,
+      `⏳ Days Elapsed: ${daysElapsed} days`,
+      `💰 Collected: ${fmt(totalCollected)}`,
       `❌ Pending: ${fmt(totalPending)}`,
       `📈 Progress: ${collectionPct.toFixed(1)}%`,
       ``,
@@ -317,11 +321,11 @@ function GroupDetail({ groupId, onBack }: { groupId: number; onBack: () => void 
     if (memberPending.length > 0) {
       lines.push(`⚠️ *Pending Members (${memberPending.length}):*`);
       memberPending.forEach(m => {
-        lines.push(`• ${m.name} — ${fmt(m.pending)} (${m.pendingDays} din)`);
+        lines.push(`• ${m.name} — ${fmt(m.pending)} (${m.pendingDays} days)`);
       });
       lines.push(``);
     } else {
-      lines.push(`✅ Sab ne puri payment di hai!`);
+      lines.push(`✅ All members have completed their payment!`);
       lines.push(``);
     }
     lines.push(`_Apna Enterprise, Firozepur_`);
@@ -393,8 +397,8 @@ function GroupDetail({ groupId, onBack }: { groupId: number; onBack: () => void 
         />
       )}
       {delMember && (
-        <ConfirmDialog msg={`${delMember.name} ko delete karo?`}
-          sub="Inki saari collections bhi delete ho jaengi."
+        <ConfirmDialog msg={`Delete ${delMember.name}?`}
+          sub="All their collections will also be deleted."
           onConfirm={() => doDeleteMember(delMember.id)} onCancel={() => setDelMember(null)} />
       )}
       {editMember && (
@@ -424,7 +428,7 @@ function GroupDetail({ groupId, onBack }: { groupId: number; onBack: () => void 
                 <a href={`https://wa.me/?text=${buildBulkWAReport()}`} target="_blank" rel="noreferrer"
                   className="flex items-center gap-1.5 text-xs font-bold px-3 py-2 rounded-2xl text-white transition-all active:scale-95"
                   style={{ background: "rgba(34,197,94,0.25)", border: "1px solid rgba(34,197,94,0.3)" }}
-                  title="WA Pe Share Karo">
+                  title="Share on WhatsApp">
                   <FaShareAlt className="text-xs" /> Report
                 </a>
                 {/* Settings */}
@@ -441,7 +445,9 @@ function GroupDetail({ groupId, onBack }: { groupId: number; onBack: () => void 
             <div className="mb-4">
               <p className="text-[10px] font-bold uppercase tracking-widest mb-1" style={{ color: `${GOLD}bb` }}>Daily Cameti</p>
               <h1 className="text-xl font-black text-white">{group.name}</h1>
-              <p className="text-white/40 text-xs font-medium mt-0.5">Started {fmtDate(group.started_on)}</p>
+              <p className="text-white/40 text-xs font-medium mt-0.5">
+                Started {group.started_on ? fmtDate(group.started_on) : "N/A"}
+              </p>
             </div>
 
             {/* Stats row */}
@@ -449,7 +455,7 @@ function GroupDetail({ groupId, onBack }: { groupId: number; onBack: () => void 
               {[
                 { label: "Members", val: group.members.length, c: "rgba(255,255,255,0.12)" },
                 { label: "Daily", val: fmt(effectiveDaily), c: "rgba(212,160,23,0.2)" },
-                { label: "Jama", val: fmt(totalCollected), c: "rgba(34,197,94,0.18)" },
+                { label: "Collected", val: fmt(totalCollected), c: "rgba(34,197,94,0.18)" },
                 { label: "Pending", val: fmt(totalPending), c: "rgba(239,68,68,0.2)" },
               ].map(({ label, val, c }) => (
                 <div key={label} className="rounded-2xl p-2.5 text-center"
@@ -469,23 +475,23 @@ function GroupDetail({ groupId, onBack }: { groupId: number; onBack: () => void 
           {group.members.length > 0 && (
             <div className="ct-up bg-white rounded-3xl shadow-sm mb-4 overflow-hidden" style={{ border: "1.5px solid #e2e8f0" }}>
               <div className="px-4 py-3 flex items-center justify-between" style={{ borderBottom: "1px solid #f1f5f9" }}>
-                <p className="text-xs font-extrabold text-slate-600 uppercase tracking-wider">📊 Poori Cameti Ka Hisaab</p>
+                <p className="text-xs font-extrabold text-slate-600 uppercase tracking-wider">📊 Full Cameti Summary</p>
                 <div className="flex items-center gap-2">
                   <span className="text-[10px] font-bold px-2.5 py-1 rounded-full" style={{ background: "#EEF2FF", color: NAVY }}>
-                    {daysElapsed} din chalu
+                    {daysElapsed} days running
                   </span>
-                  {/* Boli button */}
+                  {/* Auction button */}
                   <button onClick={() => setShowBoli(true)}
                     className="flex items-center gap-1 text-[10px] font-extrabold px-2.5 py-1 rounded-full transition-all active:scale-95"
                     style={{ background: `rgba(212,160,23,0.15)`, color: "#92400e", border: "1px solid rgba(212,160,23,0.3)" }}>
-                    <FaGavel className="text-[9px]" /> Boli
+                    <FaGavel className="text-[9px]" /> Auction
                   </button>
                 </div>
               </div>
 
               <div className="px-4 pt-3">
                 <div className="flex items-center justify-between mb-1.5">
-                  <p className="text-[11px] font-bold text-slate-400">Jama / Kul Expected</p>
+                  <p className="text-[11px] font-bold text-slate-400">Collected / Total Expected</p>
                   <p className="text-[11px] font-extrabold" style={{ color: NAVY }}>
                     {fmt(totalCollected)} / {fmt(totalExpected)}
                   </p>
@@ -505,9 +511,9 @@ function GroupDetail({ groupId, onBack }: { groupId: number; onBack: () => void 
 
                 <div className="grid grid-cols-3 gap-2 pb-3">
                   {[
-                    { label: "Jama Hua", val: fmt(totalCollected), color: GREEN, bg: "#dcfce7" },
+                    { label: "Collected", val: fmt(totalCollected), color: GREEN, bg: "#dcfce7" },
                     { label: "Pending", val: fmt(totalPending), color: RED, bg: "#fee2e2" },
-                    { label: `${daysElapsed} din × ${fmt(effectiveDaily)}`, val: `${group.members.length} members`, color: NAVY, bg: "#EEF2FF" },
+                    { label: `${daysElapsed} days × ${fmt(effectiveDaily)}`, val: `${group.members.length} members`, color: NAVY, bg: "#EEF2FF" },
                   ].map(({ label, val, color, bg }) => (
                     <div key={label} className="rounded-2xl py-2.5 px-1 text-center" style={{ background: bg }}>
                       <p className="text-xs font-black leading-tight truncate" style={{ color }}>{val}</p>
@@ -522,7 +528,7 @@ function GroupDetail({ groupId, onBack }: { groupId: number; onBack: () => void 
                 <div style={{ borderTop: "1px solid #f1f5f9" }} className="px-4 py-3">
                   <div className="flex items-center justify-between mb-2">
                     <p className="text-[10px] font-extrabold uppercase tracking-wider" style={{ color: RED }}>
-                      Baaki ({memberPending.length} log)
+                      Pending ({memberPending.length} members)
                     </p>
                     <div className="flex gap-2">
                       <a href={`https://wa.me/?text=${buildBulkWAReport()}`} target="_blank" rel="noreferrer"
@@ -534,7 +540,7 @@ function GroupDetail({ groupId, onBack }: { groupId: number; onBack: () => void 
                   </div>
                   <div className="space-y-1.5">
                     {memberPending.map((m, idx) => {
-                      const waMsg = encodeURIComponent(`Sat Sri Akal ${m.name} Ji 🙏\n*Apna Enterprise — Cameti Reminder*\n\n📅 ${m.pendingDays} din ki payment baaki hai\n💰 Pending Amount: ${fmt(m.pending)}\n\nKripya jaldi payment karein. 🙏\n\n_Apna Enterprise, Firozepur_`);
+                      const waMsg = encodeURIComponent(`Hello ${m.name} 🙏\n*Apna Enterprise — Cameti Reminder*\n\n📅 Payment pending for ${m.pendingDays} days\n💰 Pending Amount: ${fmt(m.pending)}\n\nPlease make the payment at your earliest. 🙏\n\n_Apna Enterprise, Firozepur_`);
                       return (
                         <div key={m.id}
                           className="ct-up flex items-center justify-between rounded-2xl px-3 py-2"
@@ -544,7 +550,7 @@ function GroupDetail({ groupId, onBack }: { groupId: number; onBack: () => void 
                               style={{ background: "#fee2e2", color: RED }}>{initials(m.name)}</div>
                             <div>
                               <p className="text-xs font-extrabold text-slate-800">{m.name}</p>
-                              <p className="text-[9px] font-bold text-slate-400">{m.pendingDays} din · {m.days_paid} din paid</p>
+                              <p className="text-[9px] font-bold text-slate-400">{m.pendingDays} days · {m.days_paid} days paid</p>
                             </div>
                           </div>
                           <div className="flex items-center gap-2">
@@ -568,7 +574,7 @@ function GroupDetail({ groupId, onBack }: { groupId: number; onBack: () => void 
               {memberPending.length === 0 && totalExpected > 0 && (
                 <div style={{ borderTop: "1px solid #f1f5f9" }} className="px-4 py-3 flex items-center gap-2 justify-center">
                   <FaCheckCircle className="text-green-500" />
-                  <p className="text-sm font-extrabold text-green-600">Sab ne puri cameti di hai! 🎉</p>
+                  <p className="text-sm font-extrabold text-green-600">All members are fully paid up! 🎉</p>
                 </div>
               )}
             </div>
@@ -651,7 +657,7 @@ function GroupDetail({ groupId, onBack }: { groupId: number; onBack: () => void 
                         <div className="text-right flex-shrink-0">
                           <p className="text-sm font-black text-green-600">{fmt(m.total_paid ?? 0)}</p>
                           <p className="text-[9px] font-bold" style={{ color: mPending > 0 ? RED : "#94a3b8" }}>
-                            {mPending > 0 ? `${fmt(mPending)} baaki` : `${m.days_paid ?? 0} din paid`}
+                            {mPending > 0 ? `${fmt(mPending)} pending` : `${m.days_paid ?? 0} days paid`}
                           </p>
                         </div>
                         {/* Action buttons */}
@@ -683,7 +689,7 @@ function GroupDetail({ groupId, onBack }: { groupId: number; onBack: () => void 
                     </div>
                   );
                 })}
-                {summary.length === 0 && <EmptyState icon={FaUsers} title="Koi member nahi" sub="Add Member se member add karo" />}
+                {summary.length === 0 && <EmptyState icon={FaUsers} title="No members yet" sub="Add members from the Members tab" />}
               </div>
             </div>
           )}
@@ -692,7 +698,7 @@ function GroupDetail({ groupId, onBack }: { groupId: number; onBack: () => void 
           {activeTab === "months" && (
             <div className="pb-10 space-y-3">
               {group.months.length === 0 && (
-                <EmptyState icon={FaCalendarAlt} title="Koi month nahi" sub="Pehli collection karo — month apne aap ban jaega" />
+                <EmptyState icon={FaCalendarAlt} title="No months yet" sub="Make your first collection — the month will be created automatically" />
               )}
               {[...group.months].reverse().map((mn, idx) => {
                 const ms = monthStats.find(s => s.month_id === mn.id);
@@ -729,7 +735,7 @@ function GroupDetail({ groupId, onBack }: { groupId: number; onBack: () => void 
                         </div>
                         <div className="grid grid-cols-3 gap-2">
                           {[
-                            { label: "Jama", val: fmt(ms.total_collected), c: "#dcfce7", tc: GREEN },
+                            { label: "Collected", val: fmt(ms.total_collected), c: "#dcfce7", tc: GREEN },
                             { label: "Members Paid", val: `${ms.members_paid}/${group.members.length}`, c: "#EEF2FF", tc: NAVY },
                             { label: "Entries", val: ms.entries, c: "#fef9c3", tc: "#92400e" },
                           ].map(({ label, val, c, tc }) => (
@@ -745,9 +751,9 @@ function GroupDetail({ groupId, onBack }: { groupId: number; onBack: () => void 
                     {mn.status === "closed" && (
                       <div className="grid grid-cols-3 gap-2 mt-2">
                         {[
-                          { label: "Boli Amount", val: fmt(mn.bid_amount ?? 0), c: "#fef9c3", tc: "#92400e" },
+                          { label: "Auction Amount", val: fmt(mn.bid_amount ?? 0), c: "#fef9c3", tc: "#92400e" },
                           { label: "Profit/Member", val: fmt(mn.profit_per_member ?? 0), c: "#dcfce7", tc: GREEN },
-                          { label: "Daily Kami", val: `−${fmt(mn.daily_reduction ?? 0)}`, c: "#fee2e2", tc: RED },
+                          { label: "Daily Reduction", val: `−${fmt(mn.daily_reduction ?? 0)}`, c: "#fee2e2", tc: RED },
                         ].map(({ label, val, c, tc }) => (
                           <div key={label} className="rounded-2xl p-2.5 text-center" style={{ background: c }}>
                             <p className="text-[9px] font-bold uppercase tracking-wide text-slate-500 mb-1">{label}</p>
@@ -768,18 +774,18 @@ function GroupDetail({ groupId, onBack }: { groupId: number; onBack: () => void 
             </div>
           )}
 
-          {/* ── Tab: Boli History ── */}
+          {/* ── Tab: Auction History ── */}
           {activeTab === "boli" && (
             <div className="pb-10 space-y-3">
               <div className="flex justify-end mb-2">
                 <button onClick={() => setShowBoli(true)}
                   className="flex items-center gap-2 text-xs font-extrabold px-4 py-2 rounded-2xl text-white transition-all active:scale-95"
                   style={{ background: `linear-gradient(135deg,${GOLD},#b8860b)` }}>
-                  <FaGavel /> New Boli
+                  <FaGavel /> New Auction
                 </button>
               </div>
               {group.months.filter(m => m.status === "closed").length === 0 && (
-                <EmptyState icon={FaGavel} title="Koi auction nahi" sub="New Boli button se auction record karo" />
+                <EmptyState icon={FaGavel} title="No auctions yet" sub="Record an auction using the New Auction button" />
               )}
               {group.months.filter(m => m.status === "closed").map((mn, idx) => (
                 <div key={mn.id}
@@ -792,7 +798,7 @@ function GroupDetail({ groupId, onBack }: { groupId: number; onBack: () => void 
                     </div>
                     <div className="text-right">
                       <p className="text-lg font-black" style={{ color: GOLD }}>{fmt(mn.bid_amount ?? 0)}</p>
-                      <p className="text-[10px] font-bold text-slate-400">Boli Amount</p>
+                      <p className="text-[10px] font-bold text-slate-400">Auction Amount</p>
                     </div>
                   </div>
                   <div className="mt-3 flex gap-3">
@@ -919,13 +925,13 @@ function CollectionSession({ groupId, members, effectiveDaily, currentMonthId, o
               className="flex-1 text-sm font-bold outline-none text-slate-700 bg-transparent" />
             {!isToday && (
               <span className="text-[10px] font-extrabold bg-amber-100 text-amber-700 px-2 py-0.5 rounded-full flex-shrink-0">
-                Pehle Ki Date
+                Past Date
               </span>
             )}
             <button onClick={() => setDate(todayISO())}
               className="text-[10px] font-extrabold px-2.5 py-1 rounded-xl"
               style={{ background: isToday ? "#EEF2FF" : "#f1f5f9", color: NAVY }}>
-              Aaj
+              Today
             </button>
           </div>
         </div>
@@ -945,8 +951,8 @@ function CollectionSession({ groupId, members, effectiveDaily, currentMonthId, o
           </div>
           <div className="grid grid-cols-3 gap-2 pb-3">
             {[
-              { label: "Jama", val: fmt(todayCollected), color: GREEN, bg: "#dcfce7" },
-              { label: "Baaki", val: `${unpaidMembers.length} log`, color: RED, bg: "#fee2e2" },
+              { label: "Collected", val: fmt(todayCollected), color: GREEN, bg: "#dcfce7" },
+              { label: "Pending", val: `${unpaidMembers.length} members`, color: RED, bg: "#fee2e2" },
               { label: "Paid", val: `${paidIds.size}/${members.length}`, color: NAVY, bg: "#EEF2FF" },
             ].map(({ label, val, color, bg }) => (
               <div key={label} className="rounded-2xl py-2 text-center" style={{ background: bg }}>
@@ -971,13 +977,13 @@ function CollectionSession({ groupId, members, effectiveDaily, currentMonthId, o
                 <div className="flex items-center gap-2">
                   <div className="w-2 h-2 rounded-full" style={{ background: RED }} />
                   <p className="text-xs font-extrabold text-slate-600 uppercase tracking-wider">
-                    Baaki / Pending ({unpaidMembers.length})
+                    Pending ({unpaidMembers.length})
                   </p>
                 </div>
                 <button onClick={toggleAll}
                   className="text-[10px] font-extrabold px-3 py-1 rounded-xl border transition-all active:scale-95"
                   style={{ borderColor: "#e2e8f0", color: NAVY, background: "white" }}>
-                  {unpaidMembers.every(m => checked[m.id]) ? "✗ Sab Hatao" : "✓ Sab Select"}
+                  {unpaidMembers.every(m => checked[m.id]) ? "✗ Deselect All" : "✓ Select All"}
                 </button>
               </div>
 
@@ -987,7 +993,7 @@ function CollectionSession({ groupId, members, effectiveDaily, currentMonthId, o
                   const amt = Number(amounts[m.id] ?? effectiveDaily);
                   const daysCovered = effectiveDaily > 0 ? Math.round(amt / effectiveDaily) : 1;
                   const isMultiDay = amt !== effectiveDaily && amt > 0;
-                  const waMsg = encodeURIComponent(`Sat Sri Akal ${m.name} Ji 🙏\n*Apna Enterprise — Cameti Reminder*\n\nAaj ki cameti ₹${effectiveDaily} pending hai.\nKripya jaldi payment karein. 🙏\n\n_Apna Enterprise, Firozepur_`);
+                  const waMsg = encodeURIComponent(`Hello ${m.name} 🙏\n*Apna Enterprise — Cameti Reminder*\n\nToday's cameti ₹${effectiveDaily} is pending.\nPlease make the payment at your earliest. 🙏\n\n_Apna Enterprise, Firozepur_`);
 
                   return (
                     <div key={m.id}
@@ -1051,7 +1057,7 @@ function CollectionSession({ groupId, members, effectiveDaily, currentMonthId, o
                         <div className="px-3 pb-2.5">
                           <input
                             type="text"
-                            placeholder="Note likhein (optional)..."
+                            placeholder="Add a note (optional)..."
                             value={notes[m.id] ?? ""}
                             onChange={e => setNotes(p => ({ ...p, [m.id]: e.target.value }))}
                             className="w-full text-xs font-semibold outline-none bg-yellow-50 border border-yellow-200 rounded-xl px-3 py-2 text-slate-700"
@@ -1066,7 +1072,7 @@ function CollectionSession({ groupId, members, effectiveDaily, currentMonthId, o
                             <FaStickyNote className="text-amber-400 text-[10px]" />
                             <p className="text-[10px] font-bold text-amber-700">
                               {amt > effectiveDaily
-                                ? `${daysCovered} din ki cameti (${fmt(amt)})`
+                                ? `${daysCovered} days payment (${fmt(amt)})`
                                 : `Custom: ${fmt(amt)}`}
                             </p>
                           </div>
@@ -1081,25 +1087,25 @@ function CollectionSession({ groupId, members, effectiveDaily, currentMonthId, o
               {selectedCount > 0 && (
                 <div className="mt-4">
                   <div className="flex items-center justify-between bg-blue-50 rounded-2xl px-4 py-3 mb-3 border border-blue-100">
-                    <p className="text-sm font-bold text-blue-700">{selectedCount} member — Total</p>
+                    <p className="text-sm font-bold text-blue-700">{selectedCount} member(s) — Total</p>
                     <p className="text-base font-black" style={{ color: NAVY }}>{fmt(total)}</p>
                   </div>
                   <button disabled={saving} onClick={saveRound}
                     className="w-full py-4 rounded-2xl font-extrabold text-base text-white shadow-lg transition-all hover:opacity-90 active:scale-[0.98] disabled:opacity-60 flex items-center justify-center gap-2"
                     style={{ background: `linear-gradient(135deg,${GREEN},#15803d)` }}>
                     <FaSave />
-                    {saving ? "Save ho rha hai..." : `✓ Collection Save Karo (${fmt(total)})`}
+                    {saving ? "Saving..." : `✓ Save Collection (${fmt(total)})`}
                   </button>
                   {saved && (
                     <div className="mt-2 flex items-center justify-center gap-2 text-green-600 font-bold text-sm">
-                      <FaCheckCircle /> Saved! Collection record ho gayi.
+                      <FaCheckCircle /> Saved! Collection recorded.
                     </div>
                   )}
                 </div>
               )}
               {selectedCount === 0 && (
                 <div className="mt-3 text-center text-slate-400 text-sm font-semibold py-2">
-                  Kisi member ko select karo
+                  Select a member to collect from
                 </div>
               )}
             </div>
@@ -1108,13 +1114,13 @@ function CollectionSession({ groupId, members, effectiveDaily, currentMonthId, o
           {unpaidMembers.length === 0 && members.length > 0 && (
             <div className="text-center py-8 bg-white rounded-3xl mb-4" style={{ border: "1.5px solid #bbf7d0" }}>
               <FaCheckCircle className="text-4xl text-green-500 mx-auto mb-3" />
-              <p className="font-extrabold text-slate-700 text-base">Sab ne de di! 🎉</p>
-              <p className="text-slate-400 text-sm mt-1">{dateLabel} ki saari collection ho gayi.</p>
+              <p className="font-extrabold text-slate-700 text-base">All collected! 🎉</p>
+              <p className="text-slate-400 text-sm mt-1">All collections for {dateLabel} are done.</p>
             </div>
           )}
 
           {members.length === 0 && (
-            <EmptyState icon={FaUsers} title="Koi member nahi" sub="Members tab se member add karo" />
+            <EmptyState icon={FaUsers} title="No members yet" sub="Add members from the Members tab" />
           )}
 
           {/* PAID */}
@@ -1123,7 +1129,7 @@ function CollectionSession({ groupId, members, effectiveDaily, currentMonthId, o
               <div className="flex items-center gap-2 mb-2 px-1">
                 <div className="w-2 h-2 rounded-full" style={{ background: GREEN }} />
                 <p className="text-xs font-extrabold text-slate-600 uppercase tracking-wider">
-                  Jama Ho Gayi ({paidMembers.length})
+                  Collected ({paidMembers.length})
                 </p>
               </div>
               <div className="space-y-2">
@@ -1146,7 +1152,7 @@ function CollectionSession({ groupId, members, effectiveDaily, currentMonthId, o
                         <p className="text-sm font-black text-green-600">{fmt(col?.amount ?? 0)}</p>
                         {col && daysCovered > 1 ? (
                           <span className="text-[9px] font-bold text-amber-600 bg-amber-50 px-1.5 py-0.5 rounded-full">
-                            {daysCovered} din
+                            {daysCovered} days
                           </span>
                         ) : (
                           <span className="text-[9px] font-bold text-green-600 bg-green-50 px-1.5 py-0.5 rounded-full">
@@ -1183,19 +1189,19 @@ function EditMemberModal({ member, onClose, onSave }: {
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
-    if (!name.trim() || !phone.trim()) { setErr("Name aur phone required hai"); return; }
+    if (!name.trim() || !phone.trim()) { setErr("Name and phone are required"); return; }
     setSaving(true); setErr("");
     try { await onSave(member.id, name, phone); }
-    catch { setErr("Kuch galat hua. Dobara try karo."); } finally { setSaving(false); }
+    catch { setErr("Something went wrong. Please try again."); } finally { setSaving(false); }
   }
 
   return (
-    <Modal title="Member Edit Karo" onClose={onClose}>
+    <Modal title="Edit Member" onClose={onClose}>
       <form onSubmit={submit} className="flex flex-col gap-3">
-        <InputField icon={FaUsers} placeholder="Member ka naam" value={name} onChange={setName} />
+        <InputField icon={FaUsers} placeholder="Member name" value={name} onChange={setName} />
         <InputField icon={FaPhone} placeholder="Phone number" value={phone} onChange={setPhone} type="tel" />
         {err && <ErrMsg>{err}</ErrMsg>}
-        <PrimaryBtn loading={saving} label="✓ Save Karo" loadingLabel="Saving..." />
+        <PrimaryBtn loading={saving} label="✓ Save" loadingLabel="Saving..." />
       </form>
     </Modal>
   );
@@ -1213,10 +1219,10 @@ function GroupSettingsModal({ group, onClose, onSave }: {
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
-    if (!name.trim()) { setErr("Naam required hai"); return; }
+    if (!name.trim()) { setErr("Name is required"); return; }
     setSaving(true); setErr("");
     try { await onSave(name, Number(daily) || group.daily_amount, startedOn); }
-    catch { setErr("Kuch galat hua."); } finally { setSaving(false); }
+    catch { setErr("Something went wrong."); } finally { setSaving(false); }
   }
 
   return (
@@ -1224,7 +1230,7 @@ function GroupSettingsModal({ group, onClose, onSave }: {
       <form onSubmit={submit} className="flex flex-col gap-3">
         <div>
           <p className="text-[10px] font-extrabold text-slate-400 uppercase tracking-wider mb-1.5">Group Name</p>
-          <InputField icon={FaEdit} placeholder="Group ka naam" value={name} onChange={setName} />
+          <InputField icon={FaEdit} placeholder="Group name" value={name} onChange={setName} />
         </div>
         <div>
           <p className="text-[10px] font-extrabold text-slate-400 uppercase tracking-wider mb-1.5">Daily Amount (per member)</p>
@@ -1235,7 +1241,7 @@ function GroupSettingsModal({ group, onClose, onSave }: {
           <InputField icon={FaCalendarAlt} value={startedOn} onChange={setStartedOn} type="date" />
         </div>
         {err && <ErrMsg>{err}</ErrMsg>}
-        <PrimaryBtn loading={saving} label="✓ Settings Save Karo" loadingLabel="Saving..." />
+        <PrimaryBtn loading={saving} label="✓ Save Settings" loadingLabel="Saving..." />
       </form>
     </Modal>
   );
@@ -1265,7 +1271,7 @@ function MemberHistoryModal({ member, effectiveDaily, onClose }: {
           <div className="w-6 h-6 rounded-full border-2 border-slate-200 border-t-blue-500 animate-spin" />
         </div>
       ) : history.length === 0 ? (
-        <div className="text-center py-8 text-slate-400 font-semibold">Koi payment nahi mili</div>
+        <div className="text-center py-8 text-slate-400 font-semibold">No payment history found</div>
       ) : (
         <div className="space-y-2">
           {/* Summary */}
@@ -1292,7 +1298,7 @@ function MemberHistoryModal({ member, effectiveDaily, onClose }: {
                   <p className="text-sm font-extrabold text-slate-800">{fmtDate(c.collected_date)}</p>
                   {c.note && <p className="text-[10px] text-amber-600 font-semibold">📝 {c.note}</p>}
                   {daysCovered > 1 && (
-                    <p className="text-[10px] text-blue-500 font-bold">{daysCovered} din ki payment</p>
+                    <p className="text-[10px] text-blue-500 font-bold">{daysCovered} days payment</p>
                   )}
                 </div>
                 <div className="text-right">
@@ -1316,15 +1322,15 @@ function AddMemberModal({ onClose, onAdd }: { onClose: () => void; onAdd: (n: st
   const [saving, setSaving] = useState(false); const [err, setErr] = useState("");
   async function submit(e: React.FormEvent) {
     e.preventDefault();
-    if (!name.trim() || !phone.trim()) { setErr("Naam aur phone required hai"); return; }
+    if (!name.trim() || !phone.trim()) { setErr("Name and phone are required"); return; }
     setSaving(true); setErr("");
     try { await onAdd(name, phone); onClose(); }
-    catch { setErr("Kuch galat hua. Dobara try karo."); } finally { setSaving(false); }
+    catch { setErr("Something went wrong. Please try again."); } finally { setSaving(false); }
   }
   return (
-    <Modal title="Member Add Karo" onClose={onClose}>
+    <Modal title="Add Member" onClose={onClose}>
       <form onSubmit={submit} className="flex flex-col gap-3">
-        <InputField icon={FaUsers} placeholder="Member ka naam" value={name} onChange={setName} />
+        <InputField icon={FaUsers} placeholder="Member name" value={name} onChange={setName} />
         <InputField icon={FaPhone} placeholder="Phone number" value={phone} onChange={setPhone} type="tel" />
         {err && <ErrMsg>{err}</ErrMsg>}
         <PrimaryBtn loading={saving} label="✓ Add Member" loadingLabel="Adding..." />
@@ -1333,7 +1339,7 @@ function AddMemberModal({ onClose, onAdd }: { onClose: () => void; onAdd: (n: st
   );
 }
 
-/* ── Boli Modal ── */
+/* ── Auction Modal ── */
 function BoliModal({ members, dailyAmount, totalMembers, onClose, onConfirm }: {
   members: Member[]; dailyAmount: number; totalMembers: number;
   onClose: () => void; onConfirm: (winnerId: number, bid: number) => Promise<void>;
@@ -1348,18 +1354,18 @@ function BoliModal({ members, dailyAmount, totalMembers, onClose, onConfirm }: {
   const newDaily = dailyAmount - dailyReduction;
 
   async function submit() {
-    if (!winnerId) { setErr("Winner select karo"); return; }
-    if (bid <= 0) { setErr("Boli amount enter karo"); return; }
+    if (!winnerId) { setErr("Please select a winner"); return; }
+    if (bid <= 0) { setErr("Please enter auction amount"); return; }
     setSaving(true); setErr("");
     try { await onConfirm(winnerId, bid); onClose(); }
-    catch { setErr("Kuch galat hua."); } finally { setSaving(false); }
+    catch { setErr("Something went wrong."); } finally { setSaving(false); }
   }
 
   return (
-    <Modal title="🏆 Auction Record Karo" subtitle="Is month ki boli" onClose={onClose} wide>
+    <Modal title="🏆 Record Auction" subtitle="This month's auction" onClose={onClose} wide>
       <div className="flex flex-col gap-4">
         <div>
-          <p className="text-xs font-extrabold text-slate-500 uppercase tracking-wider mb-2">Winner Select Karo</p>
+          <p className="text-xs font-extrabold text-slate-500 uppercase tracking-wider mb-2">Select Winner</p>
           <div className="grid grid-cols-2 gap-2 max-h-48 overflow-y-auto">
             {eligible.map(m => (
               <button key={m.id} type="button" onClick={() => setWinnerId(m.id)}
@@ -1375,14 +1381,14 @@ function BoliModal({ members, dailyAmount, totalMembers, onClose, onConfirm }: {
             ))}
           </div>
           {eligible.length === 0 && (
-            <p className="text-sm text-slate-400 font-medium text-center py-3">Sab members ne le li hai cameti!</p>
+            <p className="text-sm text-slate-400 font-medium text-center py-3">All members have already won!</p>
           )}
         </div>
-        <InputField icon={FaRupeeSign} placeholder="Boli Amount (e.g. 8000)" value={bidAmount} onChange={setBidAmount} type="number" />
+        <InputField icon={FaRupeeSign} placeholder="Auction Amount (e.g. 8000)" value={bidAmount} onChange={setBidAmount} type="number" />
         {bid > 0 && (
           <div className="grid grid-cols-3 gap-2 bg-slate-50 rounded-2xl p-3 border border-slate-100">
             <div className="text-center">
-              <p className="text-[9px] font-bold text-slate-400 uppercase">Boli</p>
+              <p className="text-[9px] font-bold text-slate-400 uppercase">Auction</p>
               <p className="text-sm font-black" style={{ color: GOLD }}>{fmt(bid)}</p>
             </div>
             <div className="text-center">
@@ -1396,7 +1402,7 @@ function BoliModal({ members, dailyAmount, totalMembers, onClose, onConfirm }: {
           </div>
         )}
         {err && <ErrMsg>{err}</ErrMsg>}
-        <PrimaryBtn loading={saving} label="✓ Auction Confirm Karo" loadingLabel="Saving..."
+        <PrimaryBtn loading={saving} label="✓ Confirm Auction" loadingLabel="Saving..."
           type="button" onClick={submit} color={`linear-gradient(135deg,${GOLD},#b8860b)`} />
       </div>
     </Modal>
@@ -1487,12 +1493,14 @@ function GroupsList({ onSelect }: { onSelect: (id: number) => void }) {
               {[1,2].map(i => <div key={i} className="h-24 ct-skeleton rounded-3xl" />)}
             </div>
           ) : groups.length === 0 ? (
-            <EmptyState icon={FaUsers} title="Koi cameti group nahi" sub="'New Group' se pehla group banao" />
+            <EmptyState icon={FaUsers} title="No cameti groups yet" sub="Create your first group using 'New Group'" />
           ) : (
             <div className="space-y-3">
               {groups.map((g, idx) => {
-                const start = new Date(g.started_on + "T00:00:00");
-                const days = Math.max(1, Math.floor((Date.now() - start.getTime()) / 86400000) + 1);
+                const start = g.started_on ? new Date(g.started_on + "T00:00:00") : null;
+                const days = start && !isNaN(start.getTime())
+                  ? Math.max(1, Math.floor((Date.now() - start.getTime()) / 86400000) + 1)
+                  : 0;
                 return (
                   <button key={g.id} onClick={() => onSelect(g.id)}
                     className="ct-up w-full bg-white rounded-3xl p-5 text-left shadow-sm hover:shadow-lg transition-all active:scale-[0.98]"
@@ -1506,7 +1514,7 @@ function GroupsList({ onSelect }: { onSelect: (id: number) => void }) {
                         <div>
                           <h3 className="font-extrabold text-base text-slate-800">{g.name}</h3>
                           <p className="text-xs text-slate-400 font-medium mt-0.5">
-                            Started {fmtDate(g.started_on)} · {days} din chalu
+                            Started {fmtDate(g.started_on)} · {days} days running
                           </p>
                         </div>
                       </div>
@@ -1546,10 +1554,10 @@ function CreateGroupModal({ onClose, onCreate }: {
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
-    if (!name.trim()) { setErr("Group ka naam enter karo"); return; }
+    if (!name.trim()) { setErr("Please enter a group name"); return; }
     setSaving(true); setErr("");
     try { await onCreate(name, Number(daily) || 300, startDate); onClose(); }
-    catch { setErr("Kuch galat hua."); } finally { setSaving(false); }
+    catch { setErr("Something went wrong."); } finally { setSaving(false); }
   }
 
   return (
@@ -1577,7 +1585,7 @@ function CreateGroupModal({ onClose, onCreate }: {
           </div>
         )}
         {err && <ErrMsg>{err}</ErrMsg>}
-        <PrimaryBtn loading={saving} label="✓ Group Banao" loadingLabel="Creating..." />
+        <PrimaryBtn loading={saving} label="✓ Create Group" loadingLabel="Creating..." />
       </form>
     </Modal>
   );
