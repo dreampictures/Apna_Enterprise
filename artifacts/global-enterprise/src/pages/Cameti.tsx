@@ -540,7 +540,7 @@ function GroupDetail({ groupId, onBack }: { groupId: number; onBack: () => void 
                   </div>
                   <div className="space-y-1.5">
                     {memberPending.map((m, idx) => {
-                      const waMsg = encodeURIComponent(`Hello ${m.name} 🙏\n*Apna Enterprise — Cameti Reminder*\n\n📅 Payment pending for ${m.pendingDays} days\n💰 Pending Amount: ${fmt(m.pending)}\n\nPlease make the payment at your earliest. 🙏\n\n_Apna Enterprise, Firozepur_`);
+                      const waMsg = encodeURIComponent(`Hello ${m.name} 🙏\n*Apna Enterprise — Daily Cameti*\n\n📊 *Pending Summary:*\n⏳ Total Days: ${daysElapsed}\n✅ Days Paid: ${m.days_paid ?? 0}\n❌ Days Pending: ${m.pendingDays}\n💵 Daily Rate: ${fmt(effectiveDaily)}\n\n💰 *Total Pending: ${fmt(m.pending)}*\n\nPlease clear your pending at earliest. 🙏\n\n_Apna Enterprise, Firozepur_`);
                       return (
                         <div key={m.id}
                           className="ct-up flex items-center justify-between rounded-2xl px-3 py-2"
@@ -605,6 +605,8 @@ function GroupDetail({ groupId, onBack }: { groupId: number; onBack: () => void 
               members={group.members}
               effectiveDaily={effectiveDaily}
               currentMonthId={currentMonth?.id ?? null}
+              summary={summary}
+              daysElapsed={daysElapsed}
               onMonthNeeded={async () => {
                 const now = new Date();
                 await fetch(`/api/cameti/groups/${group!.id}/months`, {
@@ -641,7 +643,9 @@ function GroupDetail({ groupId, onBack }: { groupId: number; onBack: () => void 
                     : 0;
                   const statusColor = m.has_taken ? GOLD : mPending > 0 ? RED : GREEN;
                   const statusBg   = m.has_taken ? "#fef9c3" : mPending > 0 ? "#fee2e2" : "#dcfce7";
-                  const waMsg = encodeURIComponent(`Hello ${m.name} 🙏\n*Apna Enterprise — Cameti Reminder*\n\n📅 Payment pending for ${Math.max(0, daysElapsed - (m.days_paid ?? 0))} days\n💰 Pending Amount: ${fmt(mPending)}\n\nPlease make the payment at your earliest. 🙏\n\n_Apna Enterprise, Firozepur_`);
+                  const memberDaysPaid = m.days_paid ?? 0;
+                  const memberPendingDays = Math.max(0, daysElapsed - memberDaysPaid);
+                  const waMsg = encodeURIComponent(`Hello ${m.name} 🙏\n*Apna Enterprise — Daily Cameti*\n\n📊 *Pending Summary:*\n⏳ Total Days: ${daysElapsed}\n✅ Days Paid: ${memberDaysPaid}\n❌ Days Pending: ${memberPendingDays}\n💵 Daily Rate: ${fmt(effectiveDaily)}\n\n💰 *Total Pending: ${fmt(mPending)}*\n\nPlease clear your pending at earliest. 🙏\n\n_Apna Enterprise, Firozepur_`);
 
                   return (
                     <div key={m.id} className="ct-up bg-white rounded-3xl shadow-sm overflow-hidden"
@@ -873,10 +877,10 @@ function GroupDetail({ groupId, onBack }: { groupId: number; onBack: () => void 
 /* ══════════════════════════════════════════════════════════════
    COLLECTION SESSION
 ══════════════════════════════════════════════════════════════ */
-function CollectionSession({ groupId, members, effectiveDaily, currentMonthId, onMonthNeeded, onRefreshParent }: {
+function CollectionSession({ groupId, members, effectiveDaily, currentMonthId, summary, daysElapsed, onMonthNeeded, onRefreshParent }: {
   groupId: number; members: Member[]; effectiveDaily: number;
-  currentMonthId: number | null; onMonthNeeded: () => Promise<void>;
-  onRefreshParent: () => void;
+  currentMonthId: number | null; summary: Member[]; daysElapsed: number;
+  onMonthNeeded: () => Promise<void>; onRefreshParent: () => void;
 }) {
   const [date, setDate] = useState(todayISO());
   const [existing, setExisting] = useState<Collection[]>([]);
@@ -1042,7 +1046,12 @@ function CollectionSession({ groupId, members, effectiveDaily, currentMonthId, o
                   const amt = Number(amounts[m.id] ?? effectiveDaily);
                   const daysCovered = effectiveDaily > 0 ? Math.round(amt / effectiveDaily) : 1;
                   const isMultiDay = amt !== effectiveDaily && amt > 0;
-                  const waMsg = encodeURIComponent(`Hello ${m.name} 🙏\n*Apna Enterprise — Cameti Reminder*\n\nToday's cameti ₹${effectiveDaily} is pending.\nPlease make the payment at your earliest. 🙏\n\n_Apna Enterprise, Firozepur_`);
+                  const memberSummary = summary.find(s => s.id === m.id);
+                  const mDaysPaid = memberSummary?.days_paid ?? 0;
+                  const mTotalPaid = memberSummary?.total_paid ?? 0;
+                  const mTotalPending = Math.max(0, daysElapsed * effectiveDaily - mTotalPaid);
+                  const mDaysPending = Math.max(0, daysElapsed - mDaysPaid);
+                  const waMsg = encodeURIComponent(`Hello ${m.name} 🙏\n*Apna Enterprise — Daily Cameti*\n\n📊 *Pending Summary:*\n⏳ Total Days: ${daysElapsed}\n✅ Days Paid: ${mDaysPaid}\n❌ Days Pending: ${mDaysPending}\n💵 Daily Rate: ${fmt(effectiveDaily)}\n\n💰 *Total Pending: ${fmt(mTotalPending)}*\n\nPlease clear your pending at earliest. 🙏\n\n_Apna Enterprise, Firozepur_`);
 
                   return (
                     <div key={m.id}
