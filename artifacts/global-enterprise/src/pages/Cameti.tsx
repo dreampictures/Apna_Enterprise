@@ -308,24 +308,24 @@ function GroupDetail({ groupId, onBack }: { groupId: number; onBack: () => void 
   /* ── WA helpers ── */
   function buildBulkWAReport() {
     const lines = [
-      `🏦 *Apna Enterprise - Daily Cameti*`,
+      `🏦 *Apna Enterprise — Daily Cameti*`,
       `📅 ${new Date().toLocaleDateString("en-IN", { day: "numeric", month: "long", year: "numeric" })}`,
       ``,
-      `📊 *${group!.name} — Full Report*`,
-      `⏳ Days Elapsed: ${daysElapsed} days`,
-      `💰 Collected: ${fmt(totalCollected)}`,
-      `❌ Pending: ${fmt(totalPending)}`,
+      `📊 *${group!.name} — Poori Report*`,
+      `⏳ Kul Chale Din: ${daysElapsed} din`,
+      `💰 Jama Ho Gaya: ${fmt(totalCollected)}`,
+      `❌ Abhi Baaki: ${fmt(totalPending)}`,
       `📈 Progress: ${collectionPct.toFixed(1)}%`,
       ``,
     ];
     if (memberPending.length > 0) {
-      lines.push(`⚠️ *Pending Members (${memberPending.length}):*`);
+      lines.push(`⚠️ *Jinki Payment Baaki Hai (${memberPending.length} log):*`);
       memberPending.forEach(m => {
-        lines.push(`• ${m.name} — ${fmt(m.pending)} (${m.pendingDays} days)`);
+        lines.push(`• ${m.name} — ${fmt(m.pending)} baaki (${m.pendingDays} din pending)`);
       });
       lines.push(``);
     } else {
-      lines.push(`✅ All members have completed their payment!`);
+      lines.push(`✅ Sab ne puri cameti de di hai! 🎉`);
       lines.push(``);
     }
     lines.push(`_Apna Enterprise, Firozepur_`);
@@ -645,7 +645,7 @@ function GroupDetail({ groupId, onBack }: { groupId: number; onBack: () => void 
                   const statusBg   = m.has_taken ? "#fef9c3" : mPending > 0 ? "#fee2e2" : "#dcfce7";
                   const memberDaysPaid = m.days_paid ?? 0;
                   const memberPendingDays = Math.max(0, daysElapsed - memberDaysPaid);
-                  const waMsg = encodeURIComponent(`Hello ${m.name} 🙏\n*Apna Enterprise — Daily Cameti*\n\n📊 *Pending Summary:*\n⏳ Total Days: ${daysElapsed}\n✅ Days Paid: ${memberDaysPaid}\n❌ Days Pending: ${memberPendingDays}\n💵 Daily Rate: ${fmt(effectiveDaily)}\n\n💰 *Total Pending: ${fmt(mPending)}*\n\nPlease clear your pending at earliest. 🙏\n\n_Apna Enterprise, Firozepur_`);
+                  const waMsg = encodeURIComponent(`Sat Sri Akal ${m.name} Ji 🙏\n*Apna Enterprise — Daily Cameti*\n\n📋 *Aapka Pending Hisaab:*\n📅 Kul Chale Din: ${daysElapsed} din\n✅ Aapne Diye: ${memberDaysPaid} din\n❌ Pending Din: ${memberPendingDays} din\n💵 Roz Ka: ${fmt(effectiveDaily)}\n\n💰 *Kul Jama Karna Hai: ${fmt(mPending)}*\n\nKripya jaldi payment karein. Shukriya 🙏\n\n_Apna Enterprise, Firozepur_`);
 
                   return (
                     <div key={m.id} className="ct-up bg-white rounded-3xl shadow-sm overflow-hidden"
@@ -1051,7 +1051,7 @@ function CollectionSession({ groupId, members, effectiveDaily, currentMonthId, s
                   const mTotalPaid = memberSummary?.total_paid ?? 0;
                   const mTotalPending = Math.max(0, daysElapsed * effectiveDaily - mTotalPaid);
                   const mDaysPending = Math.max(0, daysElapsed - mDaysPaid);
-                  const waMsg = encodeURIComponent(`Hello ${m.name} 🙏\n*Apna Enterprise — Daily Cameti*\n\n📊 *Pending Summary:*\n⏳ Total Days: ${daysElapsed}\n✅ Days Paid: ${mDaysPaid}\n❌ Days Pending: ${mDaysPending}\n💵 Daily Rate: ${fmt(effectiveDaily)}\n\n💰 *Total Pending: ${fmt(mTotalPending)}*\n\nPlease clear your pending at earliest. 🙏\n\n_Apna Enterprise, Firozepur_`);
+                  const waMsg = encodeURIComponent(`Sat Sri Akal ${m.name} Ji 🙏\n*Apna Enterprise — Daily Cameti*\n\n📋 *Aapka Pending Hisaab:*\n📅 Kul Chale Din: ${daysElapsed} din\n✅ Aapne Diye: ${mDaysPaid} din\n❌ Pending Din: ${mDaysPending} din\n💵 Roz Ka: ${fmt(effectiveDaily)}\n\n💰 *Kul Jama Karna Hai: ${fmt(mTotalPending)}*\n\nKripya jaldi payment karein. Shukriya 🙏\n\n_Apna Enterprise, Firozepur_`);
 
                   return (
                     <div key={m.id}
