@@ -470,13 +470,16 @@ function ClientDetail({ client, onBack, onClientUpdated, onClientDeleted }: {
           {/* Action Buttons */}
           <div className="flex gap-3 mb-6">
             <button onClick={() => setShowAddTxn(true)}
-              className="flex-1 flex items-center justify-center gap-2 py-3.5 rounded-2xl font-extrabold text-sm text-white shadow-lg transition-all hover:opacity-90 active:scale-[0.98]"
+              className="flex-1 flex items-center justify-center gap-2.5 py-4 rounded-2xl font-extrabold text-sm text-white shadow-lg transition-all hover:opacity-90 active:scale-[0.98]"
               style={{ background: `linear-gradient(135deg, ${NAVY}, #1e40af)` }}>
-              <FaPlus /> Add Transaction
+              <div className="w-6 h-6 rounded-lg bg-white/20 flex items-center justify-center">
+                <FaPlus className="text-xs" />
+              </div>
+              Add Entry
             </button>
             {bal > 0 && (
               <a href={waLink(client)} target="_blank" rel="noreferrer"
-                className="flex items-center gap-2 py-3.5 px-5 rounded-2xl font-extrabold text-sm text-white shadow-lg transition-all hover:opacity-90 active:scale-[0.98]"
+                className="flex items-center gap-2 py-4 px-5 rounded-2xl font-extrabold text-sm text-white shadow-lg transition-all hover:opacity-90 active:scale-[0.98]"
                 style={{ background: "linear-gradient(135deg,#16a34a,#15803d)" }}>
                 <FaWhatsapp className="text-base" /> Reminder
               </a>
@@ -743,8 +746,18 @@ export default function KhaataBook() {
         {/* ══ MAIN CONTENT ══ */}
         <div className="px-4 -mt-14 max-w-3xl mx-auto w-full">
 
-          {/* Search + Sort + Add row */}
-          <div className="flex gap-3 mb-4">
+          {/* Add New Client — prominent full-width button */}
+          <button onClick={() => setShowAdd(true)}
+            className="w-full flex items-center justify-center gap-2.5 py-4 rounded-2xl font-extrabold text-sm text-white mb-3 transition-all hover:opacity-90 active:scale-[0.98]"
+            style={{ background: `linear-gradient(135deg, ${NAVY}, #1e40af)`, boxShadow: "0 8px 24px rgba(7,27,74,0.3)" }}>
+            <div className="w-6 h-6 rounded-lg bg-white/20 flex items-center justify-center">
+              <FaPlus className="text-xs" />
+            </div>
+            Add New Client
+          </button>
+
+          {/* Search + Sort row */}
+          <div className="flex gap-2.5 mb-4">
             <div className="flex-1 flex items-center gap-3 bg-white rounded-2xl px-4 shadow-lg border border-white"
               style={{ boxShadow: "0 8px 32px rgba(7,27,74,0.1)" }}>
               <FaSearch className="text-slate-300 text-sm flex-shrink-0" />
@@ -770,11 +783,6 @@ export default function KhaataBook() {
               <option value="balance_desc">Highest Balance</option>
               <option value="balance_asc">Lowest Balance</option>
             </select>
-            <button onClick={() => setShowAdd(true)}
-              className="flex items-center gap-2 px-5 rounded-2xl font-extrabold text-sm text-white shadow-lg flex-shrink-0 transition-all hover:opacity-90 active:scale-[0.97]"
-              style={{ background: `linear-gradient(135deg, ${NAVY}, #1e40af)`, boxShadow: "0 8px 24px rgba(7,27,74,0.3)" }}>
-              <FaPlus /> <span className="hidden sm:inline">New Client</span><span className="sm:hidden">New</span>
-            </button>
           </div>
 
           {/* Filter Tabs */}
