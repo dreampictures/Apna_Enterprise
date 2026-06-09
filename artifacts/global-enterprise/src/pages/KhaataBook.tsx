@@ -746,16 +746,6 @@ export default function KhaataBook() {
         {/* ══ MAIN CONTENT ══ */}
         <div className="px-4 -mt-14 max-w-3xl mx-auto w-full">
 
-          {/* Add New Client — prominent full-width button */}
-          <button onClick={() => setShowAdd(true)}
-            className="w-full flex items-center justify-center gap-2.5 py-4 rounded-2xl font-extrabold text-sm text-white mb-3 transition-all hover:opacity-90 active:scale-[0.98]"
-            style={{ background: `linear-gradient(135deg, ${NAVY}, #1e40af)`, boxShadow: "0 8px 24px rgba(7,27,74,0.3)" }}>
-            <div className="w-6 h-6 rounded-lg bg-white/20 flex items-center justify-center">
-              <FaPlus className="text-xs" />
-            </div>
-            Add New Client
-          </button>
-
           {/* Search + Sort row */}
           <div className="flex gap-2.5 mb-4">
             <div className="flex-1 flex items-center gap-3 bg-white rounded-2xl px-4 shadow-lg border border-white"
@@ -806,6 +796,16 @@ export default function KhaataBook() {
               ))}
             </div>
           )}
+
+          {/* Add New Client button — on light bg, always visible */}
+          <button onClick={() => setShowAdd(true)}
+            className="w-full flex items-center justify-center gap-2.5 py-4 rounded-2xl font-extrabold text-sm text-white mb-4 transition-all hover:opacity-90 active:scale-[0.98]"
+            style={{ background: `linear-gradient(135deg, ${NAVY}, #1e40af)`, boxShadow: "0 8px 24px rgba(7,27,74,0.25)" }}>
+            <div className="w-6 h-6 rounded-lg bg-white/20 flex items-center justify-center">
+              <FaPlus className="text-xs" />
+            </div>
+            Add New Client
+          </button>
 
           {/* Client List */}
           {loading ? (
