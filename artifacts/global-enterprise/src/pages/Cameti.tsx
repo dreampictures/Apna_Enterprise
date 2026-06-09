@@ -620,76 +620,125 @@ function GroupDetail({ groupId, onBack }: { groupId: number; onBack: () => void 
           {/* ── Tab: Members ── */}
           {activeTab === "members" && (
             <div className="pb-10">
+              {/* Header */}
               <div className="flex items-center justify-between mb-4">
-                <p className="text-xs font-extrabold text-slate-500 uppercase tracking-widest">
-                  {group.members.length} Members
-                </p>
+                <div>
+                  <p className="text-base font-black text-slate-800">{group.members.length} Members</p>
+                  <p className="text-[11px] text-slate-400 font-medium mt-0.5">{group.name}</p>
+                </div>
                 <button onClick={() => setShowAddMember(true)}
-                  className="flex items-center gap-1.5 text-xs font-extrabold px-4 py-2 rounded-2xl text-white transition-all active:scale-95"
+                  className="flex items-center gap-2 text-sm font-extrabold px-5 py-2.5 rounded-2xl text-white transition-all active:scale-95 shadow-sm"
                   style={{ background: `linear-gradient(135deg,${NAVY},#1e40af)` }}>
-                  <FaPlus /> Add Member
+                  <FaPlus className="text-xs" /> Add Member
                 </button>
               </div>
-              <div className="space-y-2.5">
+
+              <div className="space-y-3">
                 {summary.map((m, idx) => {
                   const mPending = Math.max(0, daysElapsed * effectiveDaily - (m.total_paid ?? 0));
+                  const paidPct = daysElapsed > 0
+                    ? Math.min(100, ((m.total_paid ?? 0) / (daysElapsed * effectiveDaily)) * 100)
+                    : 0;
+                  const statusColor = m.has_taken ? GOLD : mPending > 0 ? RED : GREEN;
+                  const statusBg   = m.has_taken ? "#fef9c3" : mPending > 0 ? "#fee2e2" : "#dcfce7";
+                  const waMsg = encodeURIComponent(`Hello ${m.name} 🙏\n*Apna Enterprise — Cameti Reminder*\n\n📅 Payment pending for ${Math.max(0, daysElapsed - (m.days_paid ?? 0))} days\n💰 Pending Amount: ${fmt(mPending)}\n\nPlease make the payment at your earliest. 🙏\n\n_Apna Enterprise, Firozepur_`);
+
                   return (
-                    <div key={m.id}
-                      className="ct-up bg-white rounded-3xl overflow-hidden shadow-sm"
-                      style={{ border: `1.5px solid ${m.has_taken ? "#fef9c3" : "#f1f5f9"}`, animationDelay: `${idx*30}ms` }}>
-                      <div className="flex items-center gap-3 px-4 py-3">
-                        <div className="w-1.5 self-stretch flex-shrink-0 -ml-4 mr-1"
-                          style={{ background: m.has_taken ? GOLD : mPending > 0 ? RED : GREEN }} />
-                        <div className="w-11 h-11 rounded-2xl flex items-center justify-center font-black text-base flex-shrink-0"
-                          style={{ background: m.has_taken ? "#fef9c3" : mPending > 0 ? "#fee2e2" : "#dcfce7",
-                            color: m.has_taken ? "#92400e" : mPending > 0 ? RED : GREEN }}>
-                          {initials(m.name)}
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-2">
-                            <p className="font-extrabold text-sm text-slate-800 truncate">{m.name}</p>
-                            {m.has_taken && <span className="text-[9px] font-extrabold bg-yellow-100 text-yellow-800 px-2 py-0.5 rounded-full flex-shrink-0">🏆 Won</span>}
+                    <div key={m.id} className="ct-up bg-white rounded-3xl shadow-sm overflow-hidden"
+                      style={{ border: `1.5px solid ${m.has_taken ? "#fde68a" : mPending > 0 ? "#fecaca" : "#e2e8f0"}`, animationDelay: `${idx*30}ms` }}>
+
+                      {/* Top row */}
+                      <div className="flex items-center gap-3.5 px-4 pt-4 pb-3">
+                        {/* Avatar */}
+                        <div className="relative flex-shrink-0">
+                          <div className="w-12 h-12 rounded-2xl flex items-center justify-center font-black text-lg"
+                            style={{ background: statusBg, color: statusColor }}>
+                            {initials(m.name)}
                           </div>
-                          <p className="text-xs text-slate-400 font-medium mt-0.5 flex items-center gap-1">
-                            <FaPhone className="text-[8px]" />{m.phone}
+                          {/* Status dot */}
+                          <div className="absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 rounded-full border-2 border-white"
+                            style={{ background: statusColor }} />
+                        </div>
+
+                        {/* Info */}
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <p className="font-black text-sm text-slate-800 truncate">{m.name}</p>
+                            {m.has_taken && (
+                              <span className="inline-flex items-center gap-1 text-[9px] font-extrabold px-2 py-0.5 rounded-full flex-shrink-0"
+                                style={{ background: "#fef9c3", color: "#92400e" }}>
+                                🏆 Won
+                              </span>
+                            )}
+                          </div>
+                          <p className="text-[11px] text-slate-400 font-semibold mt-0.5 flex items-center gap-1">
+                            <FaPhone className="text-[9px]" />{m.phone || "—"}
                           </p>
                         </div>
+
+                        {/* Amount block */}
                         <div className="text-right flex-shrink-0">
-                          <p className="text-sm font-black text-green-600">{fmt(m.total_paid ?? 0)}</p>
-                          <p className="text-[9px] font-bold" style={{ color: mPending > 0 ? RED : "#94a3b8" }}>
-                            {mPending > 0 ? `${fmt(mPending)} pending` : `${m.days_paid ?? 0} days paid`}
+                          <p className="text-base font-black leading-tight" style={{ color: GREEN }}>
+                            {fmt(m.total_paid ?? 0)}
                           </p>
-                        </div>
-                        {/* Action buttons */}
-                        <div className="flex flex-col gap-1 flex-shrink-0">
-                          <button onClick={() => setHistoryMember(m)}
-                            className="w-7 h-7 flex items-center justify-center rounded-xl bg-blue-50 text-blue-400 hover:bg-blue-100 transition-all" title="Payment History">
-                            <FaHistory className="text-xs" />
-                          </button>
-                          <button onClick={() => setEditMember(m)}
-                            className="w-7 h-7 flex items-center justify-center rounded-xl bg-slate-50 text-slate-400 hover:bg-slate-100 transition-all" title="Edit">
-                            <FaEdit className="text-xs" />
-                          </button>
-                          <button onClick={() => setDelMember(m)}
-                            className="w-7 h-7 flex items-center justify-center rounded-xl text-slate-200 hover:text-red-400 hover:bg-red-50 transition-all" title="Delete">
-                            <FaTrash className="text-xs" />
-                          </button>
+                          <p className="text-[10px] font-bold mt-0.5" style={{ color: mPending > 0 ? RED : "#94a3b8" }}>
+                            {mPending > 0 ? `${fmt(mPending)} due` : "Fully paid ✓"}
+                          </p>
                         </div>
                       </div>
-                      {/* Mini progress bar */}
+
+                      {/* Progress bar */}
                       {daysElapsed > 0 && (
-                        <div className="h-1 bg-slate-100 mx-4 mb-2 rounded-full overflow-hidden">
-                          <div className="h-full rounded-full"
-                            style={{
-                              width: `${Math.min(100, ((m.total_paid ?? 0) / (daysElapsed * effectiveDaily)) * 100)}%`,
-                              background: mPending > 0 ? `linear-gradient(90deg,${RED},#f87171)` : `linear-gradient(90deg,${GREEN},#22c55e)`,
-                            }} />
+                        <div className="px-4 pb-3">
+                          <div className="flex items-center justify-between mb-1">
+                            <p className="text-[10px] font-bold text-slate-400">{m.days_paid ?? 0} of {daysElapsed} days paid</p>
+                            <p className="text-[10px] font-extrabold" style={{ color: statusColor }}>{paidPct.toFixed(0)}%</p>
+                          </div>
+                          <div className="h-1.5 bg-slate-100 rounded-full overflow-hidden">
+                            <div className="h-full rounded-full transition-all duration-700"
+                              style={{
+                                width: `${paidPct}%`,
+                                background: m.has_taken
+                                  ? `linear-gradient(90deg,${GOLD},#f59e0b)`
+                                  : mPending > 0
+                                    ? `linear-gradient(90deg,${RED},#f87171)`
+                                    : `linear-gradient(90deg,${GREEN},#22c55e)`,
+                              }} />
+                          </div>
                         </div>
                       )}
+
+                      {/* Action row */}
+                      <div className="flex border-t border-slate-50" style={{ borderColor: "#f8fafc" }}>
+                        <button onClick={() => setHistoryMember(m)}
+                          className="flex-1 flex items-center justify-center gap-1.5 py-2.5 text-[11px] font-extrabold text-blue-500 hover:bg-blue-50 transition-colors">
+                          <FaHistory className="text-[10px]" /> History
+                        </button>
+                        <div className="w-px bg-slate-100" />
+                        {m.phone && (
+                          <>
+                            <a href={`https://wa.me/91${m.phone.replace(/\D/g,"")}?text=${waMsg}`}
+                              target="_blank" rel="noreferrer"
+                              className="flex-1 flex items-center justify-center gap-1.5 py-2.5 text-[11px] font-extrabold text-green-600 hover:bg-green-50 transition-colors">
+                              <FaWhatsapp className="text-[11px]" /> Remind
+                            </a>
+                            <div className="w-px bg-slate-100" />
+                          </>
+                        )}
+                        <button onClick={() => setEditMember(m)}
+                          className="flex-1 flex items-center justify-center gap-1.5 py-2.5 text-[11px] font-extrabold text-slate-500 hover:bg-slate-50 transition-colors">
+                          <FaEdit className="text-[10px]" /> Edit
+                        </button>
+                        <div className="w-px bg-slate-100" />
+                        <button onClick={() => setDelMember(m)}
+                          className="flex-1 flex items-center justify-center gap-1.5 py-2.5 text-[11px] font-extrabold text-red-400 hover:bg-red-50 transition-colors">
+                          <FaTrash className="text-[10px]" /> Delete
+                        </button>
+                      </div>
                     </div>
                   );
                 })}
-                {summary.length === 0 && <EmptyState icon={FaUsers} title="No members yet" sub="Add members from the Members tab" />}
+                {summary.length === 0 && <EmptyState icon={FaUsers} title="No members yet" sub="Tap 'Add Member' to get started" />}
               </div>
             </div>
           )}
