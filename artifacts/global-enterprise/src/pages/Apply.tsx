@@ -10,7 +10,7 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { FaCheckCircle, FaWhatsapp, FaFileAlt } from "react-icons/fa";
+import { FaCheckCircle, FaEnvelope, FaFileAlt } from "react-icons/fa";
 import { SERVICE_CATEGORIES, ALL_SERVICE_IDS } from "@/lib/services";
 
 const GOLD = "#D4A017";
@@ -66,8 +66,6 @@ export default function Apply() {
     );
   }
 
-  const waLink = `https://wa.me/918437566186?text=${encodeURIComponent(`Hello Apna Enterprise, I have submitted a request for ${submittedService}. Please assist me.`)}`;
-
   if (submitted) {
     return (
       <div className="flex flex-col min-h-full">
@@ -92,14 +90,11 @@ export default function Apply() {
             </p>
             <div className="flex flex-col gap-3">
               <a
-                href={waLink}
-                target="_blank"
-                rel="noreferrer"
-                className="flex items-center justify-center gap-3 bg-[#25D366] text-white font-semibold py-3 px-6 rounded-xl hover:bg-[#20bd5a] transition-colors"
-                style={{ boxShadow: "0 4px 14px rgba(37,211,102,0.3)" }}
+                href="mailto:info@apnaenterprise.in"
+                className="flex items-center justify-center gap-3 text-white font-semibold py-3 px-6 rounded-xl transition-colors btn-gold"
               >
-                <FaWhatsapp className="text-xl" />
-                Follow up on WhatsApp
+                <FaEnvelope className="text-lg" />
+                Email Us for Follow-up
               </a>
               <Button
                 variant="outline"

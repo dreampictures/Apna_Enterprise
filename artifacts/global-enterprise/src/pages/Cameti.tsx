@@ -99,9 +99,11 @@ function PinScreen({ onUnlock }: { onUnlock: () => void }) {
           <div className="absolute -top-24 -right-24 w-96 h-96 rounded-full opacity-5" style={{ background: GOLD }} />
           <div className="absolute -bottom-20 -left-20 w-80 h-80 rounded-full opacity-5" style={{ background: GOLD }} />
         </div>
-        <input ref={inputRef} type="password" inputMode="numeric" pattern="[0-9]*"
-          maxLength={4} value={pin} onChange={e => handleInput(e.target.value)}
-          autoFocus autoComplete="off" className="absolute opacity-0 pointer-events-none w-0 h-0" />
+        <form onSubmit={e => e.preventDefault()} aria-hidden className="absolute opacity-0 pointer-events-none w-0 h-0">
+          <input ref={inputRef} type="password" inputMode="numeric" pattern="[0-9]*"
+            maxLength={4} value={pin} onChange={e => handleInput(e.target.value)}
+            autoFocus autoComplete="off" className="w-0 h-0" />
+        </form>
         <div className={`ct-pop relative bg-white rounded-[28px] shadow-2xl w-full max-w-sm overflow-hidden ${shake ? "ct-shake" : ""}`}
           style={{ border: error ? "2px solid #ef4444" : "2px solid transparent" }}>
           <div className="px-8 pt-10 pb-8 flex flex-col items-center">

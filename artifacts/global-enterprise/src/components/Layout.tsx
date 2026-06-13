@@ -1,5 +1,5 @@
 import { Link, useLocation } from "wouter";
-import { FaBuilding, FaWhatsapp, FaBars, FaTimes, FaEnvelope, FaPhone } from "react-icons/fa";
+import { FaBuilding, FaBars, FaTimes, FaEnvelope } from "react-icons/fa";
 import { useGetVisitorCount } from "@workspace/api-client-react";
 import logoImg from "/logo.png";
 import { useState } from "react";
@@ -146,22 +146,20 @@ export default function Layout({ children }: { children: React.ReactNode }) {
               ))}
             </nav>
             <div className="px-4 pb-4">
-              <a
-                href="https://wa.me/918437566186?text=Hello%20Apna%20Enterprise"
-                target="_blank"
-                rel="noreferrer"
+              <Link
+                href="/contact"
                 className="flex items-center justify-center gap-2 w-full py-2.5 rounded-xl text-xs font-semibold"
                 style={{
-                  background: "rgba(37,211,102,0.12)",
-                  border: "1px solid rgba(37,211,102,0.25)",
-                  color: "#4ade80",
+                  background: "rgba(212,160,23,0.12)",
+                  border: "1px solid rgba(212,160,23,0.25)",
+                  color: "#F2C14E",
                   textDecoration: "none",
                 }}
                 onClick={() => setMobileOpen(false)}
               >
-                <FaWhatsapp className="text-sm" />
-                Chat on WhatsApp
-              </a>
+                <FaEnvelope className="text-sm" />
+                Contact Us
+              </Link>
             </div>
           </div>
         )}
@@ -240,16 +238,6 @@ export default function Layout({ children }: { children: React.ReactNode }) {
                   </span>
                 </li>
                 <li className="flex items-center gap-3">
-                  <FaPhone className="flex-shrink-0" style={{ color: GOLD }} />
-                  <a href="tel:+918437566186" className="text-slate-400 hover:text-white transition-colors">
-                    +91 84375 66186
-                  </a>
-                </li>
-                <li className="flex items-center gap-3">
-                  <FaWhatsapp className="text-lg flex-shrink-0 text-[#25D366]" />
-                  <span className="text-slate-400">+91 84375 66186</span>
-                </li>
-                <li className="flex items-center gap-3">
                   <FaEnvelope className="flex-shrink-0" style={{ color: GOLD }} />
                   <a href="mailto:info@apnaenterprise.in" className="text-slate-400 hover:text-white transition-colors">
                     info@apnaenterprise.in
@@ -285,20 +273,6 @@ export default function Layout({ children }: { children: React.ReactNode }) {
         </div>
       </footer>
 
-      {/* Floating WhatsApp Button */}
-      <a
-        href="https://wa.me/918437566186?text=Hello%20Apna%20Enterprise%2C%20I%20want%20to%20enquire"
-        target="_blank"
-        rel="noreferrer"
-        className="fixed bottom-6 right-6 text-white p-4 rounded-full z-50 flex items-center justify-center transform hover:scale-110 transition-all duration-200"
-        style={{
-          background: "#25D366",
-          boxShadow: "0 4px 20px rgba(37, 211, 102, 0.45)",
-        }}
-        aria-label="Contact on WhatsApp"
-      >
-        <FaWhatsapp className="text-3xl" />
-      </a>
     </div>
   );
 }
