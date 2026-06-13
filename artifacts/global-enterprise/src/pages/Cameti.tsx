@@ -35,6 +35,37 @@ const todayISO = () => new Date().toISOString().split("T")[0];
 const initials = (name: string) => name.trim().charAt(0).toUpperCase();
 const MONTH_NAMES = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
 const MONTH_NAMES_FULL = ["January","February","March","April","May","June","July","August","September","October","November","December"];
+
+function buildPendingWAMsg(name: string, pendingDays: number, daysPaid: number, dailyRate: number, totalPending: number): string {
+  const lines: string[] = [
+    `Hello ${name} 🙏`,
+    `*Apna Enterprise — Daily Cameti*`,
+    ``,
+  ];
+
+  if (pendingDays <= 0) {
+    lines.push(`✅ Koi pending nahi — fully paid!`);
+  } else if (pendingDays <= 7) {
+    lines.push(`❌ *${pendingDays} din di cameti pending hai:*`);
+    lines.push(``);
+    for (let i = 1; i <= pendingDays; i++) {
+      lines.push(`  • Din ${i} — ${fmt(dailyRate)}`);
+    }
+  } else {
+    lines.push(`❌ *${pendingDays} din di cameti pending hai*`);
+    lines.push(`  ${fmt(dailyRate)} × ${pendingDays} din`);
+  }
+
+  lines.push(``);
+  lines.push(`✅ *Paid:* ${daysPaid} din`);
+  lines.push(`💰 *Total Pending: ${fmt(totalPending)}*`);
+  lines.push(``);
+  lines.push(`Kirpa karke jaldi clear karo ji 🙏`);
+  lines.push(``);
+  lines.push(`_Apna Enterprise, Firozepur_`);
+
+  return encodeURIComponent(lines.join("\n"));
+}
 const fmtDate = (d: string) => {
   if (!d) return "N/A";
   const dt = new Date(d + "T00:00:00");
@@ -542,7 +573,7 @@ function GroupDetail({ groupId, onBack }: { groupId: number; onBack: () => void 
                   </div>
                   <div className="space-y-1.5">
                     {memberPending.map((m, idx) => {
-                      const waMsg = encodeURIComponent(`Hello ${m.name} 🙏\n*Apna Enterprise — Daily Cameti*\n\n📊 *Pending Summary:*\n⏳ Total Days: ${daysElapsed}\n✅ Days Paid: ${m.days_paid ?? 0}\n❌ Days Pending: ${m.pendingDays}\n💵 Daily Rate: ${fmt(effectiveDaily)}\n\n💰 *Total Pending: ${fmt(m.pending)}*\n\nPlease clear your pending at earliest. 🙏\n\n_Apna Enterprise, Firozepur_`);
+                      const waMsg = buildPendingWAMsg(m.name, m.pendingDays, m.days_paid ?? 0, effectiveDaily, m.pending);
                       return (
                         <div key={m.id}
                           className="ct-up flex items-center justify-between rounded-2xl px-3 py-2"
@@ -647,7 +678,7 @@ function GroupDetail({ groupId, onBack }: { groupId: number; onBack: () => void 
                   const statusBg   = m.has_taken ? "#fef9c3" : mPending > 0 ? "#fee2e2" : "#dcfce7";
                   const memberDaysPaid = m.days_paid ?? 0;
                   const memberPendingDays = Math.max(0, daysElapsed - memberDaysPaid);
-                  const waMsg = encodeURIComponent(`Hello ${m.name} 🙏\n*Apna Enterprise — Daily Cameti*\n\n📋 *Your Pending Summary:*\n📅 Total Days: ${daysElapsed}\n✅ Days Paid: ${memberDaysPaid}\n❌ Days Pending: ${memberPendingDays}\n💵 Daily Rate: ${fmt(effectiveDaily)}\n\n💰 *Total Pending: ${fmt(mPending)}*\n\nPlease clear your pending at the earliest. Thank you 🙏\n\n_Apna Enterprise, Firozepur_`);
+                  const waMsg = buildPendingWAMsg(m.name, memberPendingDays, memberDaysPaid, effectiveDaily, mPending);
 
                   return (
                     <div key={m.id} className="ct-up bg-white rounded-3xl shadow-sm overflow-hidden"
@@ -1053,7 +1084,7 @@ function CollectionSession({ groupId, members, effectiveDaily, currentMonthId, s
                   const mTotalPaid = memberSummary?.total_paid ?? 0;
                   const mTotalPending = Math.max(0, daysElapsed * effectiveDaily - mTotalPaid);
                   const mDaysPending = Math.max(0, daysElapsed - mDaysPaid);
-                  const waMsg = encodeURIComponent(`Hello ${m.name} 🙏\n*Apna Enterprise — Daily Cameti*\n\n📋 *Your Pending Summary:*\n📅 Total Days: ${daysElapsed}\n✅ Days Paid: ${mDaysPaid}\n❌ Days Pending: ${mDaysPending}\n💵 Daily Rate: ${fmt(effectiveDaily)}\n\n💰 *Total Pending: ${fmt(mTotalPending)}*\n\nPlease clear your pending at the earliest. Thank you 🙏\n\n_Apna Enterprise, Firozepur_`);
+                  const waMsg = buildPendingWAMsg(m.name, mDaysPending, mDaysPaid, effectiveDaily, mTotalPending);
 
                   return (
                     <div key={m.id}
