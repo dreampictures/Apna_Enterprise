@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import Seo from "@/components/Seo";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -12,30 +12,40 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { FaCheckCircle, FaEnvelope, FaFileAlt } from "react-icons/fa";
 import { SERVICE_CATEGORIES, ALL_SERVICE_IDS } from "@/lib/services";
+import { useT } from "@/i18n";
 
 const GOLD = "#D4A017";
 const GOLD_LIGHT = "#F2C14E";
 
-const formSchema = z.object({
-  name: z.string().min(2, "Name must be at least 2 characters").max(100),
-  phone: z.string().min(10, "Enter a valid phone number").max(15),
-  service: z.enum(ALL_SERVICE_IDS, { required_error: "Please select a service" }),
-  message: z.string().max(1000).optional(),
-});
+type FormValues = {
+  name: string;
+  phone: string;
+  service: (typeof ALL_SERVICE_IDS)[number];
+  message?: string;
+};
 
-type FormValues = z.infer<typeof formSchema>;
+const isValidService = (s: string | null): s is (typeof ALL_SERVICE_IDS)[number] =>
+  !!s && (ALL_SERVICE_IDS as readonly string[]).includes(s);
 
 export default function Apply() {
   const search = useSearch();
   const params = new URLSearchParams(search);
   const preSelectedService = params.get("service");
+  const { t } = useT();
 
   const [submitted, setSubmitted] = useState(false);
   const [submittedService, setSubmittedService] = useState("");
   const createApplication = useCreateApplication();
 
-  const isValidService = (s: string | null): s is (typeof ALL_SERVICE_IDS)[number] =>
-    !!s && (ALL_SERVICE_IDS as readonly string[]).includes(s);
+  const formSchema = useMemo(() =>
+    z.object({
+      name: z.string().min(2, t.apply_val_name).max(100),
+      phone: z.string().min(10, t.apply_val_phone).max(15),
+      service: z.enum(ALL_SERVICE_IDS, { required_error: t.apply_val_service }),
+      message: z.string().max(1000).optional(),
+    }),
+    [t]
+  );
 
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
@@ -71,7 +81,7 @@ export default function Apply() {
       <div className="flex flex-col min-h-full">
         <section className="hero-navy text-white py-16">
           <div className="container mx-auto px-4 lg:px-8 relative z-10 text-center">
-            <h1 className="text-4xl font-extrabold mb-4">Application Submitted</h1>
+            <h1 className="text-4xl font-extrabold mb-4">{t.apply_submitted_title}</h1>
             <div className="gold-line w-20 mx-auto" />
           </div>
         </section>
@@ -83,10 +93,9 @@ export default function Apply() {
             >
               <FaCheckCircle className="text-4xl text-green-500" />
             </div>
-            <h2 className="text-2xl font-extrabold text-slate-900 mb-3">Thank You!</h2>
+            <h2 className="text-2xl font-extrabold text-slate-900 mb-3">{t.apply_thank_you}</h2>
             <p className="text-slate-600 mb-8 leading-relaxed">
-              Your application for <strong className="text-slate-900">{submittedService}</strong> has been received.
-              Our team will contact you shortly.
+              {t.apply_success_desc(submittedService)}
             </p>
             <div className="flex flex-col gap-3">
               <a
@@ -94,7 +103,7 @@ export default function Apply() {
                 className="flex items-center justify-center gap-3 text-white font-semibold py-3 px-6 rounded-xl transition-colors btn-gold"
               >
                 <FaEnvelope className="text-lg" />
-                Email Us for Follow-up
+                {t.apply_email_followup}
               </a>
               <Button
                 variant="outline"
@@ -102,7 +111,7 @@ export default function Apply() {
                 className="w-full h-11 rounded-xl font-semibold"
                 style={{ borderColor: "#d1d9e8", color: "#071B4A" }}
               >
-                Submit Another Application
+                {t.apply_another}
               </Button>
             </div>
           </div>
@@ -123,12 +132,12 @@ export default function Apply() {
       <section className="hero-navy text-white py-16">
         <div className="container mx-auto px-4 lg:px-8 relative z-10 text-center">
           <p className="font-semibold uppercase tracking-widest text-xs mb-3" style={{ color: GOLD_LIGHT }}>
-            Apply Online
+            {t.apply_online_label}
           </p>
-          <h1 className="text-4xl md:text-5xl font-extrabold mb-4">Apply for a Service</h1>
+          <h1 className="text-4xl md:text-5xl font-extrabold mb-4">{t.apply_title}</h1>
           <div className="gold-line w-20 mx-auto mb-5" />
           <p className="max-w-xl mx-auto text-lg" style={{ color: "rgba(255,255,255,0.75)" }}>
-            Fill in your details below and our team will reach out within 24 hours.
+            {t.apply_subtitle}
           </p>
         </div>
       </section>
@@ -148,8 +157,8 @@ export default function Apply() {
                 <FaFileAlt style={{ color: GOLD_LIGHT }} />
               </div>
               <div>
-                <h2 className="text-white font-bold text-lg">Service Application</h2>
-                <p className="text-xs" style={{ color: "rgba(255,255,255,0.55)" }}>All fields marked are required</p>
+                <h2 className="text-white font-bold text-lg">{t.apply_form_title}</h2>
+                <p className="text-xs" style={{ color: "rgba(255,255,255,0.55)" }}>{t.apply_form_subtitle}</p>
               </div>
             </div>
 
@@ -161,10 +170,10 @@ export default function Apply() {
                     name="name"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel className="text-sm font-semibold text-slate-700">Full Name</FormLabel>
+                        <FormLabel className="text-sm font-semibold text-slate-700">{t.apply_name}</FormLabel>
                         <FormControl>
                           <Input
-                            placeholder="Enter your full name"
+                            placeholder={t.apply_name_placeholder}
                             className="h-11 rounded-xl glass-input"
                             {...field}
                           />
@@ -179,10 +188,10 @@ export default function Apply() {
                     name="phone"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel className="text-sm font-semibold text-slate-700">Phone Number</FormLabel>
+                        <FormLabel className="text-sm font-semibold text-slate-700">{t.apply_phone}</FormLabel>
                         <FormControl>
                           <Input
-                            placeholder="+91 98765 43210"
+                            placeholder={t.apply_phone_placeholder}
                             className="h-11 rounded-xl glass-input"
                             {...field}
                           />
@@ -197,11 +206,11 @@ export default function Apply() {
                     name="service"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel className="text-sm font-semibold text-slate-700">Service Type</FormLabel>
+                        <FormLabel className="text-sm font-semibold text-slate-700">{t.apply_service}</FormLabel>
                         <Select onValueChange={field.onChange} value={field.value}>
                           <FormControl>
                             <SelectTrigger className="h-11 rounded-xl glass-input">
-                              <SelectValue placeholder="Select a service" />
+                              <SelectValue placeholder={t.apply_service_placeholder} />
                             </SelectTrigger>
                           </FormControl>
                           <SelectContent className="max-h-72">
@@ -229,10 +238,10 @@ export default function Apply() {
                     name="message"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel className="text-sm font-semibold text-slate-700">Message (Optional)</FormLabel>
+                        <FormLabel className="text-sm font-semibold text-slate-700">{t.apply_message}</FormLabel>
                         <FormControl>
                           <Textarea
-                            placeholder="Any additional details or special requirements..."
+                            placeholder={t.apply_message_placeholder}
                             className="resize-none rounded-xl glass-input"
                             rows={4}
                             {...field}
@@ -248,12 +257,12 @@ export default function Apply() {
                     className="btn-gold w-full h-12 text-base rounded-xl mt-2"
                     disabled={createApplication.isPending}
                   >
-                    {createApplication.isPending ? "Submitting..." : "Submit Application"}
+                    {createApplication.isPending ? t.apply_submitting : t.apply_submit}
                   </Button>
 
                   {createApplication.isError && (
                     <p className="text-destructive text-sm text-center">
-                      Something went wrong. Please try again.
+                      {t.apply_error}
                     </p>
                   )}
                 </form>

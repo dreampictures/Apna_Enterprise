@@ -12,6 +12,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { SERVICE_CATEGORIES } from "@/lib/services";
 import { FaWalking, FaClock } from "react-icons/fa";
+import { useT } from "@/i18n";
 
 const GOLD = "#D4A017";
 const GOLD_LIGHT = "#F2C14E";
@@ -85,6 +86,7 @@ const CATEGORY_ICON_LIGHT: Record<string, string> = {
 export default function Services() {
   const [search, setSearch] = useState("");
   const [activeCategory, setActiveCategory] = useState<string | null>(null);
+  const { t } = useT();
 
   const filtered = useMemo(() => {
     const q = search.toLowerCase().trim();
@@ -110,12 +112,12 @@ export default function Services() {
       <section className="hero-navy text-white py-16">
         <div className="container mx-auto px-4 lg:px-8 relative z-10 text-center">
           <p className="font-semibold uppercase tracking-widest text-xs mb-3" style={{ color: GOLD_LIGHT }}>
-            All Services
+            {t.services_all_label}
           </p>
-          <h1 className="text-4xl md:text-5xl font-extrabold mb-4">Our Services</h1>
+          <h1 className="text-4xl md:text-5xl font-extrabold mb-4">{t.services_title}</h1>
           <div className="gold-line w-20 mx-auto mb-5" />
           <p className="max-w-2xl mx-auto text-lg" style={{ color: "rgba(255,255,255,0.75)" }}>
-            Travel, government documents, online forms, printing, finance, and more — all under one roof.
+            {t.services_desc}
           </p>
         </div>
       </section>
@@ -132,7 +134,7 @@ export default function Services() {
               <FaSearch className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 text-sm" />
               <input
                 type="text"
-                placeholder="Search services..."
+                placeholder={t.services_search_placeholder}
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 className="w-full pl-10 pr-9 py-2.5 text-sm rounded-xl focus:outline-none transition-all"
@@ -170,7 +172,7 @@ export default function Services() {
                     : { background: "white", color: "#64748b", borderColor: "#d1d9e8" }
                 }
               >
-                All
+                {t.services_all_chip}
               </button>
               {SERVICE_CATEGORIES.map((cat) => (
                 <button
@@ -197,14 +199,14 @@ export default function Services() {
           {filtered.length === 0 ? (
             <div className="text-center py-24 text-slate-500">
               <FaSearch className="text-4xl mx-auto mb-4 text-slate-300" />
-              <p className="font-semibold text-lg">No services found</p>
-              <p className="text-sm mt-1">Try a different search term or clear the filter.</p>
+              <p className="font-semibold text-lg">{t.services_not_found}</p>
+              <p className="text-sm mt-1">{t.services_not_found_sub}</p>
               <button
                 onClick={() => { setSearch(""); setActiveCategory(null); }}
                 className="mt-4 text-sm font-semibold hover:underline"
                 style={{ color: GOLD }}
               >
-                Clear filters
+                {t.services_clear}
               </button>
             </div>
           ) : (
@@ -226,7 +228,7 @@ export default function Services() {
                       <div>
                         <h2 className="text-xl font-bold text-slate-900">{cat.name}</h2>
                         <span className="text-xs text-slate-400 font-medium">
-                          {cat.services.length} service{cat.services.length !== 1 ? "s" : ""}
+                          {t.services_available(cat.services.length)}
                         </span>
                       </div>
                     </div>
@@ -257,17 +259,17 @@ export default function Services() {
                                   style={{ background: "rgba(212,160,23,0.08)", border: "1px solid rgba(212,160,23,0.25)", color: GOLD }}
                                 >
                                   <FaClock className="text-sm" />
-                                  Coming Soon
+                                  {t.services_coming_soon}
                                 </div>
                               ) : WALKIN_SERVICES.has(service.id) ? (
                                 <div className="w-full h-9 flex items-center justify-center gap-2 rounded-xl bg-slate-50 border border-slate-200 text-slate-500 text-xs font-semibold">
                                   <FaWalking className="text-sm" />
-                                  Walk-in / Visit Us
+                                  {t.services_walkin}
                                 </div>
                               ) : (
                                 <Button asChild size="sm" className="btn-gold w-full h-9 rounded-xl text-xs group">
                                   <Link href={`/apply?service=${encodeURIComponent(service.id)}`}>
-                                    Apply Now
+                                    {t.services_apply}
                                     <FaArrowRight className="ml-2 group-hover:translate-x-0.5 transition-transform" />
                                   </Link>
                                 </Button>

@@ -6,6 +6,7 @@ import {
   FaGlobe, FaFileAlt, FaExternalLinkAlt, FaWhatsapp,
   FaFire, FaStar, FaChevronRight,
 } from "react-icons/fa";
+import { useT } from "@/i18n";
 
 const NAVY = "#071B4A";
 const GOLD = "#D4A017";
@@ -170,6 +171,7 @@ export default function UpdateDetail() {
   const [item, setItem] = useState<Announcement | null>(null);
   const [loading, setLoading] = useState(true);
   const [notFound, setNotFound] = useState(false);
+  const { t } = useT();
 
   useEffect(() => {
     if (!slug) return;
@@ -196,10 +198,10 @@ export default function UpdateDetail() {
     return (
       <div className="flex-1 flex flex-col items-center justify-center py-24 text-center px-4">
         <p className="text-5xl mb-4">📄</p>
-        <h2 className="text-2xl font-bold text-slate-800 mb-2">Announcement Not Found</h2>
-        <p className="text-slate-500 mb-6">This post may have been removed or the link is incorrect.</p>
+        <h2 className="text-2xl font-bold text-slate-800 mb-2">{t.detail_not_found_title}</h2>
+        <p className="text-slate-500 mb-6">{t.detail_not_found_sub}</p>
         <Link href="/updates" className="btn-gold px-6 py-2.5 rounded-xl font-semibold text-sm">
-          Back to Updates
+          {t.detail_back_btn}
         </Link>
       </div>
     );
@@ -207,10 +209,10 @@ export default function UpdateDetail() {
 
   const waText = encodeURIComponent(`${item.title} — Read more at apnaenterprise.in/updates/${item.slug}`);
   const infoRows = [
-    item.department && { label: "Department / Organization", value: item.department, icon: FaBuilding },
-    item.vacancyCount && { label: "Total Vacancies", value: item.vacancyCount, icon: FaUsers },
-    item.startDate && { label: "Application Start Date", value: fmtDate(item.startDate), icon: FaCalendarAlt },
-    item.lastDate && { label: "Last Date to Apply", value: fmtDate(item.lastDate), icon: FaCalendarAlt },
+    item.department && { label: t.detail_department, value: item.department, icon: FaBuilding },
+    item.vacancyCount && { label: t.detail_vacancies, value: item.vacancyCount, icon: FaUsers },
+    item.startDate && { label: t.detail_start_date, value: fmtDate(item.startDate), icon: FaCalendarAlt },
+    item.lastDate && { label: t.detail_last_date, value: fmtDate(item.lastDate), icon: FaCalendarAlt },
   ].filter(Boolean) as { label: string; value: string | number; icon: any }[];
 
   return (
@@ -229,7 +231,7 @@ export default function UpdateDetail() {
             className="inline-flex items-center gap-2 text-sm mb-6 transition-colors hover:text-yellow-300"
             style={{ color: "rgba(255,255,255,0.65)" }}
           >
-            <FaArrowLeft className="text-xs" /> Back to Updates
+            <FaArrowLeft className="text-xs" /> {t.detail_back}
           </Link>
 
           <div className="flex flex-wrap gap-2 mb-4">
@@ -238,16 +240,16 @@ export default function UpdateDetail() {
             </span>
             {item.isUrgent && (
               <span className="text-xs font-bold px-3 py-1 rounded-full bg-red-500 text-white flex items-center gap-1">
-                <FaFire /> URGENT
+                <FaFire /> {t.detail_urgent}
               </span>
             )}
             {item.isFeatured && (
               <span className="text-xs font-bold px-3 py-1 rounded-full bg-amber-500 text-white flex items-center gap-1">
-                <FaStar /> Featured
+                <FaStar /> {t.detail_featured}
               </span>
             )}
             <span className={`text-xs font-bold px-3 py-1 rounded-full ${item.isExpired ? "bg-red-600 text-white" : "bg-green-500 text-white"}`}>
-              {item.isExpired ? "Closed" : "Active"}
+              {item.isExpired ? t.detail_closed : t.detail_active}
             </span>
           </div>
 
@@ -268,7 +270,7 @@ export default function UpdateDetail() {
             {infoRows.length > 0 && (
               <div className="bg-white rounded-2xl overflow-hidden shadow-sm" style={{ border: "1px solid #e2e8f0" }}>
                 <div className="px-5 py-3" style={{ background: NAVY }}>
-                  <h2 className="font-bold text-white text-sm uppercase tracking-wider">Important Information</h2>
+                  <h2 className="font-bold text-white text-sm uppercase tracking-wider">{t.detail_important_info}</h2>
                 </div>
                 <table className="w-full text-sm">
                   <tbody>
@@ -290,7 +292,6 @@ export default function UpdateDetail() {
 
             {/* Dynamic Sections */}
             {item.sections.map((sec) => {
-              // Auto-hide empty sections
               if (sec.type === "text" && (!sec.content || !sec.content.trim())) return null;
               if (sec.type === "table") {
                 const hasContent = sec.rows && sec.rows.some((r) => r.some((c) => getCellValue(c).trim()));
@@ -447,7 +448,7 @@ export default function UpdateDetail() {
           {/* Sticky Sidebar */}
           <div className="lg:w-64 space-y-4 lg:sticky lg:top-36 self-start">
             <div className="bg-white rounded-2xl p-5 space-y-3 shadow-sm" style={{ border: "1px solid #e2e8f0" }}>
-              <h3 className="text-xs font-bold uppercase tracking-wider text-slate-500">Quick Actions</h3>
+              <h3 className="text-xs font-bold uppercase tracking-wider text-slate-500">{t.detail_quick_actions}</h3>
 
               {item.applyUrl && !item.isExpired && (
                 <a
@@ -461,12 +462,12 @@ export default function UpdateDetail() {
                     boxShadow: "0 4px 14px rgba(212,160,23,0.35)",
                   }}
                 >
-                  Apply Online <FaChevronRight />
+                  {t.detail_apply_online} <FaChevronRight />
                 </a>
               )}
               {item.isExpired && (
                 <div className="w-full px-4 py-3 rounded-xl font-semibold text-sm text-center bg-red-50 text-red-500 border border-red-100">
-                  Applications Closed
+                  {t.detail_apps_closed}
                 </div>
               )}
               {item.officialNotificationUrl && (
@@ -481,7 +482,7 @@ export default function UpdateDetail() {
                     boxShadow: "0 4px 14px rgba(7,27,74,0.3)",
                   }}
                 >
-                  <span className="flex items-center gap-2"><FaFileAlt /> Official Notice</span>
+                  <span className="flex items-center gap-2"><FaFileAlt /> {t.detail_official_notice}</span>
                   <FaExternalLinkAlt className="text-xs" />
                 </a>
               )}
@@ -493,7 +494,7 @@ export default function UpdateDetail() {
                   className="flex items-center justify-between w-full px-4 py-3 rounded-xl font-semibold text-sm border-2 border-slate-200 text-slate-700 hover:border-slate-400 transition-all hover:-translate-y-0.5"
                   style={{ boxShadow: "0 2px 8px rgba(0,0,0,0.06)" }}
                 >
-                  <span className="flex items-center gap-2"><FaGlobe /> Official Website</span>
+                  <span className="flex items-center gap-2"><FaGlobe /> {t.detail_official_website}</span>
                   <FaExternalLinkAlt className="text-xs" />
                 </a>
               )}
@@ -504,13 +505,13 @@ export default function UpdateDetail() {
                 className="flex items-center justify-center gap-2 w-full px-4 py-3 rounded-xl font-semibold text-sm text-white transition-all hover:opacity-90"
                 style={{ background: "#25D366" }}
               >
-                <FaWhatsapp /> Share on WhatsApp
+                <FaWhatsapp /> {t.detail_share_wa}
               </a>
               <Link
                 href="/updates"
                 className="flex items-center justify-center w-full px-4 py-2.5 rounded-xl text-sm text-slate-500 border border-slate-200 hover:border-slate-400 transition-colors font-medium"
               >
-                ← Back to Updates
+                {t.detail_back_link}
               </Link>
             </div>
           </div>

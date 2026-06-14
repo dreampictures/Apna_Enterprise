@@ -5,6 +5,7 @@ import { QueryClient, QueryClientProvider, QueryCache } from "@tanstack/react-qu
 import { HelmetProvider } from "react-helmet-async";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
+import { LanguageProvider } from "@/i18n";
 import NotFound from "@/pages/not-found";
 
 import Home from "./pages/Home";
@@ -127,13 +128,15 @@ function App() {
     <HelmetProvider>
       <QueryClientProvider client={queryClient}>
         <TooltipProvider>
-          <WouterRouter base={import.meta.env.BASE_URL.replace(/\/$/, "")}>
-            <TrackVisitor />
-            <PageViewTracker />
-            <Router />
-            <LeadPopup />
-          </WouterRouter>
-          <Toaster />
+          <LanguageProvider>
+            <WouterRouter base={import.meta.env.BASE_URL.replace(/\/$/, "")}>
+              <TrackVisitor />
+              <PageViewTracker />
+              <Router />
+              <LeadPopup />
+            </WouterRouter>
+            <Toaster />
+          </LanguageProvider>
         </TooltipProvider>
       </QueryClientProvider>
     </HelmetProvider>

@@ -6,20 +6,10 @@ import {
   FaBullhorn, FaStar, FaWhatsapp, FaExternalLinkAlt, FaArrowRight,
   FaCalendarAlt, FaBuilding, FaUsers, FaFire, FaClock,
 } from "react-icons/fa";
+import { useT } from "@/i18n";
 
 const NAVY = "#071B4A";
 const GOLD = "#D4A017";
-
-const CATEGORIES = [
-  { id: "All", label: "All Updates", icon: FaBullhorn },
-  { id: "Government Job", label: "Govt Jobs", icon: FaBriefcase },
-  { id: "Admit Card", label: "Admit Card", icon: FaFileAlt },
-  { id: "Result", label: "Result", icon: FaCheckCircle },
-  { id: "Govt Scheme", label: "Schemes", icon: FaHandHoldingUsd },
-  { id: "Govt Notice", label: "Notices", icon: FaFileAlt },
-  { id: "Announcement", label: "Announcements", icon: FaBullhorn },
-  { id: "Offer / Update", label: "Offers", icon: FaStar },
-];
 
 const CAT_COLOR: Record<string, { bg: string; text: string; dot: string }> = {
   "Government Job":  { bg: "#eff6ff", text: "#1d4ed8", dot: "#3b82f6" },
@@ -87,6 +77,18 @@ export default function Updates() {
   const [loading, setLoading] = useState(true);
   const [page, setPage] = useState(0);
   const limit = 12;
+  const { t } = useT();
+
+  const CATEGORIES = [
+    { id: "All", label: t.updates_cat_all, icon: FaBullhorn },
+    { id: "Government Job", label: t.updates_cat_jobs, icon: FaBriefcase },
+    { id: "Admit Card", label: t.updates_cat_admit, icon: FaFileAlt },
+    { id: "Result", label: t.updates_cat_result, icon: FaCheckCircle },
+    { id: "Govt Scheme", label: t.updates_cat_scheme, icon: FaHandHoldingUsd },
+    { id: "Govt Notice", label: t.updates_cat_notice, icon: FaFileAlt },
+    { id: "Announcement", label: t.updates_cat_announcement, icon: FaBullhorn },
+    { id: "Offer / Update", label: t.updates_cat_offer, icon: FaStar },
+  ];
 
   useEffect(() => {
     setLoading(true);
@@ -120,12 +122,12 @@ export default function Updates() {
       <section className="hero-navy text-white py-14">
         <div className="container mx-auto px-4 lg:px-8 text-center">
           <p className="font-bold uppercase tracking-widest text-xs mb-3" style={{ color: GOLD, letterSpacing: "0.18em" }}>
-            Stay Informed
+            {t.updates_stay_informed}
           </p>
-          <h1 className="text-4xl md:text-5xl font-extrabold mb-4 tracking-tight">Updates & Announcements</h1>
+          <h1 className="text-4xl md:text-5xl font-extrabold mb-4 tracking-tight">{t.updates_title}</h1>
           <div className="w-16 h-1 rounded-full mx-auto mb-5" style={{ background: GOLD }} />
           <p className="max-w-xl mx-auto text-base md:text-lg leading-relaxed" style={{ color: "rgba(255,255,255,0.7)" }}>
-            Latest government jobs, admit cards, results, schemes, and notices — all in one place.
+            {t.updates_subtitle}
           </p>
         </div>
       </section>
@@ -168,14 +170,14 @@ export default function Updates() {
               <div className="w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-5" style={{ background: "#e8edf5" }}>
                 <FaBullhorn className="text-2xl" style={{ color: NAVY }} />
               </div>
-              <p className="text-slate-700 font-bold text-lg mb-1">No announcements found</p>
-              <p className="text-slate-400 text-sm">Check back soon for updates.</p>
+              <p className="text-slate-700 font-bold text-lg mb-1">{t.updates_no_items}</p>
+              <p className="text-slate-400 text-sm">{t.updates_no_items_sub}</p>
             </div>
           ) : (
             <>
               <div className="flex items-center justify-between mb-6">
                 <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider">
-                  {total} update{total !== 1 ? "s" : ""} found
+                  {t.updates_count(total)}
                 </p>
               </div>
 
@@ -217,12 +219,12 @@ export default function Updates() {
                             </span>
                             {item.isUrgent && (
                               <span className="inline-flex items-center gap-1 text-xs font-bold px-2.5 py-1 rounded-full bg-red-100 text-red-600">
-                                <FaFire className="text-xs" /> URGENT
+                                <FaFire className="text-xs" /> {t.updates_apply === "Apply" ? "URGENT" : "ਜ਼ਰੂਰੀ"}
                               </span>
                             )}
                             {item.isFeatured && (
                               <span className="inline-flex items-center gap-1 text-xs font-bold px-2.5 py-1 rounded-full bg-amber-100 text-amber-700">
-                                <FaStar className="text-xs" /> Featured
+                                <FaStar className="text-xs" /> {t.detail_featured}
                               </span>
                             )}
                           </div>
@@ -234,7 +236,7 @@ export default function Updates() {
                                 : { background: "#fee2e2", color: "#b91c1c" }
                             }
                           >
-                            {isActive ? "● Active" : "○ Closed"}
+                            {isActive ? t.updates_active : t.updates_closed}
                           </span>
                         </div>
 
@@ -258,25 +260,25 @@ export default function Updates() {
                           {item.vacancyCount ? (
                             <div className="flex items-center gap-2">
                               <FaUsers className="flex-shrink-0" style={{ color: GOLD }} />
-                              <span><strong className="text-slate-700">{item.vacancyCount.toLocaleString()}</strong> Vacancies</span>
+                              <span><strong className="text-slate-700">{item.vacancyCount.toLocaleString()}</strong> {t.updates_vacancies}</span>
                             </div>
                           ) : null}
                           {item.lastDate && (
                             <div className="flex items-center gap-2">
                               <FaClock className={`flex-shrink-0 ${item.isExpired ? "text-red-400" : "text-green-500"}`} />
                               <span>
-                                Last Date:{" "}
+                                {t.updates_last_date}{" "}
                                 <strong className={item.isExpired ? "text-red-500" : "text-slate-700"}>
                                   {fmtDate(item.lastDate)}
                                 </strong>
-                                {item.isExpired && <span className="ml-1 text-red-400">(Expired)</span>}
+                                {item.isExpired && <span className="ml-1 text-red-400">{t.updates_expired}</span>}
                               </span>
                             </div>
                           )}
                           {item.startDate && !item.lastDate && (
                             <div className="flex items-center gap-2">
                               <FaCalendarAlt className="flex-shrink-0 text-green-500" />
-                              <span>Start: <strong className="text-slate-700">{fmtDate(item.startDate)}</strong></span>
+                              <span>{t.updates_start} <strong className="text-slate-700">{fmtDate(item.startDate)}</strong></span>
                             </div>
                           )}
                         </div>
@@ -297,7 +299,7 @@ export default function Updates() {
                             letterSpacing: "0.01em",
                           }}
                         >
-                          Know More <FaArrowRight className="text-xs" />
+                          {t.updates_know_more} <FaArrowRight className="text-xs" />
                         </Link>
 
                         {item.applyUrl && isActive && (
@@ -313,7 +315,7 @@ export default function Updates() {
                               letterSpacing: "0.01em",
                             }}
                           >
-                            Apply <FaExternalLinkAlt className="text-xs" />
+                            {t.updates_apply} <FaExternalLinkAlt className="text-xs" />
                           </a>
                         )}
 
@@ -342,7 +344,7 @@ export default function Updates() {
                     className="px-6 py-2.5 rounded-xl text-sm font-bold border-2 disabled:opacity-40 transition-all duration-200 hover:border-slate-400"
                     style={{ borderColor: "#e2e8f0", color: "#475569", background: "#fff" }}
                   >
-                    ← Previous
+                    {t.updates_prev}
                   </button>
                   <span className="px-5 py-2.5 rounded-xl text-sm font-bold text-white" style={{ background: NAVY }}>
                     {page + 1} / {Math.ceil(total / limit)}
@@ -353,7 +355,7 @@ export default function Updates() {
                     className="px-6 py-2.5 rounded-xl text-sm font-bold border-2 disabled:opacity-40 transition-all duration-200 hover:border-slate-400"
                     style={{ borderColor: "#e2e8f0", color: "#475569", background: "#fff" }}
                   >
-                    Next →
+                    {t.updates_next}
                   </button>
                 </div>
               )}

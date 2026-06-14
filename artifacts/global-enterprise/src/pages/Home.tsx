@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { SERVICE_CATEGORIES } from "@/lib/services";
 import Seo from "@/components/Seo";
 import AnalogClock from "@/components/AnalogClock";
+import { useT } from "@/i18n";
 
 const GOLD = "#D4A017";
 const GOLD_LIGHT = "#F2C14E";
@@ -39,9 +40,11 @@ const CATEGORY_TAG: Record<string, string> = {
   parcel:    "bg-cyan-100 text-cyan-700",
 };
 
-
 export default function Home() {
   const totalServices = SERVICE_CATEGORIES.reduce((acc, c) => acc + c.services.length, 0);
+  const { t } = useT();
+
+  const bullets = [t.home_bullet1, t.home_bullet2, t.home_bullet3, t.home_bullet4];
 
   return (
     <div className="flex flex-col min-h-full">
@@ -64,31 +67,30 @@ export default function Home() {
             }}
           >
             <FaStar className="text-xs" />
-            Firozepur's Trusted Multi-Service Centre
+            {t.home_badge}
           </div>
 
           <h1 className="text-4xl md:text-6xl font-extrabold mb-6 tracking-tight leading-tight text-white">
-            Professional Services<br />
-            <span style={{ color: GOLD_LIGHT }}>for Everyday Needs</span>
+            {t.home_hero_title1}<br />
+            <span style={{ color: GOLD_LIGHT }}>{t.home_hero_title2}</span>
           </h1>
 
           <div className="gold-line w-24 mx-auto mb-6" />
 
           <p className="text-lg md:text-xl mb-10 max-w-2xl mx-auto leading-relaxed" style={{ color: "rgba(255,255,255,0.78)" }}>
-            Your trusted local partner for travel ticketing, government documents, online forms,
-            printing, finance, and international parcels. We make complex procedures simple.
+            {t.home_hero_desc}
           </p>
 
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
             <Button asChild size="lg" className="btn-gold w-full sm:w-auto px-10 h-14 text-base rounded-xl">
-              <Link href="/services">Explore Services</Link>
+              <Link href="/services">{t.home_explore}</Link>
             </Button>
             <Button
               asChild size="lg"
               className="w-full sm:w-auto px-10 h-14 text-base rounded-xl font-semibold bg-transparent text-white hover:bg-white/10 transition-all duration-200"
               style={{ border: "1.5px solid rgba(255,255,255,0.35)" }}
             >
-              <Link href="/contact">Contact Us</Link>
+              <Link href="/contact">{t.home_contact}</Link>
             </Button>
           </div>
 
@@ -98,9 +100,9 @@ export default function Home() {
 
           <div className="flex flex-wrap items-center justify-center gap-8 mt-10 pt-10" style={{ borderTop: "1px solid rgba(255,255,255,0.1)" }}>
             {[
-              { value: "10,000+", label: "Happy Customers" },
-              { value: `${totalServices}+`, label: "Services Available" },
-              { value: "5+ Years", label: "Trusted Since" },
+              { value: "10,000+", label: t.home_happy_customers },
+              { value: `${totalServices}+`, label: t.home_services_available },
+              { value: "5+ Years", label: t.home_trusted_since },
             ].map(({ value, label }) => (
               <div key={label} className="text-center">
                 <div className="text-2xl font-extrabold" style={{ color: GOLD_LIGHT }}>{value}</div>
@@ -117,29 +119,20 @@ export default function Home() {
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
             <div>
               <p className="font-semibold uppercase tracking-widest text-sm mb-3" style={{ color: GOLD }}>
-                About Us
+                {t.home_about_label}
               </p>
               <div className="gold-line w-12 mb-6" />
               <h2 className="text-3xl md:text-4xl font-extrabold text-slate-900 mb-6 leading-tight">
-                Your Trusted Partner for Every Service Need
+                {t.home_about_title}
               </h2>
               <p className="text-slate-600 leading-relaxed mb-5">
-                Apna Enterprise is a trusted multi-service centre in Firozepur, Punjab, dedicated to making
-                essential government and travel services accessible to everyone. We started with a simple belief
-                — no one should struggle with paperwork, long queues, or confusing processes.
+                {t.home_about_p1}
               </p>
               <p className="text-slate-600 leading-relaxed mb-8">
-                From booking air and train tickets to processing PAN cards, Aadhaar updates, Voter IDs,
-                passports, GST registration, and international parcels, we handle it all with speed,
-                accuracy, and a personal touch.
+                {t.home_about_p2}
               </p>
               <ul className="space-y-3 mb-8">
-                {[
-                  "100% transparent pricing — no hidden charges",
-                  "Fast processing with real-time updates",
-                  "Experienced team with deep local knowledge",
-                  "Serving thousands of happy customers",
-                ].map((point) => (
+                {bullets.map((point) => (
                   <li key={point} className="flex items-start gap-3 text-slate-700">
                     <FaCheckCircle className="mt-1 shrink-0" style={{ color: GOLD }} />
                     <span className="font-medium">{point}</span>
@@ -147,16 +140,16 @@ export default function Home() {
                 ))}
               </ul>
               <Button asChild size="lg" className="btn-gold px-8 h-12 rounded-xl">
-                <Link href="/contact">Get in Touch</Link>
+                <Link href="/contact">{t.home_get_in_touch}</Link>
               </Button>
             </div>
 
             <div className="grid grid-cols-2 gap-5">
               {[
-                { icon: FaUsers, value: "10,000+", label: "Happy Customers", gradient: "linear-gradient(135deg, #071B4A, #1a3a8a)" },
-                { icon: FaClock, value: "5+ Years", label: "In Business", gradient: "linear-gradient(135deg, #065f46, #10b981)" },
-                { icon: FaCheckCircle, value: "98%", label: "Success Rate", gradient: `linear-gradient(135deg, ${GOLD}, ${GOLD_LIGHT})` },
-                { icon: FaHeadset, value: "6 Days", label: "Expert Support", gradient: "linear-gradient(135deg, #5b21b6, #8b5cf6)" },
+                { icon: FaUsers, value: "10,000+", label: t.home_happy_customers, gradient: "linear-gradient(135deg, #071B4A, #1a3a8a)" },
+                { icon: FaClock, value: "5+ Years", label: t.home_in_business, gradient: "linear-gradient(135deg, #065f46, #10b981)" },
+                { icon: FaCheckCircle, value: "98%", label: t.home_success_rate, gradient: `linear-gradient(135deg, ${GOLD}, ${GOLD_LIGHT})` },
+                { icon: FaHeadset, value: "6 Days", label: t.home_expert_support, gradient: "linear-gradient(135deg, #5b21b6, #8b5cf6)" },
               ].map(({ icon: Icon, value, label, gradient }) => (
                 <div
                   key={label}
@@ -178,11 +171,11 @@ export default function Home() {
         <div className="container mx-auto px-4 lg:px-8">
           <div className="text-center mb-14">
             <p className="font-semibold uppercase tracking-widest text-sm mb-2" style={{ color: GOLD }}>
-              What We Offer
+              {t.home_what_we_offer}
             </p>
-            <h2 className="text-3xl md:text-4xl font-extrabold text-slate-900 mb-3">Our Services</h2>
+            <h2 className="text-3xl md:text-4xl font-extrabold text-slate-900 mb-3">{t.home_our_services}</h2>
             <p className="text-slate-500 max-w-xl mx-auto">
-              We offer {totalServices}+ services across 6 categories to meet all your needs.
+              {t.home_services_desc(totalServices)}
             </p>
             <div className="gold-line w-24 mx-auto mt-4" />
           </div>
@@ -202,7 +195,7 @@ export default function Home() {
                   </div>
                   <h3 className="text-lg font-bold text-slate-900 mb-1">{cat.name}</h3>
                   <p className="text-sm text-slate-500 mb-4">
-                    {cat.services.length} service{cat.services.length !== 1 ? "s" : ""} available
+                    {t.services_available(cat.services.length)}
                   </p>
                   <div className="flex flex-wrap gap-1.5 mb-5">
                     {cat.services.slice(0, 3).map((s) => (
@@ -212,7 +205,7 @@ export default function Home() {
                     ))}
                     {cat.services.length > 3 && (
                       <span className="text-xs px-2.5 py-1 rounded-full font-semibold bg-slate-100 text-slate-500">
-                        +{cat.services.length - 3} more
+                        {t.services_more(cat.services.length - 3)}
                       </span>
                     )}
                   </div>
@@ -221,7 +214,7 @@ export default function Home() {
                     className="inline-flex items-center gap-2 text-sm font-semibold uppercase tracking-wider transition-all duration-200 hover:gap-3"
                     style={{ color: GOLD }}
                   >
-                    View All <FaArrowRight className="text-xs" />
+                    {t.home_view_all} <FaArrowRight className="text-xs" />
                   </Link>
                 </div>
               );
@@ -230,7 +223,7 @@ export default function Home() {
 
           <div className="text-center mt-14">
             <Button asChild size="lg" className="btn-gold px-12 h-14 text-base rounded-xl">
-              <Link href="/apply">Apply for Any Service</Link>
+              <Link href="/apply">{t.home_apply_any}</Link>
             </Button>
           </div>
         </div>
@@ -240,24 +233,24 @@ export default function Home() {
       <section className="hero-navy text-white py-20">
         <div className="container mx-auto px-4 lg:px-8 relative z-10 text-center max-w-3xl">
           <p className="font-semibold uppercase tracking-widest text-sm mb-3" style={{ color: GOLD_LIGHT }}>
-            Ready to Get Started?
+            {t.home_cta_label}
           </p>
           <h2 className="text-3xl md:text-4xl font-extrabold mb-5">
-            Let Us Handle the Paperwork
+            {t.home_cta_title}
           </h2>
           <p className="text-lg mb-10" style={{ color: "rgba(255,255,255,0.75)" }}>
-            Walk in or apply online — our team will guide you through every step.
+            {t.home_cta_desc}
           </p>
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
             <Button asChild size="lg" className="btn-gold w-full sm:w-auto px-10 h-14 text-base rounded-xl">
-              <Link href="/apply">Apply Now</Link>
+              <Link href="/apply">{t.home_apply_now}</Link>
             </Button>
             <Button
               asChild size="lg"
               className="w-full sm:w-auto px-10 h-14 text-base rounded-xl font-semibold bg-transparent text-white hover:bg-white/10 transition-all"
               style={{ border: "1.5px solid rgba(255,255,255,0.3)" }}
             >
-              <Link href="/contact">Contact Us</Link>
+              <Link href="/contact">{t.home_contact}</Link>
             </Button>
           </div>
         </div>

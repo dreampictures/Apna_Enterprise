@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { Link } from "wouter";
 import { FaBullhorn } from "react-icons/fa";
+import { useT } from "@/i18n";
 
 interface TickerItem {
   id: number;
@@ -12,6 +13,7 @@ interface TickerItem {
 export default function NewsTicker() {
   const [items, setItems] = useState<TickerItem[]>([]);
   const trackRef = useRef<HTMLDivElement>(null);
+  const { t } = useT();
 
   useEffect(() => {
     fetch("/api/announcements?limit=10&published=1")
@@ -49,7 +51,7 @@ export default function NewsTicker() {
       >
         <FaBullhorn className="text-white text-xs" />
         <span className="text-white text-xs font-bold uppercase tracking-wider whitespace-nowrap">
-          Latest
+          {t.ticker_latest}
         </span>
       </div>
 
@@ -71,7 +73,7 @@ export default function NewsTicker() {
                   className="text-xs font-bold px-1.5 py-0.5 rounded"
                   style={{ background: "#ef4444", color: "#fff" }}
                 >
-                  URGENT
+                  {t.ticker_urgent}
                 </span>
               )}
               {item.title}

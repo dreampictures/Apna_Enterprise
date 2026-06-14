@@ -4,6 +4,7 @@ import { useGetVisitorCount } from "@workspace/api-client-react";
 import logoImg from "/logo.png";
 import { useState } from "react";
 import NewsTicker from "./NewsTicker";
+import { useT } from "@/i18n";
 
 const GOLD = "#D4A017";
 const GOLD_LIGHT = "#F2C14E";
@@ -11,13 +12,14 @@ const GOLD_LIGHT = "#F2C14E";
 export default function Layout({ children }: { children: React.ReactNode }) {
   const [location] = useLocation();
   const [mobileOpen, setMobileOpen] = useState(false);
+  const { t, lang, setLang } = useT();
 
   const navItems = [
-    { href: "/", label: "Home" },
-    { href: "/services", label: "Services" },
-    { href: "/updates", label: "Updates" },
-    { href: "/apply", label: "Apply Now" },
-    { href: "/contact", label: "Contact Us" },
+    { href: "/", label: t.nav_home },
+    { href: "/services", label: t.nav_services },
+    { href: "/updates", label: t.nav_updates },
+    { href: "/apply", label: t.nav_apply },
+    { href: "/contact", label: t.nav_contact },
   ];
 
   return (
@@ -48,7 +50,6 @@ export default function Layout({ children }: { children: React.ReactNode }) {
               className="flex items-center gap-3 transition-opacity hover:opacity-95"
               style={{ textDecoration: "none" }}
             >
-              {/* Logo with golden aura */}
               <div className="relative flex items-center justify-center flex-shrink-0">
                 <div className="logo-aura" />
                 <img
@@ -59,7 +60,6 @@ export default function Layout({ children }: { children: React.ReactNode }) {
                 />
               </div>
 
-              {/* Brand name */}
               <div className="flex flex-col leading-tight">
                 <span
                   className="font-extrabold tracking-wide"
@@ -81,13 +81,13 @@ export default function Layout({ children }: { children: React.ReactNode }) {
                     textShadow: "0 0 10px rgba(212,160,23,0.45)",
                   }}
                 >
-                  PROFESSIONAL SERVICES
+                  {t.brand_tagline}
                 </span>
               </div>
             </Link>
 
             {/* ── Desktop Nav ── */}
-            <nav className="hidden md:flex items-center gap-9">
+            <nav className="hidden md:flex items-center gap-7">
               {navItems.map((item) => (
                 <Link
                   key={item.href}
@@ -97,21 +97,49 @@ export default function Layout({ children }: { children: React.ReactNode }) {
                   {item.label}
                 </Link>
               ))}
+
+              {/* Language Toggle */}
+              <button
+                onClick={() => setLang(lang === "en" ? "pa" : "en")}
+                title={lang === "en" ? "Switch to Punjabi" : "Switch to English"}
+                className="flex items-center gap-1 text-xs font-bold rounded-lg px-2.5 py-1.5 transition-all duration-200 select-none"
+                style={{
+                  background: "rgba(212,160,23,0.12)",
+                  border: "1px solid rgba(212,160,23,0.3)",
+                  color: GOLD_LIGHT,
+                  letterSpacing: "0.04em",
+                }}
+              >
+                {lang === "en" ? "ਪੰਜਾਬੀ" : "EN"}
+              </button>
             </nav>
 
-            {/* ── Mobile Hamburger ── */}
-            <button
-              className="md:hidden relative p-2.5 rounded-xl transition-all duration-200"
-              style={{
-                color: "rgba(255,255,255,0.85)",
-                background: "rgba(212,160,23,0.08)",
-                border: "1px solid rgba(212,160,23,0.2)",
-              }}
-              onClick={() => setMobileOpen(!mobileOpen)}
-              aria-label="Toggle menu"
-            >
-              {mobileOpen ? <FaTimes className="text-lg" /> : <FaBars className="text-lg" />}
-            </button>
+            {/* ── Mobile right: lang toggle + hamburger ── */}
+            <div className="md:hidden flex items-center gap-2">
+              <button
+                onClick={() => setLang(lang === "en" ? "pa" : "en")}
+                className="text-xs font-bold rounded-lg px-2 py-1.5 transition-all duration-200 select-none"
+                style={{
+                  background: "rgba(212,160,23,0.12)",
+                  border: "1px solid rgba(212,160,23,0.25)",
+                  color: GOLD_LIGHT,
+                }}
+              >
+                {lang === "en" ? "ਪੰ" : "EN"}
+              </button>
+              <button
+                className="relative p-2.5 rounded-xl transition-all duration-200"
+                style={{
+                  color: "rgba(255,255,255,0.85)",
+                  background: "rgba(212,160,23,0.08)",
+                  border: "1px solid rgba(212,160,23,0.2)",
+                }}
+                onClick={() => setMobileOpen(!mobileOpen)}
+                aria-label="Toggle menu"
+              >
+                {mobileOpen ? <FaTimes className="text-lg" /> : <FaBars className="text-lg" />}
+              </button>
+            </div>
           </div>
         </div>
 
@@ -125,7 +153,6 @@ export default function Layout({ children }: { children: React.ReactNode }) {
               boxShadow: "0 12px 32px rgba(0,0,0,0.5)",
             }}
           >
-            {/* Gold top accent inside dropdown */}
             <div
               style={{
                 height: "1px",
@@ -158,7 +185,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
                 onClick={() => setMobileOpen(false)}
               >
                 <FaEnvelope className="text-sm" />
-                Contact Us
+                {t.nav_contact}
               </Link>
             </div>
           </div>
@@ -173,7 +200,6 @@ export default function Layout({ children }: { children: React.ReactNode }) {
 
       {/* ── Premium Footer ── */}
       <footer style={{ background: "#050D24" }} className="text-slate-300">
-        {/* Gold top separator */}
         <div className="gold-divider" />
 
         <div className="container mx-auto px-4 lg:px-8 pt-12 pb-8">
@@ -185,13 +211,12 @@ export default function Layout({ children }: { children: React.ReactNode }) {
                 <div>
                   <span className="font-bold text-lg text-white block tracking-wide">Apna Enterprise</span>
                   <span className="text-xs tracking-widest font-medium" style={{ color: GOLD }}>
-                    YOUR TRUSTED SERVICE PARTNER
+                    {t.footer_tagline}
                   </span>
                 </div>
               </div>
               <p className="text-sm leading-relaxed text-slate-400">
-                Your trusted partner for travel ticketing, government documents, online forms, printing,
-                financial services, and international parcels in Firozepur, Punjab.
+                {t.footer_desc}
               </p>
             </div>
 
@@ -201,7 +226,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
                 className="font-bold mb-5 uppercase tracking-widest text-xs pb-3"
                 style={{ color: GOLD_LIGHT, borderBottom: "1px solid rgba(255,255,255,0.08)" }}
               >
-                Quick Links
+                {t.footer_quick_links}
               </h3>
               <ul className="space-y-3">
                 {navItems.map((item) => (
@@ -227,7 +252,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
                 className="font-bold mb-5 uppercase tracking-widest text-xs pb-3"
                 style={{ color: GOLD_LIGHT, borderBottom: "1px solid rgba(255,255,255,0.08)" }}
               >
-                Contact Information
+                {t.footer_contact_info}
               </h3>
               <ul className="space-y-4 text-sm">
                 <li className="flex items-start gap-3">
@@ -253,10 +278,10 @@ export default function Layout({ children }: { children: React.ReactNode }) {
             style={{ borderTop: "1px solid rgba(255,255,255,0.07)" }}
           >
             <div className="flex flex-col sm:flex-row items-center gap-1 sm:gap-3 text-xs text-slate-500">
-              <span>&copy; {new Date().getFullYear()} Apna Enterprise. All rights reserved. | apnaenterprise.in</span>
+              <span>&copy; {new Date().getFullYear()} Apna Enterprise. {t.footer_rights}. | apnaenterprise.in</span>
               <span className="hidden sm:inline" style={{ color: "rgba(255,255,255,0.12)" }}>|</span>
               <span>
-                Managed by{" "}
+                {t.footer_managed_by}{" "}
                 <a
                   href="https://thedreampictures.com"
                   target="_blank"
@@ -279,12 +304,13 @@ export default function Layout({ children }: { children: React.ReactNode }) {
 
 function VisitorCounter() {
   const { data } = useGetVisitorCount();
+  const { t } = useT();
   return (
     <div
       className="flex items-center gap-2 text-xs px-3 py-1.5 rounded-lg"
       style={{ border: "1px solid rgba(255,255,255,0.08)", color: "#94a3b8" }}
     >
-      <span className="uppercase tracking-wider font-semibold">Visitors:</span>
+      <span className="uppercase tracking-wider font-semibold">{t.footer_visitors}</span>
       <span
         className="font-mono px-2 py-0.5 rounded"
         style={{ background: "rgba(212, 160, 23, 0.12)", color: GOLD_LIGHT }}
