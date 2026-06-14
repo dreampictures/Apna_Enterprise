@@ -5,38 +5,95 @@ import {
   FaPhone, FaRupeeSign, FaTimes, FaCalendarAlt,
   FaCheckCircle, FaLock, FaGavel, FaStickyNote,
   FaExclamationTriangle, FaEdit, FaSave, FaHistory,
-  FaCog, FaShareAlt,
+  FaCog, FaShareAlt, FaChartBar,
 } from "react-icons/fa";
 
-/* ── Tokens ─────────────────────────────────────────────────── */
-const NAVY = "#071B4A";
-const GOLD = "#D4A017";
+/* ── Design tokens ──────────────────────────────────────────── */
+const NAVY  = "#071B4A";
+const GOLD  = "#D4A017";
 const GREEN = "#16a34a";
-const RED = "#dc2626";
+const RED   = "#dc2626";
 const CORRECT_PIN = "1103";
 
-/* ── CSS ─────────────────────────────────────────────────────── */
+/* ── CSS animations ─────────────────────────────────────────── */
 const CSS = `
-@keyframes ct-pop{0%{transform:scale(0.93);opacity:0}100%{transform:scale(1);opacity:1}}
-@keyframes ct-up{0%{transform:translateY(16px);opacity:0}100%{transform:translateY(0);opacity:1}}
+@keyframes ct-pop {0%{transform:scale(0.93);opacity:0}100%{transform:scale(1);opacity:1}}
+@keyframes ct-up  {0%{transform:translateY(16px);opacity:0}100%{transform:translateY(0);opacity:1}}
 @keyframes ct-fade{0%{opacity:0}100%{opacity:1}}
 @keyframes ct-shake{0%,100%{transform:translateX(0)}20%,60%{transform:translateX(-8px)}40%,80%{transform:translateX(8px)}}
 @keyframes ct-shimmer{0%{background-position:200% 0}100%{background-position:-200% 0}}
-.ct-pop{animation:ct-pop .28s cubic-bezier(.34,1.56,.64,1) both}
-.ct-up{animation:ct-up .3s ease both}
-.ct-fade{animation:ct-fade .25s ease both}
+.ct-pop  {animation:ct-pop  .28s cubic-bezier(.34,1.56,.64,1) both}
+.ct-up   {animation:ct-up   .3s  ease both}
+.ct-fade {animation:ct-fade .25s ease both}
 .ct-shake{animation:ct-shake .45s ease}
 .ct-skeleton{background:linear-gradient(90deg,#f1f5f9 25%,#e2e8f0 50%,#f1f5f9 75%);background-size:400% 100%;animation:ct-shimmer 1.5s infinite linear}
 `;
 
 /* ── Helpers ─────────────────────────────────────────────────── */
-const fmt = (n: number) => "₹" + Math.abs(n).toLocaleString("en-IN");
+const fmt      = (n: number) => "₹" + Math.abs(n).toLocaleString("en-IN");
 const todayISO = () => new Date().toISOString().split("T")[0];
 const initials = (name: string) => name.trim().charAt(0).toUpperCase();
-const MONTH_NAMES = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+
+const MONTH_NAMES      = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
 const MONTH_NAMES_FULL = ["January","February","March","April","May","June","July","August","September","October","November","December"];
 
-function buildPendingWAMsg(name: string, pendingDays: number, daysPaid: number, dailyRate: number, totalPending: number): string {
+/**
+ * Safely parse a date that may come from PostgreSQL as a string "YYYY-MM-DD"
+ * or as a Date object. Always returns local midnight.
+ */
+function parseLocalDate(d: string | Date | null | undefined): Date | null {
+  if (!d) return null;
+  if (d instanceof Date) {
+    if (isNaN(d.getTime())) return null;
+    return new Date(d.getFullYear(), d.getMonth(), d.getDate());
+  }
+  const s = String(d).slice(0, 10); // "YYYY-MM-DD"
+  const parts = s.split("-").map(Number);
+  if (parts.length < 3 || parts.some(isNaN)) return null;
+  return new Date(parts[0], parts[1] - 1, parts[2]);
+}
+
+/** Format a date string or Date for display */
+function fmtDate(d: string | Date | null | undefined): string {
+  const dt = parseLocalDate(d);
+  if (!dt) return "N/A";
+  return `${dt.getDate()} ${MONTH_NAMES[dt.getMonth()]} ${dt.getFullYear()}`;
+}
+
+/**
+ * Calculate how many days a member has actually paid for.
+ * Uses amount ÷ daily rate — NOT the COUNT(*) of entries,
+ * because one entry may cover multiple days (e.g. ₹600 = 2 days at ₹300/day).
+ */
+function actualDaysPaid(totalPaid: number, effectiveDaily: number): number {
+  if (!effectiveDaily || effectiveDaily <= 0) return 0;
+  return Math.round(totalPaid / effectiveDaily);
+}
+
+/**
+ * Calculate days elapsed since the group started (inclusive of start day).
+ * Returns at least 0.
+ */
+function calcDaysElapsed(startedOn: string | Date | null | undefined): number {
+  const start = parseLocalDate(startedOn);
+  if (!start) return 0;
+  const today = parseLocalDate(todayISO())!;
+  const diff = Math.floor((today.getTime() - start.getTime()) / 86_400_000);
+  return Math.max(0, diff + 1);
+}
+
+/**
+ * Build a WhatsApp message for a pending member.
+ * Shows each pending day individually when pendingDays ≤ 7,
+ * or a compact summary for longer periods.
+ */
+function buildPendingWAMsg(
+  name: string,
+  pendingDays: number,
+  paidDays: number,
+  dailyRate: number,
+  totalPending: number,
+): string {
   const lines: string[] = [
     `Hello ${name} 🙏`,
     `*Apna Enterprise — Daily Cameti*`,
@@ -57,7 +114,7 @@ function buildPendingWAMsg(name: string, pendingDays: number, daysPaid: number, 
   }
 
   lines.push(``);
-  lines.push(`✅ *Paid:* ${daysPaid} din`);
+  lines.push(`✅ *Paid:* ${paidDays} din`);
   lines.push(`💰 *Total Pending: ${fmt(totalPending)}*`);
   lines.push(``);
   lines.push(`Kirpa karke jaldi clear karo ji 🙏`);
@@ -66,12 +123,6 @@ function buildPendingWAMsg(name: string, pendingDays: number, daysPaid: number, 
 
   return encodeURIComponent(lines.join("\n"));
 }
-const fmtDate = (d: string) => {
-  if (!d) return "N/A";
-  const dt = new Date(d + "T00:00:00");
-  if (isNaN(dt.getTime())) return "N/A";
-  return `${dt.getDate()} ${MONTH_NAMES[dt.getMonth()]} ${dt.getFullYear()}`;
-};
 
 /* ── Types ───────────────────────────────────────────────────── */
 interface CametiGroup {
@@ -124,7 +175,7 @@ function PinScreen({ onUnlock }: { onUnlock: () => void }) {
     <Layout>
       <style>{CSS}</style>
       <div className="flex-1 flex flex-col items-center justify-center px-4 py-12 cursor-default"
-        style={{ background: `linear-gradient(145deg, #0a1628 0%, #112044 50%, #071535 100%)` }}
+        style={{ background: `linear-gradient(145deg,#0a1628 0%,#112044 50%,#071535 100%)` }}
         onClick={() => inputRef.current?.focus()}>
         <div className="absolute inset-0 overflow-hidden pointer-events-none" aria-hidden>
           <div className="absolute -top-24 -right-24 w-96 h-96 rounded-full opacity-5" style={{ background: GOLD }} />
@@ -155,11 +206,11 @@ function PinScreen({ onUnlock }: { onUnlock: () => void }) {
             </div>
             {error ? (
               <p className="text-sm font-bold text-red-500 flex items-center gap-1.5">
-                <FaExclamationTriangle className="text-xs" /> Wrong PIN, please try again
+                <FaExclamationTriangle className="text-xs" /> Wrong PIN, try again
               </p>
             ) : (
               <p className="text-sm text-slate-400 font-medium flex items-center gap-2">
-                <span>⌨️</span> Type your 4-digit PIN using the keyboard
+                <span>⌨️</span> Type your 4-digit PIN
               </p>
             )}
             <p className="text-[11px] text-slate-300 mt-3 flex items-center gap-1.5">
@@ -172,7 +223,7 @@ function PinScreen({ onUnlock }: { onUnlock: () => void }) {
   );
 }
 
-/* ── Shared UI ───────────────────────────────────────────────── */
+/* ── Shared UI components ────────────────────────────────────── */
 function Modal({ title, subtitle, onClose, children, wide }: {
   title: string; subtitle?: string; onClose: () => void; children: React.ReactNode; wide?: boolean;
 }) {
@@ -198,8 +249,8 @@ function Modal({ title, subtitle, onClose, children, wide }: {
 }
 
 function InputField({ icon: Icon, placeholder, value, onChange, type = "text" }: {
-  icon: React.ComponentType<{ className?: string }>; placeholder?: string;
-  value: string; onChange: (v: string) => void; type?: string;
+  icon: React.ComponentType<{ className?: string }>;
+  placeholder?: string; value: string; onChange: (v: string) => void; type?: string;
 }) {
   return (
     <div className="flex items-center gap-3 border-2 border-slate-100 rounded-2xl px-4 py-3 focus-within:border-blue-300 bg-white transition-colors">
@@ -219,7 +270,9 @@ function PrimaryBtn({ loading, label, loadingLabel, type = "submit", onClick, co
     <button type={type} disabled={loading} onClick={onClick}
       className="w-full py-3.5 rounded-2xl font-extrabold text-sm text-white transition-all hover:opacity-90 active:scale-[0.98] disabled:opacity-60 flex items-center justify-center gap-2"
       style={{ background: color ?? `linear-gradient(135deg,${NAVY},#1e40af)` }}>
-      {loading ? <><div className="w-4 h-4 rounded-full border-2 border-white/30 border-t-white animate-spin" />{loadingLabel}</> : label}
+      {loading
+        ? <><div className="w-4 h-4 rounded-full border-2 border-white/30 border-t-white animate-spin" />{loadingLabel}</>
+        : label}
     </button>
   );
 }
@@ -232,7 +285,9 @@ function ErrMsg({ children }: { children: React.ReactNode }) {
   );
 }
 
-function EmptyState({ icon: Icon, title, sub }: { icon: React.ComponentType<{ className?: string }>; title: string; sub: string }) {
+function EmptyState({ icon: Icon, title, sub }: {
+  icon: React.ComponentType<{ className?: string }>; title: string; sub: string;
+}) {
   return (
     <div className="flex flex-col items-center justify-center py-14 text-center">
       <div className="w-16 h-16 rounded-3xl flex items-center justify-center mb-4" style={{ background: "#EEF2FF" }}>
@@ -257,9 +312,15 @@ function ConfirmDialog({ msg, sub, onConfirm, onCancel }: {
         <p className="font-extrabold text-slate-800 text-center text-base mb-1">{msg}</p>
         <p className="text-sm text-slate-400 text-center mb-6">{sub}</p>
         <div className="flex gap-3">
-          <button onClick={onCancel} className="flex-1 py-3 rounded-2xl border-2 border-slate-200 text-sm font-bold text-slate-600">No</button>
-          <button onClick={onConfirm} className="flex-1 py-3 rounded-2xl text-sm font-extrabold text-white"
-            style={{ background: "linear-gradient(135deg,#ef4444,#b91c1c)" }}>Yes, Delete</button>
+          <button onClick={onCancel}
+            className="flex-1 py-3 rounded-2xl border-2 border-slate-200 text-sm font-bold text-slate-600">
+            No
+          </button>
+          <button onClick={onConfirm}
+            className="flex-1 py-3 rounded-2xl text-sm font-extrabold text-white"
+            style={{ background: "linear-gradient(135deg,#ef4444,#b91c1c)" }}>
+            Yes, Delete
+          </button>
         </div>
       </div>
     </div>
@@ -267,21 +328,20 @@ function ConfirmDialog({ msg, sub, onConfirm, onCancel }: {
 }
 
 /* ══════════════════════════════════════════════════════════════
-   GROUP DETAIL VIEW
+   GROUP DETAIL
 ══════════════════════════════════════════════════════════════ */
 function GroupDetail({ groupId, onBack }: { groupId: number; onBack: () => void }) {
-  const [group, setGroup] = useState<GroupDetail | null>(null);
-  const [summary, setSummary] = useState<Member[]>([]);
+  const [group, setGroup]         = useState<GroupDetail | null>(null);
+  const [summary, setSummary]     = useState<Member[]>([]);
   const [monthStats, setMonthStats] = useState<MonthStat[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState<"aaj" | "members" | "months" | "boli">("aaj");
+  const [loading, setLoading]     = useState(true);
+  const [activeTab, setActiveTab] = useState<"aaj"|"members"|"months"|"boli">("aaj");
 
-  // Modals
   const [showAddMember, setShowAddMember] = useState(false);
-  const [showBoli, setShowBoli] = useState(false);
-  const [showSettings, setShowSettings] = useState(false);
-  const [delMember, setDelMember] = useState<Member | null>(null);
-  const [editMember, setEditMember] = useState<Member | null>(null);
+  const [showBoli,      setShowBoli]      = useState(false);
+  const [showSettings,  setShowSettings]  = useState(false);
+  const [delMember,    setDelMember]      = useState<Member | null>(null);
+  const [editMember,   setEditMember]     = useState<Member | null>(null);
   const [historyMember, setHistoryMember] = useState<Member | null>(null);
 
   const load = useCallback(async () => {
@@ -314,58 +374,64 @@ function GroupDetail({ groupId, onBack }: { groupId: number; onBack: () => void 
     );
   }
 
-  const currentMonth = group.months.find(m => m.status === "open") ?? null;
-  const latestClosed = [...group.months].filter(m => m.status === "closed").pop() ?? null;
-  const reduction = latestClosed?.daily_reduction ?? 0;
-  const effectiveDaily = group.daily_amount - reduction;
+  /* ── Key computed values ── */
+  const currentMonth  = group.months.find(m => m.status === "open") ?? null;
+  const latestClosed  = [...group.months].filter(m => m.status === "closed").pop() ?? null;
+  const reduction     = latestClosed?.daily_reduction ?? 0;
+  const effectiveDaily = Math.max(0, group.daily_amount - reduction);
 
-  /* ── Cumulative stats ── */
-  const startDate = new Date((group.started_on || todayISO()) + "T00:00:00");
-  const daysElapsed = !isNaN(startDate.getTime())
-    ? Math.max(1, Math.floor((Date.now() - startDate.getTime()) / 86400000) + 1)
-    : 1;
-  const totalExpected = daysElapsed * effectiveDaily * group.members.length;
-  const totalCollected = summary.reduce((s, m) => s + (m.total_paid ?? 0), 0);
-  const totalPending = Math.max(0, totalExpected - totalCollected);
-  const collectionPct = totalExpected > 0 ? Math.min(100, (totalCollected / totalExpected) * 100) : 0;
-  const memberPending = summary
-    .map(m => ({
-      ...m,
-      expected: daysElapsed * effectiveDaily,
-      pending: Math.max(0, daysElapsed * effectiveDaily - (m.total_paid ?? 0)),
-      pendingDays: Math.max(0, daysElapsed - Math.round((m.total_paid ?? 0) / (effectiveDaily || 1))),
-    }))
+  /* Days elapsed since start (inclusive). Uses robust date parser. */
+  const daysElapsed = calcDaysElapsed(group.started_on);
+
+  /* Per-member stats — key fix: use actualDaysPaid (amount ÷ rate) not COUNT(*) */
+  const memberStats = summary.map(m => {
+    const paid    = m.total_paid ?? 0;
+    const paidDays    = actualDaysPaid(paid, effectiveDaily);
+    const pendingDays = Math.max(0, daysElapsed - paidDays);
+    const pending     = Math.max(0, daysElapsed * effectiveDaily - paid);
+    const expected    = daysElapsed * effectiveDaily;
+    const paidPct     = expected > 0 ? Math.min(100, (paid / expected) * 100) : 0;
+    return { ...m, paid, paidDays, pendingDays, pending, expected, paidPct };
+  });
+
+  const totalCollected = memberStats.reduce((s, m) => s + m.paid, 0);
+  const totalExpected  = daysElapsed * effectiveDaily * group.members.length;
+  const totalPending   = Math.max(0, totalExpected - totalCollected);
+  const collectionPct  = totalExpected > 0 ? Math.min(100, (totalCollected / totalExpected) * 100) : 0;
+
+  /* Members with any pending amount */
+  const pendingMembers = memberStats
     .filter(m => m.pending > 0)
     .sort((a, b) => b.pending - a.pending);
 
-  /* ── WA helpers ── */
+  /* ── Bulk WA report ── */
   function buildBulkWAReport() {
     const lines = [
       `🏦 *Apna Enterprise — Daily Cameti*`,
       `📅 ${new Date().toLocaleDateString("en-IN", { day: "numeric", month: "long", year: "numeric" })}`,
       ``,
-      `📊 *${group!.name} — Full Report*`,
+      `📊 *${group!.name} — Report*`,
       `⏳ Days Elapsed: ${daysElapsed}`,
       `💰 Collected: ${fmt(totalCollected)}`,
       `❌ Pending: ${fmt(totalPending)}`,
       `📈 Progress: ${collectionPct.toFixed(1)}%`,
       ``,
     ];
-    if (memberPending.length > 0) {
-      lines.push(`⚠️ *Pending Members (${memberPending.length}):*`);
-      memberPending.forEach(m => {
-        lines.push(`• ${m.name} — ${fmt(m.pending)} pending (${m.pendingDays} days)`);
+    if (pendingMembers.length > 0) {
+      lines.push(`⚠️ *Pending Members (${pendingMembers.length}):*`);
+      pendingMembers.forEach(m => {
+        lines.push(`• ${m.name} — ${fmt(m.pending)} (${m.pendingDays} din)`);
       });
       lines.push(``);
     } else {
-      lines.push(`✅ All members are fully paid! 🎉`);
+      lines.push(`✅ Sab members fully paid! 🎉`);
       lines.push(``);
     }
     lines.push(`_Apna Enterprise, Firozepur_`);
     return encodeURIComponent(lines.join("\n"));
   }
 
-  /* ── add member ── */
+  /* ── Actions ── */
   async function addMember(name: string, phone: string) {
     const r = await fetch(`/api/cameti/groups/${group!.id}/members`, {
       method: "POST", headers: { "Content-Type": "application/json" },
@@ -375,7 +441,6 @@ function GroupDetail({ groupId, onBack }: { groupId: number; onBack: () => void 
     await load();
   }
 
-  /* ── edit member ── */
   async function doEditMember(id: number, name: string, phone: string) {
     await fetch(`/api/cameti/members/${id}`, {
       method: "PATCH", headers: { "Content-Type": "application/json" },
@@ -384,13 +449,11 @@ function GroupDetail({ groupId, onBack }: { groupId: number; onBack: () => void 
     setEditMember(null); await load();
   }
 
-  /* ── delete member ── */
   async function doDeleteMember(id: number) {
     await fetch(`/api/cameti/members/${id}`, { method: "DELETE" });
     setDelMember(null); await load();
   }
 
-  /* ── edit group ── */
   async function doEditGroup(name: string, daily: number, startedOn: string) {
     await fetch(`/api/cameti/groups/${group!.id}`, {
       method: "PATCH", headers: { "Content-Type": "application/json" },
@@ -399,7 +462,6 @@ function GroupDetail({ groupId, onBack }: { groupId: number; onBack: () => void 
     setShowSettings(false); await load();
   }
 
-  /* ── boli ── */
   async function recordBoli(winner_member_id: number, bid_amount: number) {
     if (!currentMonth) return;
     await fetch(`/api/cameti/months/${currentMonth.id}/boli`, {
@@ -419,7 +481,7 @@ function GroupDetail({ groupId, onBack }: { groupId: number; onBack: () => void 
     <Layout>
       <style>{CSS}</style>
       {showAddMember && <AddMemberModal onClose={() => setShowAddMember(false)} onAdd={addMember} />}
-      {showSettings && <GroupSettingsModal group={group} onClose={() => setShowSettings(false)} onSave={doEditGroup} />}
+      {showSettings  && <GroupSettingsModal group={group} onClose={() => setShowSettings(false)} onSave={doEditGroup} />}
       {showBoli && (
         <BoliModal
           members={group.members}
@@ -430,9 +492,12 @@ function GroupDetail({ groupId, onBack }: { groupId: number; onBack: () => void 
         />
       )}
       {delMember && (
-        <ConfirmDialog msg={`Delete ${delMember.name}?`}
+        <ConfirmDialog
+          msg={`Delete ${delMember.name}?`}
           sub="All their collections will also be deleted."
-          onConfirm={() => doDeleteMember(delMember.id)} onCancel={() => setDelMember(null)} />
+          onConfirm={() => doDeleteMember(delMember.id)}
+          onCancel={() => setDelMember(null)}
+        />
       )}
       {editMember && (
         <EditMemberModal member={editMember} onClose={() => setEditMember(null)} onSave={doEditMember} />
@@ -443,53 +508,49 @@ function GroupDetail({ groupId, onBack }: { groupId: number; onBack: () => void 
 
       <div className="flex-1 flex flex-col" style={{ background: "#f4f6fb" }}>
 
-        {/* ── Hero Header ── */}
+        {/* ── Hero ── */}
         <div className="relative overflow-hidden pb-20 pt-7 px-4"
           style={{ background: `linear-gradient(145deg,${NAVY} 0%,#1e3a8a 60%,#1e40af 100%)` }}>
           <div className="absolute inset-0 opacity-[0.04] pointer-events-none" aria-hidden
             style={{ backgroundImage: "radial-gradient(circle,white 1px,transparent 1px)", backgroundSize: "30px 30px" }} />
+
           <div className="relative max-w-3xl mx-auto">
-            {/* Nav */}
             <div className="flex items-center justify-between mb-7">
               <button onClick={onBack}
-                className="flex items-center gap-2 text-sm font-bold px-4 py-2.5 rounded-2xl transition-all active:scale-95 text-white"
+                className="flex items-center gap-2 text-sm font-bold px-4 py-2.5 rounded-2xl text-white transition-all active:scale-95"
                 style={{ background: "rgba(255,255,255,0.12)", border: "1px solid rgba(255,255,255,0.1)" }}>
                 <FaArrowLeft className="text-xs" /> Back
               </button>
               <div className="flex items-center gap-2">
-                {/* WA Report */}
                 <a href={`https://wa.me/?text=${buildBulkWAReport()}`} target="_blank" rel="noreferrer"
                   className="flex items-center gap-1.5 text-xs font-bold px-3 py-2 rounded-2xl text-white transition-all active:scale-95"
-                  style={{ background: "rgba(34,197,94,0.25)", border: "1px solid rgba(34,197,94,0.3)" }}
-                  title="Share on WhatsApp">
+                  style={{ background: "rgba(34,197,94,0.25)", border: "1px solid rgba(34,197,94,0.3)" }}>
                   <FaShareAlt className="text-xs" /> Report
                 </a>
-                {/* Settings */}
                 <button onClick={() => setShowSettings(true)}
                   className="w-9 h-9 flex items-center justify-center rounded-2xl text-white transition-all active:scale-95"
-                  style={{ background: "rgba(255,255,255,0.12)", border: "1px solid rgba(255,255,255,0.1)" }}
-                  title="Group Settings">
+                  style={{ background: "rgba(255,255,255,0.12)", border: "1px solid rgba(255,255,255,0.1)" }}>
                   <FaCog className="text-sm" />
                 </button>
               </div>
             </div>
 
-            {/* Group name */}
             <div className="mb-4">
-              <p className="text-[10px] font-bold uppercase tracking-widest mb-1" style={{ color: `${GOLD}bb` }}>Daily Cameti</p>
+              <p className="text-[10px] font-bold uppercase tracking-widest mb-1" style={{ color: `${GOLD}bb` }}>
+                Daily Cameti
+              </p>
               <h1 className="text-xl font-black text-white">{group.name}</h1>
               <p className="text-white/40 text-xs font-medium mt-0.5">
-                Started {group.started_on ? fmtDate(group.started_on) : "N/A"}
+                Started {fmtDate(group.started_on)} · {daysElapsed} din chal raha hai
               </p>
             </div>
 
-            {/* Stats row */}
             <div className="grid grid-cols-4 gap-2">
               {[
-                { label: "Members", val: group.members.length, c: "rgba(255,255,255,0.12)" },
-                { label: "Daily", val: fmt(effectiveDaily), c: "rgba(212,160,23,0.2)" },
-                { label: "Collected", val: fmt(totalCollected), c: "rgba(34,197,94,0.18)" },
-                { label: "Pending", val: fmt(totalPending), c: "rgba(239,68,68,0.2)" },
+                { label: "Members",   val: group.members.length, c: "rgba(255,255,255,0.12)" },
+                { label: "Daily",     val: fmt(effectiveDaily),  c: "rgba(212,160,23,0.2)" },
+                { label: "Collected", val: fmt(totalCollected),  c: "rgba(34,197,94,0.18)" },
+                { label: "Pending",   val: fmt(totalPending),    c: "rgba(239,68,68,0.2)" },
               ].map(({ label, val, c }) => (
                 <div key={label} className="rounded-2xl p-2.5 text-center"
                   style={{ background: c, border: "1px solid rgba(255,255,255,0.1)" }}>
@@ -504,19 +565,20 @@ function GroupDetail({ groupId, onBack }: { groupId: number; onBack: () => void 
         {/* ── Content ── */}
         <div className="px-4 -mt-8 max-w-3xl mx-auto w-full">
 
-          {/* ── Overview Card ── */}
+          {/* Overview card */}
           {group.members.length > 0 && (
             <div className="ct-up bg-white rounded-3xl shadow-sm mb-4 overflow-hidden" style={{ border: "1.5px solid #e2e8f0" }}>
-              <div className="px-4 py-3 flex items-center justify-between" style={{ borderBottom: "1px solid #f1f5f9" }}>
-                <p className="text-xs font-extrabold text-slate-600 uppercase tracking-wider">📊 Full Cameti Summary</p>
+              <div className="px-4 py-3 flex items-center justify-between border-b border-slate-100">
+                <p className="text-xs font-extrabold text-slate-600 uppercase tracking-wider">
+                  📊 Cameti Summary
+                </p>
                 <div className="flex items-center gap-2">
                   <span className="text-[10px] font-bold px-2.5 py-1 rounded-full" style={{ background: "#EEF2FF", color: NAVY }}>
-                    {daysElapsed} days running
+                    {daysElapsed} din
                   </span>
-                  {/* Auction button */}
                   <button onClick={() => setShowBoli(true)}
                     className="flex items-center gap-1 text-[10px] font-extrabold px-2.5 py-1 rounded-full transition-all active:scale-95"
-                    style={{ background: `rgba(212,160,23,0.15)`, color: "#92400e", border: "1px solid rgba(212,160,23,0.3)" }}>
+                    style={{ background: "rgba(212,160,23,0.15)", color: "#92400e", border: "1px solid rgba(212,160,23,0.3)" }}>
                     <FaGavel className="text-[9px]" /> Auction
                   </button>
                 </div>
@@ -524,7 +586,7 @@ function GroupDetail({ groupId, onBack }: { groupId: number; onBack: () => void 
 
               <div className="px-4 pt-3">
                 <div className="flex items-center justify-between mb-1.5">
-                  <p className="text-[11px] font-bold text-slate-400">Collected / Total Expected</p>
+                  <p className="text-[11px] font-bold text-slate-400">Collected / Expected</p>
                   <p className="text-[11px] font-extrabold" style={{ color: NAVY }}>
                     {fmt(totalCollected)} / {fmt(totalExpected)}
                   </p>
@@ -540,13 +602,15 @@ function GroupDetail({ groupId, onBack }: { groupId: number; onBack: () => void 
                           : `linear-gradient(90deg,${RED},#f87171)`,
                     }} />
                 </div>
-                <p className="text-right text-[9px] font-bold text-slate-400 mb-3">{collectionPct.toFixed(1)}% complete</p>
+                <p className="text-right text-[9px] font-bold text-slate-400 mb-3">
+                  {collectionPct.toFixed(1)}% complete
+                </p>
 
                 <div className="grid grid-cols-3 gap-2 pb-3">
                   {[
                     { label: "Collected", val: fmt(totalCollected), color: GREEN, bg: "#dcfce7" },
-                    { label: "Pending", val: fmt(totalPending), color: RED, bg: "#fee2e2" },
-                    { label: `${daysElapsed} days × ${fmt(effectiveDaily)}`, val: `${group.members.length} members`, color: NAVY, bg: "#EEF2FF" },
+                    { label: "Pending",   val: fmt(totalPending),   color: RED,   bg: "#fee2e2" },
+                    { label: `${daysElapsed} din × ${fmt(effectiveDaily)}`, val: `${group.members.length} members`, color: NAVY, bg: "#EEF2FF" },
                   ].map(({ label, val, color, bg }) => (
                     <div key={label} className="rounded-2xl py-2.5 px-1 text-center" style={{ background: bg }}>
                       <p className="text-xs font-black leading-tight truncate" style={{ color }}>{val}</p>
@@ -556,34 +620,36 @@ function GroupDetail({ groupId, onBack }: { groupId: number; onBack: () => void 
                 </div>
               </div>
 
-              {/* WA Bulk Reminder */}
-              {memberPending.length > 0 && (
+              {/* Pending members list */}
+              {pendingMembers.length > 0 && (
                 <div style={{ borderTop: "1px solid #f1f5f9" }} className="px-4 py-3">
                   <div className="flex items-center justify-between mb-2">
                     <p className="text-[10px] font-extrabold uppercase tracking-wider" style={{ color: RED }}>
-                      Pending ({memberPending.length} members)
+                      Pending ({pendingMembers.length} members)
                     </p>
-                    <div className="flex gap-2">
-                      <a href={`https://wa.me/?text=${buildBulkWAReport()}`} target="_blank" rel="noreferrer"
-                        className="flex items-center gap-1 text-[10px] font-extrabold px-2.5 py-1 rounded-xl text-white transition-all active:scale-95"
-                        style={{ background: "linear-gradient(135deg,#22c55e,#16a34a)" }}>
-                        <FaWhatsapp className="text-[10px]" /> Bulk Reminder
-                      </a>
-                    </div>
+                    <a href={`https://wa.me/?text=${buildBulkWAReport()}`} target="_blank" rel="noreferrer"
+                      className="flex items-center gap-1 text-[10px] font-extrabold px-2.5 py-1 rounded-xl text-white"
+                      style={{ background: "linear-gradient(135deg,#22c55e,#16a34a)" }}>
+                      <FaWhatsapp className="text-[10px]" /> Bulk Reminder
+                    </a>
                   </div>
                   <div className="space-y-1.5">
-                    {memberPending.map((m, idx) => {
-                      const waMsg = buildPendingWAMsg(m.name, m.pendingDays, m.days_paid ?? 0, effectiveDaily, m.pending);
+                    {pendingMembers.map((m, idx) => {
+                      const waMsg = buildPendingWAMsg(m.name, m.pendingDays, m.paidDays, effectiveDaily, m.pending);
                       return (
                         <div key={m.id}
                           className="ct-up flex items-center justify-between rounded-2xl px-3 py-2"
                           style={{ background: "#fff5f5", border: "1px solid #fee2e2", animationDelay: `${idx * 20}ms` }}>
                           <div className="flex items-center gap-2">
                             <div className="w-7 h-7 rounded-xl flex items-center justify-center font-black text-xs flex-shrink-0"
-                              style={{ background: "#fee2e2", color: RED }}>{initials(m.name)}</div>
+                              style={{ background: "#fee2e2", color: RED }}>
+                              {initials(m.name)}
+                            </div>
                             <div>
                               <p className="text-xs font-extrabold text-slate-800">{m.name}</p>
-                              <p className="text-[9px] font-bold text-slate-400">{m.pendingDays} days · {m.days_paid} days paid</p>
+                              <p className="text-[9px] font-bold text-slate-400">
+                                {m.pendingDays} din pending · {m.paidDays} din paid
+                              </p>
                             </div>
                           </div>
                           <div className="flex items-center gap-2">
@@ -591,7 +657,7 @@ function GroupDetail({ groupId, onBack }: { groupId: number; onBack: () => void 
                             {m.phone && (
                               <a href={`https://wa.me/91${m.phone.replace(/\D/g, "")}?text=${waMsg}`}
                                 target="_blank" rel="noreferrer"
-                                className="w-7 h-7 flex items-center justify-center rounded-xl text-white transition-all active:scale-90"
+                                className="w-7 h-7 flex items-center justify-center rounded-xl text-white active:scale-90"
                                 style={{ background: "linear-gradient(135deg,#22c55e,#16a34a)" }}>
                                 <FaWhatsapp className="text-xs" />
                               </a>
@@ -604,10 +670,10 @@ function GroupDetail({ groupId, onBack }: { groupId: number; onBack: () => void 
                 </div>
               )}
 
-              {memberPending.length === 0 && totalExpected > 0 && (
+              {pendingMembers.length === 0 && totalExpected > 0 && (
                 <div style={{ borderTop: "1px solid #f1f5f9" }} className="px-4 py-3 flex items-center gap-2 justify-center">
                   <FaCheckCircle className="text-green-500" />
-                  <p className="text-sm font-extrabold text-green-600">All members are fully paid up! 🎉</p>
+                  <p className="text-sm font-extrabold text-green-600">Sab members fully paid! 🎉</p>
                 </div>
               )}
             </div>
@@ -616,10 +682,10 @@ function GroupDetail({ groupId, onBack }: { groupId: number; onBack: () => void 
           {/* Tabs */}
           <div className="flex gap-2 mb-5 overflow-x-auto pb-1">
             {[
-              { key: "aaj", label: "💰 Collection" },
+              { key: "aaj",     label: "💰 Collection" },
               { key: "members", label: "👥 Members" },
-              { key: "months", label: "📅 Months" },
-              { key: "boli", label: "🏆 Auction" },
+              { key: "months",  label: "📅 Months" },
+              { key: "boli",    label: "🏆 Auction" },
             ].map(t => (
               <button key={t.key} onClick={() => setActiveTab(t.key as typeof activeTab)}
                 className="flex-shrink-0 px-4 py-2 rounded-2xl font-extrabold text-xs transition-all active:scale-95"
@@ -631,7 +697,7 @@ function GroupDetail({ groupId, onBack }: { groupId: number; onBack: () => void 
             ))}
           </div>
 
-          {/* ── Tab: Collection ── */}
+          {/* Tab: Collection */}
           {activeTab === "aaj" && (
             <CollectionSession
               groupId={group.id}
@@ -652,52 +718,42 @@ function GroupDetail({ groupId, onBack }: { groupId: number; onBack: () => void 
             />
           )}
 
-          {/* ── Tab: Members ── */}
+          {/* Tab: Members */}
           {activeTab === "members" && (
             <div className="pb-10">
-              {/* Header */}
               <div className="flex items-center justify-between mb-4">
                 <div>
                   <p className="text-base font-black text-slate-800">{group.members.length} Members</p>
                   <p className="text-[11px] text-slate-400 font-medium mt-0.5">{group.name}</p>
                 </div>
                 <button onClick={() => setShowAddMember(true)}
-                  className="flex items-center gap-2 text-sm font-extrabold px-5 py-2.5 rounded-2xl text-white transition-all active:scale-95 shadow-sm"
+                  className="flex items-center gap-2 text-sm font-extrabold px-5 py-2.5 rounded-2xl text-white shadow-sm"
                   style={{ background: `linear-gradient(135deg,${NAVY},#1e40af)` }}>
                   <FaPlus className="text-xs" /> Add Member
                 </button>
               </div>
 
               <div className="space-y-3">
-                {summary.map((m, idx) => {
-                  const mPending = Math.max(0, daysElapsed * effectiveDaily - (m.total_paid ?? 0));
-                  const paidPct = daysElapsed > 0
-                    ? Math.min(100, ((m.total_paid ?? 0) / (daysElapsed * effectiveDaily)) * 100)
-                    : 0;
-                  const statusColor = m.has_taken ? GOLD : mPending > 0 ? RED : GREEN;
-                  const statusBg   = m.has_taken ? "#fef9c3" : mPending > 0 ? "#fee2e2" : "#dcfce7";
-                  const memberDaysPaid = m.days_paid ?? 0;
-                  const memberPendingDays = Math.max(0, daysElapsed - memberDaysPaid);
-                  const waMsg = buildPendingWAMsg(m.name, memberPendingDays, memberDaysPaid, effectiveDaily, mPending);
+                {memberStats.map((m, idx) => {
+                  const statusColor = m.has_taken ? GOLD : m.pending > 0 ? RED : GREEN;
+                  const statusBg    = m.has_taken ? "#fef9c3" : m.pending > 0 ? "#fee2e2" : "#dcfce7";
+                  /* Fix: use actualDaysPaid (amount ÷ rate), not COUNT(*) */
+                  const waMsg = buildPendingWAMsg(m.name, m.pendingDays, m.paidDays, effectiveDaily, m.pending);
 
                   return (
                     <div key={m.id} className="ct-up bg-white rounded-3xl shadow-sm overflow-hidden"
-                      style={{ border: `1.5px solid ${m.has_taken ? "#fde68a" : mPending > 0 ? "#fecaca" : "#e2e8f0"}`, animationDelay: `${idx*30}ms` }}>
+                      style={{ border: `1.5px solid ${m.has_taken ? "#fde68a" : m.pending > 0 ? "#fecaca" : "#e2e8f0"}`, animationDelay: `${idx*30}ms` }}>
 
-                      {/* Top row */}
                       <div className="flex items-center gap-3.5 px-4 pt-4 pb-3">
-                        {/* Avatar */}
                         <div className="relative flex-shrink-0">
                           <div className="w-12 h-12 rounded-2xl flex items-center justify-center font-black text-lg"
                             style={{ background: statusBg, color: statusColor }}>
                             {initials(m.name)}
                           </div>
-                          {/* Status dot */}
                           <div className="absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 rounded-full border-2 border-white"
                             style={{ background: statusColor }} />
                         </div>
 
-                        {/* Info */}
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-2 flex-wrap">
                             <p className="font-black text-sm text-slate-800 truncate">{m.name}</p>
@@ -713,46 +769,52 @@ function GroupDetail({ groupId, onBack }: { groupId: number; onBack: () => void 
                           </p>
                         </div>
 
-                        {/* Amount block */}
                         <div className="text-right flex-shrink-0">
                           <p className="text-base font-black leading-tight" style={{ color: GREEN }}>
-                            {fmt(m.total_paid ?? 0)}
+                            {fmt(m.paid)}
                           </p>
-                          <p className="text-[10px] font-bold mt-0.5" style={{ color: mPending > 0 ? RED : "#94a3b8" }}>
-                            {mPending > 0 ? `${fmt(mPending)} due` : "Fully paid ✓"}
+                          <p className="text-[10px] font-bold mt-0.5" style={{ color: m.pending > 0 ? RED : "#94a3b8" }}>
+                            {m.pending > 0 ? `${fmt(m.pending)} due` : "Fully paid ✓"}
                           </p>
                         </div>
                       </div>
 
-                      {/* Progress bar */}
                       {daysElapsed > 0 && (
                         <div className="px-4 pb-3">
                           <div className="flex items-center justify-between mb-1">
-                            <p className="text-[10px] font-bold text-slate-400">{m.days_paid ?? 0} of {daysElapsed} days paid</p>
-                            <p className="text-[10px] font-extrabold" style={{ color: statusColor }}>{paidPct.toFixed(0)}%</p>
+                            <p className="text-[10px] font-bold text-slate-400">
+                              {m.paidDays} of {daysElapsed} din paid
+                            </p>
+                            <p className="text-[10px] font-extrabold" style={{ color: statusColor }}>
+                              {m.paidPct.toFixed(0)}%
+                            </p>
                           </div>
                           <div className="h-1.5 bg-slate-100 rounded-full overflow-hidden">
                             <div className="h-full rounded-full transition-all duration-700"
                               style={{
-                                width: `${paidPct}%`,
+                                width: `${m.paidPct}%`,
                                 background: m.has_taken
                                   ? `linear-gradient(90deg,${GOLD},#f59e0b)`
-                                  : mPending > 0
+                                  : m.pending > 0
                                     ? `linear-gradient(90deg,${RED},#f87171)`
                                     : `linear-gradient(90deg,${GREEN},#22c55e)`,
                               }} />
                           </div>
+                          {m.pendingDays > 0 && (
+                            <p className="text-[9px] font-bold mt-1" style={{ color: RED }}>
+                              {m.pendingDays} din pending — {fmt(m.pending)}
+                            </p>
+                          )}
                         </div>
                       )}
 
-                      {/* Action row */}
-                      <div className="flex border-t border-slate-50" style={{ borderColor: "#f8fafc" }}>
+                      <div className="flex border-t" style={{ borderColor: "#f8fafc" }}>
                         <button onClick={() => setHistoryMember(m)}
                           className="flex-1 flex items-center justify-center gap-1.5 py-2.5 text-[11px] font-extrabold text-blue-500 hover:bg-blue-50 transition-colors">
                           <FaHistory className="text-[10px]" /> History
                         </button>
                         <div className="w-px bg-slate-100" />
-                        {m.phone && (
+                        {m.phone && m.pending > 0 && (
                           <>
                             <a href={`https://wa.me/91${m.phone.replace(/\D/g,"")}?text=${waMsg}`}
                               target="_blank" rel="noreferrer"
@@ -775,21 +837,26 @@ function GroupDetail({ groupId, onBack }: { groupId: number; onBack: () => void 
                     </div>
                   );
                 })}
-                {summary.length === 0 && <EmptyState icon={FaUsers} title="No members yet" sub="Tap 'Add Member' to get started" />}
+                {memberStats.length === 0 && (
+                  <EmptyState icon={FaUsers} title="No members yet" sub="Tap 'Add Member' to get started" />
+                )}
               </div>
             </div>
           )}
 
-          {/* ── Tab: Months ── */}
+          {/* Tab: Months */}
           {activeTab === "months" && (
             <div className="pb-10 space-y-3">
               {group.months.length === 0 && (
-                <EmptyState icon={FaCalendarAlt} title="No months yet" sub="Make your first collection — the month will be created automatically" />
+                <EmptyState icon={FaCalendarAlt}
+                  title="No months yet"
+                  sub="Make your first collection — the month will be created automatically" />
               )}
               {[...group.months].reverse().map((mn, idx) => {
                 const ms = monthStats.find(s => s.month_id === mn.id);
                 const monthExpected = group.members.length * effectiveDaily * 30;
-                const monthPct = ms && monthExpected > 0 ? Math.min(100, (ms.total_collected / monthExpected) * 100) : 0;
+                const monthPct = ms && monthExpected > 0
+                  ? Math.min(100, (ms.total_collected / monthExpected) * 100) : 0;
                 return (
                   <div key={mn.id}
                     className="ct-up bg-white rounded-3xl p-5 shadow-sm"
@@ -806,7 +873,6 @@ function GroupDetail({ groupId, onBack }: { groupId: number; onBack: () => void 
                       </p>
                     </div>
 
-                    {/* Month collection stats */}
                     {ms && (
                       <div className="mb-3">
                         <div className="flex justify-between mb-1">
@@ -814,16 +880,19 @@ function GroupDetail({ groupId, onBack }: { groupId: number; onBack: () => void 
                           <p className="text-[10px] font-extrabold" style={{ color: NAVY }}>{fmt(ms.total_collected)}</p>
                         </div>
                         <div className="h-2 bg-slate-100 rounded-full overflow-hidden mb-2">
-                          <div className="h-full rounded-full" style={{
-                            width: `${monthPct}%`,
-                            background: mn.status === "closed" ? `linear-gradient(90deg,${GREEN},#22c55e)` : `linear-gradient(90deg,#3b82f6,#6366f1)`
-                          }} />
+                          <div className="h-full rounded-full"
+                            style={{
+                              width: `${monthPct}%`,
+                              background: mn.status === "closed"
+                                ? `linear-gradient(90deg,${GREEN},#22c55e)`
+                                : `linear-gradient(90deg,#3b82f6,#6366f1)`,
+                            }} />
                         </div>
                         <div className="grid grid-cols-3 gap-2">
                           {[
-                            { label: "Collected", val: fmt(ms.total_collected), c: "#dcfce7", tc: GREEN },
+                            { label: "Collected",    val: fmt(ms.total_collected),               c: "#dcfce7", tc: GREEN },
                             { label: "Members Paid", val: `${ms.members_paid}/${group.members.length}`, c: "#EEF2FF", tc: NAVY },
-                            { label: "Entries", val: ms.entries, c: "#fef9c3", tc: "#92400e" },
+                            { label: "Entries",      val: ms.entries,                            c: "#fef9c3", tc: "#92400e" },
                           ].map(({ label, val, c, tc }) => (
                             <div key={label} className="rounded-xl py-2 text-center" style={{ background: c }}>
                               <p className="text-xs font-black" style={{ color: tc }}>{val}</p>
@@ -837,8 +906,8 @@ function GroupDetail({ groupId, onBack }: { groupId: number; onBack: () => void 
                     {mn.status === "closed" && (
                       <div className="grid grid-cols-3 gap-2 mt-2">
                         {[
-                          { label: "Auction Amount", val: fmt(mn.bid_amount ?? 0), c: "#fef9c3", tc: "#92400e" },
-                          { label: "Profit/Member", val: fmt(mn.profit_per_member ?? 0), c: "#dcfce7", tc: GREEN },
+                          { label: "Auction Amount",  val: fmt(mn.bid_amount ?? 0),        c: "#fef9c3", tc: "#92400e" },
+                          { label: "Profit/Member",   val: fmt(mn.profit_per_member ?? 0), c: "#dcfce7", tc: GREEN },
                           { label: "Daily Reduction", val: `−${fmt(mn.daily_reduction ?? 0)}`, c: "#fee2e2", tc: RED },
                         ].map(({ label, val, c, tc }) => (
                           <div key={label} className="rounded-2xl p-2.5 text-center" style={{ background: c }}>
@@ -860,18 +929,18 @@ function GroupDetail({ groupId, onBack }: { groupId: number; onBack: () => void 
             </div>
           )}
 
-          {/* ── Tab: Auction History ── */}
+          {/* Tab: Auction */}
           {activeTab === "boli" && (
             <div className="pb-10 space-y-3">
               <div className="flex justify-end mb-2">
                 <button onClick={() => setShowBoli(true)}
-                  className="flex items-center gap-2 text-xs font-extrabold px-4 py-2 rounded-2xl text-white transition-all active:scale-95"
+                  className="flex items-center gap-2 text-xs font-extrabold px-4 py-2 rounded-2xl text-white"
                   style={{ background: `linear-gradient(135deg,${GOLD},#b8860b)` }}>
                   <FaGavel /> New Auction
                 </button>
               </div>
               {group.months.filter(m => m.status === "closed").length === 0 && (
-                <EmptyState icon={FaGavel} title="No auctions yet" sub="Record an auction using the New Auction button" />
+                <EmptyState icon={FaGavel} title="No auctions yet" sub="Record an auction using the button above" />
               )}
               {group.months.filter(m => m.status === "closed").map((mn, idx) => (
                 <div key={mn.id}
@@ -879,7 +948,9 @@ function GroupDetail({ groupId, onBack }: { groupId: number; onBack: () => void 
                   style={{ border: "1.5px solid #fef9c3", animationDelay: `${idx*35}ms` }}>
                   <div className="flex items-start justify-between">
                     <div>
-                      <p className="text-xs font-bold text-slate-400 uppercase tracking-wide mb-1">Month {mn.month_number} · {MONTH_NAMES[(mn.month - 1) % 12]} {mn.year}</p>
+                      <p className="text-xs font-bold text-slate-400 uppercase tracking-wide mb-1">
+                        Month {mn.month_number} · {MONTH_NAMES[(mn.month - 1) % 12]} {mn.year}
+                      </p>
                       <p className="text-xl font-black" style={{ color: NAVY }}>🏆 {mn.winner_name ?? "—"}</p>
                     </div>
                     <div className="text-right">
@@ -901,6 +972,7 @@ function GroupDetail({ groupId, onBack }: { groupId: number; onBack: () => void 
               ))}
             </div>
           )}
+
         </div>
       </div>
     </Layout>
@@ -910,19 +982,22 @@ function GroupDetail({ groupId, onBack }: { groupId: number; onBack: () => void 
 /* ══════════════════════════════════════════════════════════════
    COLLECTION SESSION
 ══════════════════════════════════════════════════════════════ */
-function CollectionSession({ groupId, members, effectiveDaily, currentMonthId, summary, daysElapsed, onMonthNeeded, onRefreshParent }: {
+function CollectionSession({
+  groupId, members, effectiveDaily, currentMonthId, summary, daysElapsed,
+  onMonthNeeded, onRefreshParent,
+}: {
   groupId: number; members: Member[]; effectiveDaily: number;
   currentMonthId: number | null; summary: Member[]; daysElapsed: number;
   onMonthNeeded: () => Promise<void>; onRefreshParent: () => void;
 }) {
-  const [date, setDate] = useState(todayISO());
+  const [date, setDate]       = useState(todayISO());
   const [existing, setExisting] = useState<Collection[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
-  const [saved, setSaved] = useState(false);
-  const [checked, setChecked] = useState<Record<number, boolean>>({});
-  const [amounts, setAmounts] = useState<Record<number, string>>({});
-  const [notes, setNotes] = useState<Record<number, string>>({});
+  const [loading, setLoading]  = useState(true);
+  const [saving, setSaving]    = useState(false);
+  const [saved, setSaved]      = useState(false);
+  const [checked, setChecked]  = useState<Record<number, boolean>>({});
+  const [amounts, setAmounts]  = useState<Record<number, string>>({});
+  const [notes, setNotes]      = useState<Record<number, string>>({});
   const [showNoteFor, setShowNoteFor] = useState<number | null>(null);
 
   const fetchExisting = useCallback(async (d: string) => {
@@ -933,7 +1008,7 @@ function CollectionSession({ groupId, members, effectiveDaily, currentMonthId, s
       setExisting(cols);
       const paidIds = new Set(cols.map(c => c.member_id));
       const newChecked: Record<number, boolean> = {};
-      const newAmounts: Record<number, string> = {};
+      const newAmounts: Record<number, string>  = {};
       members.forEach(m => {
         if (!paidIds.has(m.id)) {
           newChecked[m.id] = true;
@@ -948,16 +1023,16 @@ function CollectionSession({ groupId, members, effectiveDaily, currentMonthId, s
 
   useEffect(() => { fetchExisting(date); setSaved(false); }, [date, fetchExisting]);
 
-  const paidIds = new Set(existing.map(c => c.member_id));
+  const paidIds       = new Set(existing.map(c => c.member_id));
   const unpaidMembers = members.filter(m => !paidIds.has(m.id));
-  const paidMembers = members.filter(m => paidIds.has(m.id));
+  const paidMembers   = members.filter(m => paidIds.has(m.id));
   const selectedCount = Object.values(checked).filter(Boolean).length;
-  const total = members
+  const total         = members
     .filter(m => !paidIds.has(m.id) && checked[m.id])
     .reduce((s, m) => s + (Number(amounts[m.id]) || 0), 0);
-  const totalExpected = members.length * effectiveDaily;
   const todayCollected = existing.reduce((s, c) => s + c.amount, 0);
-  const isToday = date === todayISO();
+  const todayExpected  = members.length * effectiveDaily;
+  const isToday        = date === todayISO();
 
   function toggleAll() {
     const allChecked = unpaidMembers.every(m => checked[m.id]);
@@ -984,8 +1059,7 @@ function CollectionSession({ groupId, members, effectiveDaily, currentMonthId, s
         method: "POST", headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ entries }),
       });
-      setSaved(true);
-      setNotes({});
+      setSaved(true); setNotes({});
       await fetchExisting(date);
       onRefreshParent();
     } finally { setSaving(false); }
@@ -997,7 +1071,9 @@ function CollectionSession({ groupId, members, effectiveDaily, currentMonthId, s
     onRefreshParent();
   }
 
-  const dateLabel = new Date(date + "T00:00:00").toLocaleDateString("en-IN", { day: "numeric", month: "long", year: "numeric" });
+  const dateLabel = new Date(date + "T00:00:00").toLocaleDateString("en-IN", {
+    day: "numeric", month: "long", year: "numeric",
+  });
 
   return (
     <div className="pb-20">
@@ -1022,24 +1098,25 @@ function CollectionSession({ groupId, members, effectiveDaily, currentMonthId, s
           </div>
         </div>
 
-        {/* Progress */}
         <div className="px-4 pt-3 pb-1">
           <div className="flex items-center justify-between mb-1.5">
-            <p className="text-xs font-extrabold text-slate-500">{dateLabel} — Collection</p>
-            <p className="text-xs font-extrabold" style={{ color: NAVY }}>{fmt(todayCollected)} / {fmt(totalExpected)}</p>
+            <p className="text-xs font-extrabold text-slate-500">{dateLabel}</p>
+            <p className="text-xs font-extrabold" style={{ color: NAVY }}>
+              {fmt(todayCollected)} / {fmt(todayExpected)}
+            </p>
           </div>
           <div className="h-2.5 bg-slate-100 rounded-full overflow-hidden mb-3">
             <div className="h-full rounded-full transition-all duration-700"
               style={{
-                width: `${Math.min(100, totalExpected > 0 ? (todayCollected / totalExpected) * 100 : 0)}%`,
+                width: `${Math.min(100, todayExpected > 0 ? (todayCollected / todayExpected) * 100 : 0)}%`,
                 background: `linear-gradient(90deg,${GREEN},#22c55e)`,
               }} />
           </div>
           <div className="grid grid-cols-3 gap-2 pb-3">
             {[
               { label: "Collected", val: fmt(todayCollected), color: GREEN, bg: "#dcfce7" },
-              { label: "Pending", val: `${unpaidMembers.length} members`, color: RED, bg: "#fee2e2" },
-              { label: "Paid", val: `${paidIds.size}/${members.length}`, color: NAVY, bg: "#EEF2FF" },
+              { label: "Pending",   val: `${unpaidMembers.length} members`, color: RED, bg: "#fee2e2" },
+              { label: "Paid",      val: `${paidIds.size}/${members.length}`, color: NAVY, bg: "#EEF2FF" },
             ].map(({ label, val, color, bg }) => (
               <div key={label} className="rounded-2xl py-2 text-center" style={{ background: bg }}>
                 <p className="text-sm font-black" style={{ color }}>{val}</p>
@@ -1056,7 +1133,7 @@ function CollectionSession({ groupId, members, effectiveDaily, currentMonthId, s
         </div>
       ) : (
         <>
-          {/* PENDING */}
+          {/* Unpaid members */}
           {unpaidMembers.length > 0 && (
             <div className="mb-4">
               <div className="flex items-center justify-between mb-2 px-1">
@@ -1075,16 +1152,18 @@ function CollectionSession({ groupId, members, effectiveDaily, currentMonthId, s
 
               <div className="space-y-2">
                 {unpaidMembers.map((m, idx) => {
-                  const isChecked = !!checked[m.id];
-                  const amt = Number(amounts[m.id] ?? effectiveDaily);
+                  const isChecked   = !!checked[m.id];
+                  const amt         = Number(amounts[m.id] ?? effectiveDaily);
                   const daysCovered = effectiveDaily > 0 ? Math.round(amt / effectiveDaily) : 1;
-                  const isMultiDay = amt !== effectiveDaily && amt > 0;
-                  const memberSummary = summary.find(s => s.id === m.id);
-                  const mDaysPaid = memberSummary?.days_paid ?? 0;
-                  const mTotalPaid = memberSummary?.total_paid ?? 0;
-                  const mTotalPending = Math.max(0, daysElapsed * effectiveDaily - mTotalPaid);
-                  const mDaysPending = Math.max(0, daysElapsed - mDaysPaid);
-                  const waMsg = buildPendingWAMsg(m.name, mDaysPending, mDaysPaid, effectiveDaily, mTotalPending);
+                  const isMultiDay  = amt !== effectiveDaily && amt > 0;
+
+                  /* Fix: use actualDaysPaid (amount ÷ rate), not COUNT(*) */
+                  const memberSummary  = summary.find(s => s.id === m.id);
+                  const mTotalPaid     = memberSummary?.total_paid ?? 0;
+                  const mPaidDays      = actualDaysPaid(mTotalPaid, effectiveDaily);
+                  const mPendingDays   = Math.max(0, daysElapsed - mPaidDays);
+                  const mTotalPending  = Math.max(0, daysElapsed * effectiveDaily - mTotalPaid);
+                  const waMsg = buildPendingWAMsg(m.name, mPendingDays, mPaidDays, effectiveDaily, mTotalPending);
 
                   return (
                     <div key={m.id}
@@ -1095,26 +1174,29 @@ function CollectionSession({ groupId, members, effectiveDaily, currentMonthId, s
                         animationDelay: `${idx * 25}ms`,
                       }}>
                       <div className="flex items-center gap-3 px-3 py-3">
-                        {/* Checkbox */}
                         <button onClick={() => setChecked(p => ({ ...p, [m.id]: !p[m.id] }))}
                           className="w-6 h-6 rounded-lg border-2 flex items-center justify-center flex-shrink-0 transition-all"
                           style={{ borderColor: isChecked ? "#3b82f6" : "#cbd5e1", background: isChecked ? "#3b82f6" : "white" }}>
                           {isChecked && <span className="text-white text-[10px] font-black">✓</span>}
                         </button>
 
-                        {/* Avatar */}
                         <div className="w-9 h-9 rounded-xl flex items-center justify-center font-black text-sm flex-shrink-0"
                           style={{ background: isChecked ? "#dbeafe" : "#fee2e2", color: isChecked ? "#1d4ed8" : RED }}>
                           {initials(m.name)}
                         </div>
 
-                        {/* Name */}
                         <div className="flex-1 min-w-0">
                           <p className="font-extrabold text-sm text-slate-800 truncate">{m.name}</p>
-                          <p className="text-[10px] text-slate-400 font-medium">{m.phone}</p>
+                          <p className="text-[10px] text-slate-400 font-medium">
+                            {m.phone}
+                            {mPendingDays > 0 && (
+                              <span className="ml-1.5 font-bold" style={{ color: RED }}>
+                                · {mPendingDays} din pending
+                              </span>
+                            )}
+                          </p>
                         </div>
 
-                        {/* Amount input */}
                         <div className={`flex items-center gap-1 border-2 rounded-xl px-2 py-1.5 transition-all ${isChecked ? "border-blue-200 bg-white" : "border-slate-100 bg-slate-50 opacity-50"}`}>
                           <FaRupeeSign className="text-slate-400 text-[10px] flex-shrink-0" />
                           <input type="number" disabled={!isChecked}
@@ -1123,7 +1205,6 @@ function CollectionSession({ groupId, members, effectiveDaily, currentMonthId, s
                             className="w-14 text-sm font-extrabold outline-none text-slate-700 bg-transparent disabled:text-slate-300" />
                         </div>
 
-                        {/* Note toggle */}
                         {isChecked && (
                           <button onClick={() => setShowNoteFor(showNoteFor === m.id ? null : m.id)}
                             className="w-8 h-8 flex items-center justify-center rounded-xl transition-all flex-shrink-0"
@@ -1132,38 +1213,32 @@ function CollectionSession({ groupId, members, effectiveDaily, currentMonthId, s
                           </button>
                         )}
 
-                        {/* WA */}
                         {m.phone && (
                           <a href={`https://wa.me/91${m.phone.replace(/\D/g, "")}?text=${waMsg}`}
                             target="_blank" rel="noreferrer"
-                            className="w-8 h-8 flex items-center justify-center rounded-xl text-white flex-shrink-0 transition-all active:scale-90"
+                            className="w-8 h-8 flex items-center justify-center rounded-xl text-white flex-shrink-0 active:scale-90"
                             style={{ background: "linear-gradient(135deg,#22c55e,#16a34a)" }}>
                             <FaWhatsapp className="text-sm" />
                           </a>
                         )}
                       </div>
 
-                      {/* Note input */}
                       {isChecked && showNoteFor === m.id && (
                         <div className="px-3 pb-2.5">
-                          <input
-                            type="text"
-                            placeholder="Add a note (optional)..."
+                          <input type="text" placeholder="Add a note (optional)..."
                             value={notes[m.id] ?? ""}
                             onChange={e => setNotes(p => ({ ...p, [m.id]: e.target.value }))}
-                            className="w-full text-xs font-semibold outline-none bg-yellow-50 border border-yellow-200 rounded-xl px-3 py-2 text-slate-700"
-                          />
+                            className="w-full text-xs font-semibold outline-none bg-yellow-50 border border-yellow-200 rounded-xl px-3 py-2 text-slate-700" />
                         </div>
                       )}
 
-                      {/* Multi-day / custom badge */}
                       {isChecked && isMultiDay && (
                         <div className="px-3 pb-2.5">
                           <div className="flex items-center gap-1.5 bg-amber-50 rounded-xl px-2.5 py-1.5">
                             <FaStickyNote className="text-amber-400 text-[10px]" />
                             <p className="text-[10px] font-bold text-amber-700">
                               {amt > effectiveDaily
-                                ? `${daysCovered} days payment (${fmt(amt)})`
+                                ? `${daysCovered} din da payment (${fmt(amt)})`
                                 : `Custom: ${fmt(amt)}`}
                             </p>
                           </div>
@@ -1174,7 +1249,6 @@ function CollectionSession({ groupId, members, effectiveDaily, currentMonthId, s
                 })}
               </div>
 
-              {/* Save button */}
               {selectedCount > 0 && (
                 <div className="mt-4">
                   <div className="flex items-center justify-between bg-blue-50 rounded-2xl px-4 py-3 mb-3 border border-blue-100">
@@ -1189,14 +1263,14 @@ function CollectionSession({ groupId, members, effectiveDaily, currentMonthId, s
                   </button>
                   {saved && (
                     <div className="mt-2 flex items-center justify-center gap-2 text-green-600 font-bold text-sm">
-                      <FaCheckCircle /> Saved! Collection recorded.
+                      <FaCheckCircle /> Saved successfully!
                     </div>
                   )}
                 </div>
               )}
               {selectedCount === 0 && (
                 <div className="mt-3 text-center text-slate-400 text-sm font-semibold py-2">
-                  Select a member to collect from
+                  Select members to collect from
                 </div>
               )}
             </div>
@@ -1206,7 +1280,7 @@ function CollectionSession({ groupId, members, effectiveDaily, currentMonthId, s
             <div className="text-center py-8 bg-white rounded-3xl mb-4" style={{ border: "1.5px solid #bbf7d0" }}>
               <FaCheckCircle className="text-4xl text-green-500 mx-auto mb-3" />
               <p className="font-extrabold text-slate-700 text-base">All collected! 🎉</p>
-              <p className="text-slate-400 text-sm mt-1">All collections for {dateLabel} are done.</p>
+              <p className="text-slate-400 text-sm mt-1">{dateLabel} — sab ho gaya</p>
             </div>
           )}
 
@@ -1214,7 +1288,7 @@ function CollectionSession({ groupId, members, effectiveDaily, currentMonthId, s
             <EmptyState icon={FaUsers} title="No members yet" sub="Add members from the Members tab" />
           )}
 
-          {/* PAID */}
+          {/* Paid members */}
           {paidMembers.length > 0 && (
             <div>
               <div className="flex items-center gap-2 mb-2 px-1">
@@ -1243,7 +1317,7 @@ function CollectionSession({ groupId, members, effectiveDaily, currentMonthId, s
                         <p className="text-sm font-black text-green-600">{fmt(col?.amount ?? 0)}</p>
                         {col && daysCovered > 1 ? (
                           <span className="text-[9px] font-bold text-amber-600 bg-amber-50 px-1.5 py-0.5 rounded-full">
-                            {daysCovered} days
+                            {daysCovered} din
                           </span>
                         ) : (
                           <span className="text-[9px] font-bold text-green-600 bg-green-50 px-1.5 py-0.5 rounded-full">
@@ -1269,21 +1343,23 @@ function CollectionSession({ groupId, members, effectiveDaily, currentMonthId, s
   );
 }
 
-/* ── Edit Member Modal ── */
+/* ── Modals ──────────────────────────────────────────────────── */
+
 function EditMemberModal({ member, onClose, onSave }: {
   member: Member; onClose: () => void;
   onSave: (id: number, name: string, phone: string) => Promise<void>;
 }) {
-  const [name, setName] = useState(member.name);
+  const [name, setName]   = useState(member.name);
   const [phone, setPhone] = useState(member.phone);
-  const [saving, setSaving] = useState(false); const [err, setErr] = useState("");
+  const [saving, setSaving] = useState(false);
+  const [err, setErr]     = useState("");
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
     if (!name.trim() || !phone.trim()) { setErr("Name and phone are required"); return; }
     setSaving(true); setErr("");
     try { await onSave(member.id, name, phone); }
-    catch { setErr("Something went wrong. Please try again."); } finally { setSaving(false); }
+    catch { setErr("Something went wrong."); } finally { setSaving(false); }
   }
 
   return (
@@ -1298,15 +1374,18 @@ function EditMemberModal({ member, onClose, onSave }: {
   );
 }
 
-/* ── Group Settings Modal ── */
 function GroupSettingsModal({ group, onClose, onSave }: {
   group: GroupDetail; onClose: () => void;
   onSave: (name: string, daily: number, startedOn: string) => Promise<void>;
 }) {
-  const [name, setName] = useState(group.name);
-  const [daily, setDaily] = useState(String(group.daily_amount));
-  const [startedOn, setStartedOn] = useState(group.started_on);
-  const [saving, setSaving] = useState(false); const [err, setErr] = useState("");
+  const [name, setName]         = useState(group.name);
+  const [daily, setDaily]       = useState(String(group.daily_amount));
+  const [startedOn, setStartedOn] = useState(
+    /* Normalise whatever format PostgreSQL sends to YYYY-MM-DD */
+    String(group.started_on ?? "").slice(0, 10) || todayISO()
+  );
+  const [saving, setSaving] = useState(false);
+  const [err, setErr]       = useState("");
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
@@ -1328,7 +1407,9 @@ function GroupSettingsModal({ group, onClose, onSave }: {
           <InputField icon={FaRupeeSign} placeholder="Daily amount" value={daily} onChange={setDaily} type="number" />
         </div>
         <div>
-          <p className="text-[10px] font-extrabold text-slate-400 uppercase tracking-wider mb-1.5">Start Date</p>
+          <p className="text-[10px] font-extrabold text-slate-400 uppercase tracking-wider mb-1.5">
+            Start Date <span className="text-blue-500 normal-case font-bold">(important — cameti shuru hoin di date)</span>
+          </p>
           <InputField icon={FaCalendarAlt} value={startedOn} onChange={setStartedOn} type="date" />
         </div>
         {err && <ErrMsg>{err}</ErrMsg>}
@@ -1338,7 +1419,6 @@ function GroupSettingsModal({ group, onClose, onSave }: {
   );
 }
 
-/* ── Member History Modal ── */
 function MemberHistoryModal({ member, effectiveDaily, onClose }: {
   member: Member; effectiveDaily: number; onClose: () => void;
 }) {
@@ -1365,11 +1445,10 @@ function MemberHistoryModal({ member, effectiveDaily, onClose }: {
         <div className="text-center py-8 text-slate-400 font-semibold">No payment history found</div>
       ) : (
         <div className="space-y-2">
-          {/* Summary */}
           <div className="grid grid-cols-3 gap-2 mb-4">
             {[
-              { label: "Total Paid", val: fmt(totalPaid), c: "#dcfce7", tc: GREEN },
-              { label: "Entries", val: history.length, c: "#EEF2FF", tc: NAVY },
+              { label: "Total Paid",    val: fmt(totalPaid),                                     c: "#dcfce7", tc: GREEN },
+              { label: "Entries",       val: history.length,                                      c: "#EEF2FF", tc: NAVY },
               { label: "Avg Per Entry", val: fmt(Math.round(totalPaid / (history.length || 1))), c: "#fef9c3", tc: "#92400e" },
             ].map(({ label, val, c, tc }) => (
               <div key={label} className="rounded-2xl py-2.5 text-center" style={{ background: c }}>
@@ -1378,7 +1457,6 @@ function MemberHistoryModal({ member, effectiveDaily, onClose }: {
               </div>
             ))}
           </div>
-          {/* Entries */}
           {history.map((c, idx) => {
             const daysCovered = effectiveDaily > 0 ? Math.round(c.amount / effectiveDaily) : 1;
             return (
@@ -1389,7 +1467,7 @@ function MemberHistoryModal({ member, effectiveDaily, onClose }: {
                   <p className="text-sm font-extrabold text-slate-800">{fmtDate(c.collected_date)}</p>
                   {c.note && <p className="text-[10px] text-amber-600 font-semibold">📝 {c.note}</p>}
                   {daysCovered > 1 && (
-                    <p className="text-[10px] text-blue-500 font-bold">{daysCovered} days payment</p>
+                    <p className="text-[10px] text-blue-500 font-bold">{daysCovered} din da payment</p>
                   )}
                 </div>
                 <div className="text-right">
@@ -1407,17 +1485,22 @@ function MemberHistoryModal({ member, effectiveDaily, onClose }: {
   );
 }
 
-/* ── Add Member Modal ── */
-function AddMemberModal({ onClose, onAdd }: { onClose: () => void; onAdd: (n: string, p: string) => Promise<void> }) {
-  const [name, setName] = useState(""); const [phone, setPhone] = useState("");
-  const [saving, setSaving] = useState(false); const [err, setErr] = useState("");
+function AddMemberModal({ onClose, onAdd }: {
+  onClose: () => void; onAdd: (n: string, p: string) => Promise<void>;
+}) {
+  const [name, setName]   = useState("");
+  const [phone, setPhone] = useState("");
+  const [saving, setSaving] = useState(false);
+  const [err, setErr]     = useState("");
+
   async function submit(e: React.FormEvent) {
     e.preventDefault();
     if (!name.trim() || !phone.trim()) { setErr("Name and phone are required"); return; }
     setSaving(true); setErr("");
     try { await onAdd(name, phone); onClose(); }
-    catch { setErr("Something went wrong. Please try again."); } finally { setSaving(false); }
+    catch { setErr("Something went wrong."); } finally { setSaving(false); }
   }
+
   return (
     <Modal title="Add Member" onClose={onClose}>
       <form onSubmit={submit} className="flex flex-col gap-3">
@@ -1430,7 +1513,6 @@ function AddMemberModal({ onClose, onAdd }: { onClose: () => void; onAdd: (n: st
   );
 }
 
-/* ── Auction Modal ── */
 function BoliModal({ members, dailyAmount, totalMembers, onClose, onConfirm }: {
   members: Member[]; dailyAmount: number; totalMembers: number;
   onClose: () => void; onConfirm: (winnerId: number, bid: number) => Promise<void>;
@@ -1438,15 +1520,16 @@ function BoliModal({ members, dailyAmount, totalMembers, onClose, onConfirm }: {
   const eligible = members.filter(m => !m.has_taken);
   const [winnerId, setWinnerId] = useState<number | null>(null);
   const [bidAmount, setBidAmount] = useState("");
-  const [saving, setSaving] = useState(false); const [err, setErr] = useState("");
-  const bid = Number(bidAmount);
-  const profitPer = bid > 0 ? Math.floor(bid / totalMembers) : 0;
+  const [saving, setSaving] = useState(false);
+  const [err, setErr]       = useState("");
+  const bid           = Number(bidAmount);
+  const profitPer     = bid > 0 ? Math.floor(bid / totalMembers) : 0;
   const dailyReduction = profitPer > 0 ? Math.floor(profitPer / 30) : 0;
-  const newDaily = dailyAmount - dailyReduction;
+  const newDaily      = dailyAmount - dailyReduction;
 
   async function submit() {
-    if (!winnerId) { setErr("Please select a winner"); return; }
-    if (bid <= 0) { setErr("Please enter auction amount"); return; }
+    if (!winnerId)  { setErr("Please select a winner"); return; }
+    if (bid <= 0)   { setErr("Please enter auction amount"); return; }
     setSaving(true); setErr("");
     try { await onConfirm(winnerId, bid); onClose(); }
     catch { setErr("Something went wrong."); } finally { setSaving(false); }
@@ -1461,9 +1544,13 @@ function BoliModal({ members, dailyAmount, totalMembers, onClose, onConfirm }: {
             {eligible.map(m => (
               <button key={m.id} type="button" onClick={() => setWinnerId(m.id)}
                 className="flex items-center gap-2 px-3 py-2.5 rounded-2xl border-2 text-left transition-all"
-                style={winnerId === m.id ? { borderColor: GOLD, background: "#fef9c3" } : { borderColor: "#f1f5f9", background: "white" }}>
+                style={winnerId === m.id
+                  ? { borderColor: GOLD, background: "#fef9c3" }
+                  : { borderColor: "#f1f5f9", background: "white" }}>
                 <div className="w-8 h-8 rounded-xl flex items-center justify-center font-black text-sm flex-shrink-0"
-                  style={{ background: "#EEF2FF", color: NAVY }}>{initials(m.name)}</div>
+                  style={{ background: "#EEF2FF", color: NAVY }}>
+                  {initials(m.name)}
+                </div>
                 <div className="min-w-0">
                   <p className="font-extrabold text-xs text-slate-800 truncate">{m.name}</p>
                   <p className="text-[9px] text-slate-400">{m.phone}</p>
@@ -1501,10 +1588,10 @@ function BoliModal({ members, dailyAmount, totalMembers, onClose, onConfirm }: {
 }
 
 /* ══════════════════════════════════════════════════════════════
-   GROUPS LIST (HOME)
+   GROUPS LIST
 ══════════════════════════════════════════════════════════════ */
 function GroupsList({ onSelect }: { onSelect: (id: number) => void }) {
-  const [groups, setGroups] = useState<CametiGroup[]>([]);
+  const [groups, setGroups]   = useState<CametiGroup[]>([]);
   const [loading, setLoading] = useState(true);
   const [showCreate, setShowCreate] = useState(false);
 
@@ -1524,8 +1611,6 @@ function GroupsList({ onSelect }: { onSelect: (id: number) => void }) {
     if (!r.ok) throw new Error();
     await load();
   }
-
-  const totalMembers = groups.reduce((s, g) => s + g.total_members, 0);
 
   return (
     <Layout>
@@ -1556,7 +1641,7 @@ function GroupsList({ onSelect }: { onSelect: (id: number) => void }) {
                 </div>
               </div>
               <button onClick={() => setShowCreate(true)}
-                className="flex items-center gap-2 text-xs font-bold px-4 py-2.5 rounded-2xl transition-all active:scale-95 text-white"
+                className="flex items-center gap-2 text-xs font-bold px-4 py-2.5 rounded-2xl text-white"
                 style={{ background: `linear-gradient(135deg,${GOLD},#b8860b)` }}>
                 <FaPlus /> New Group
               </button>
@@ -1564,11 +1649,12 @@ function GroupsList({ onSelect }: { onSelect: (id: number) => void }) {
 
             <div className="grid grid-cols-3 gap-3">
               {[
-                { label: "Total Groups", val: groups.length, c: "rgba(255,255,255,0.1)" },
-                { label: "Total Members", val: totalMembers, c: "rgba(34,197,94,0.18)" },
+                { label: "Total Groups",  val: groups.length, c: "rgba(255,255,255,0.1)" },
+                { label: "Total Members", val: groups.reduce((s, g) => s + g.total_members, 0), c: "rgba(34,197,94,0.18)" },
                 { label: "Active Groups", val: groups.length, c: `rgba(212,160,23,0.18)` },
               ].map(({ label, val, c }) => (
-                <div key={label} className="rounded-2xl p-3.5 text-center" style={{ background: c, border: "1px solid rgba(255,255,255,0.08)" }}>
+                <div key={label} className="rounded-2xl p-3.5 text-center"
+                  style={{ background: c, border: "1px solid rgba(255,255,255,0.08)" }}>
                   <p className="text-white font-black text-xl leading-none">{val}</p>
                   <p className="text-white/50 text-[9px] font-bold uppercase mt-1">{label}</p>
                 </div>
@@ -1577,7 +1663,7 @@ function GroupsList({ onSelect }: { onSelect: (id: number) => void }) {
           </div>
         </div>
 
-        {/* Groups */}
+        {/* Groups list */}
         <div className="px-4 -mt-12 max-w-3xl mx-auto w-full pb-10">
           {loading ? (
             <div className="space-y-3">
@@ -1588,10 +1674,7 @@ function GroupsList({ onSelect }: { onSelect: (id: number) => void }) {
           ) : (
             <div className="space-y-3">
               {groups.map((g, idx) => {
-                const start = g.started_on ? new Date(g.started_on + "T00:00:00") : null;
-                const days = start && !isNaN(start.getTime())
-                  ? Math.max(1, Math.floor((Date.now() - start.getTime()) / 86400000) + 1)
-                  : 0;
+                const days = calcDaysElapsed(g.started_on);
                 return (
                   <button key={g.id} onClick={() => onSelect(g.id)}
                     className="ct-up w-full bg-white rounded-3xl p-5 text-left shadow-sm hover:shadow-lg transition-all active:scale-[0.98]"
@@ -1605,44 +1688,37 @@ function GroupsList({ onSelect }: { onSelect: (id: number) => void }) {
                         <div>
                           <h3 className="font-extrabold text-base text-slate-800">{g.name}</h3>
                           <p className="text-xs text-slate-400 font-medium mt-0.5">
-                            Started {fmtDate(g.started_on)} · {days} day{days !== 1 ? "s" : ""} running
+                            Started {fmtDate(g.started_on)} · {days} din chal raha
                           </p>
                         </div>
                       </div>
                       <div className="text-right flex-shrink-0">
                         <p className="text-lg font-black" style={{ color: NAVY }}>{fmt(g.daily_amount)}</p>
-                        <p className="text-[10px] text-slate-400 font-bold">Per Member / Day</p>
+                        <p className="text-[10px] text-slate-400 font-bold">Per Member / Din</p>
                       </div>
                     </div>
 
-                    {/* Estimated progress bar */}
-                    {days > 0 && (
-                      <div className="mb-3">
-                        <div className="flex items-center justify-between mb-1">
-                          <p className="text-[10px] font-bold text-slate-400">Est. Daily Target</p>
-                          <p className="text-[10px] font-extrabold" style={{ color: NAVY }}>
-                            {fmt(g.daily_amount * g.total_members)}/day
-                          </p>
-                        </div>
-                        <div className="h-2 bg-slate-100 rounded-full overflow-hidden">
-                          <div className="h-full rounded-full transition-all duration-700"
-                            style={{
-                              width: "100%",
-                              background: `linear-gradient(90deg, ${GREEN}, #22c55e)`,
-                            }} />
-                        </div>
+                    <div className="mb-2">
+                      <div className="flex items-center justify-between mb-1">
+                        <p className="text-[10px] font-bold text-slate-400">Daily Group Target</p>
+                        <p className="text-[10px] font-extrabold" style={{ color: NAVY }}>
+                          {fmt(g.daily_amount * g.total_members)}/din
+                        </p>
                       </div>
-                    )}
+                      <div className="h-2 bg-slate-100 rounded-full overflow-hidden">
+                        <div className="h-full rounded-full" style={{ width: "100%", background: `linear-gradient(90deg,${GREEN},#22c55e)` }} />
+                      </div>
+                    </div>
 
                     <div className="flex items-center gap-2 pt-3 border-t border-slate-50">
                       <span className="text-[10px] font-bold px-2.5 py-1 rounded-full bg-slate-100 text-slate-500">
                         👥 {g.total_members} Members
                       </span>
                       <span className="text-[10px] font-bold px-2.5 py-1 rounded-full" style={{ background: "#dcfce7", color: GREEN }}>
-                        {fmt(g.daily_amount * g.total_members)}/day Group Total
+                        {fmt(g.daily_amount * g.total_members)}/din
                       </span>
                       <span className="text-[10px] font-bold px-2.5 py-1 rounded-full ml-auto" style={{ background: "#EEF2FF", color: NAVY }}>
-                        {days} days
+                        {days} din
                       </span>
                     </div>
                   </button>
@@ -1661,10 +1737,11 @@ function CreateGroupModal({ onClose, onCreate }: {
   onClose: () => void;
   onCreate: (name: string, daily: number, startDate: string) => Promise<void>;
 }) {
-  const [name, setName] = useState("");
-  const [daily, setDaily] = useState("300");
+  const [name, setName]         = useState("");
+  const [daily, setDaily]       = useState("300");
   const [startDate, setStartDate] = useState(todayISO());
-  const [saving, setSaving] = useState(false); const [err, setErr] = useState("");
+  const [saving, setSaving]     = useState(false);
+  const [err, setErr]           = useState("");
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
@@ -1686,15 +1763,16 @@ function CreateGroupModal({ onClose, onCreate }: {
           <InputField icon={FaRupeeSign} placeholder="e.g. 300" value={daily} onChange={setDaily} type="number" />
         </div>
         <div>
-          <p className="text-[10px] font-extrabold text-slate-400 uppercase tracking-wider mb-1.5">Start Date</p>
+          <p className="text-[10px] font-extrabold text-slate-400 uppercase tracking-wider mb-1.5">
+            Start Date <span className="text-blue-500 normal-case font-bold">(cameti shuru hoin di date)</span>
+          </p>
           <InputField icon={FaCalendarAlt} value={startDate} onChange={setStartDate} type="date" />
         </div>
-        {/* Preview */}
         {Number(daily) > 0 && (
           <div className="bg-slate-50 rounded-2xl p-3 border border-slate-100">
-            <p className="text-[10px] font-bold text-slate-400 uppercase mb-1">Preview (12 members default)</p>
+            <p className="text-[10px] font-bold text-slate-400 uppercase mb-1">Preview (12 members)</p>
             <p className="text-sm font-extrabold text-slate-700">
-              {fmt(Number(daily))} × 12 = <span style={{ color: GREEN }}>{fmt(Number(daily) * 12)}/day</span>
+              {fmt(Number(daily))} × 12 = <span style={{ color: GREEN }}>{fmt(Number(daily) * 12)}/din</span>
             </p>
           </div>
         )}
@@ -1706,10 +1784,10 @@ function CreateGroupModal({ onClose, onCreate }: {
 }
 
 /* ══════════════════════════════════════════════════════════════
-   ROOT — PIN + ROUTER
+   ROOT
 ══════════════════════════════════════════════════════════════ */
 export default function Cameti() {
-  const [authed, setAuthed] = useState(false);
+  const [authed, setAuthed]               = useState(false);
   const [selectedGroupId, setSelectedGroupId] = useState<number | null>(null);
 
   useEffect(() => {
@@ -1721,3 +1799,6 @@ export default function Cameti() {
     return <GroupDetail groupId={selectedGroupId} onBack={() => setSelectedGroupId(null)} />;
   return <GroupsList onSelect={setSelectedGroupId} />;
 }
+
+/* suppress unused-import warning for FaChartBar (kept for future use) */
+void FaChartBar;
