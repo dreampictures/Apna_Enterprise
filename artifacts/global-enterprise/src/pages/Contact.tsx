@@ -15,6 +15,14 @@ export default function Contact() {
         description="Get in touch with Apna Enterprise, Firozepur. Email us or fill the application form. We're here to help with all your service needs."
         keywords="contact Apna Enterprise, Firozepur service centre address, email Apna Enterprise"
         path="/contact"
+        jsonLd={{
+          "@context": "https://schema.org",
+          "@type": "BreadcrumbList",
+          "itemListElement": [
+            { "@type": "ListItem", "position": 1, "name": "Home", "item": "https://apnaenterprise.in/" },
+            { "@type": "ListItem", "position": 2, "name": "Contact Us", "item": "https://apnaenterprise.in/contact" }
+          ]
+        }}
       />
       {/* ── Header ── */}
       <section className="hero-navy text-white py-16">

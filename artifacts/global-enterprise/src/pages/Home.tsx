@@ -53,6 +53,65 @@ export default function Home() {
         description="Apna Enterprise — Firozepur's trusted multi-service centre for travel ticketing, PAN card, Aadhaar, passport, government forms, printing, finance & international parcels."
         keywords="Apna Enterprise, Firozepur services, PAN card apply, Aadhaar services, passport apply, train ticket booking, air ticket booking, government forms, printing Firozepur, financial services Punjab"
         path="/"
+        jsonLd={[
+          {
+            "@context": "https://schema.org",
+            "@type": "LocalBusiness",
+            "name": "Apna Enterprise",
+            "image": "https://apnaenterprise.in/logo.png",
+            "url": "https://apnaenterprise.in",
+            "telephone": "+918437566186",
+            "address": {
+              "@type": "PostalAddress",
+              "streetAddress": "Dharamkot Road Jogewala",
+              "addressLocality": "Firozepur",
+              "addressRegion": "Punjab",
+              "postalCode": "142044",
+              "addressCountry": "IN"
+            },
+            "geo": {
+              "@type": "GeoCoordinates",
+              "latitude": 30.9279,
+              "longitude": 74.6143
+            },
+            "openingHoursSpecification": [
+              {
+                "@type": "OpeningHoursSpecification",
+                "dayOfWeek": ["Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"],
+                "opens": "09:00",
+                "closes": "20:00"
+              }
+            ],
+            "priceRange": "₹",
+            "description": "Firozepur's trusted multi-service centre for travel ticketing, PAN card, Aadhaar, passport, government forms, printing, financial services and international parcels.",
+            "hasOfferCatalog": {
+              "@type": "OfferCatalog",
+              "name": "Services",
+              "itemListElement": [
+                { "@type": "Offer", "itemOffered": { "@type": "Service", "name": "Air Ticket Booking" } },
+                { "@type": "Offer", "itemOffered": { "@type": "Service", "name": "Train Ticket Booking" } },
+                { "@type": "Offer", "itemOffered": { "@type": "Service", "name": "PAN Card Apply" } },
+                { "@type": "Offer", "itemOffered": { "@type": "Service", "name": "Aadhaar Card Services" } },
+                { "@type": "Offer", "itemOffered": { "@type": "Service", "name": "Passport Apply" } },
+                { "@type": "Offer", "itemOffered": { "@type": "Service", "name": "Voter Card Apply" } },
+                { "@type": "Offer", "itemOffered": { "@type": "Service", "name": "International Parcel Booking" } },
+                { "@type": "Offer", "itemOffered": { "@type": "Service", "name": "Money Transfer (AEPS)" } }
+              ]
+            },
+            "sameAs": []
+          },
+          {
+            "@context": "https://schema.org",
+            "@type": "WebSite",
+            "name": "Apna Enterprise",
+            "url": "https://apnaenterprise.in",
+            "potentialAction": {
+              "@type": "SearchAction",
+              "target": "https://apnaenterprise.in/services?q={search_term_string}",
+              "query-input": "required name=search_term_string"
+            }
+          }
+        ]}
       />
 
       {/* ── HERO ── */}

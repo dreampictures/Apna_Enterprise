@@ -11,6 +11,7 @@ interface SeoProps {
   path?: string;
   image?: string;
   noindex?: boolean;
+  jsonLd?: object | object[];
 }
 
 export default function Seo({
@@ -20,9 +21,16 @@ export default function Seo({
   path = "/",
   image = DEFAULT_IMAGE,
   noindex = false,
+  jsonLd,
 }: SeoProps) {
   const fullTitle = `${title} | ${SITE_NAME}`;
   const canonical = `${BASE_URL}${path}`;
+
+  const schemas = jsonLd
+    ? Array.isArray(jsonLd)
+      ? jsonLd
+      : [jsonLd]
+    : [];
 
   return (
     <Helmet>
@@ -43,6 +51,12 @@ export default function Seo({
       <meta name="twitter:title" content={fullTitle} />
       <meta name="twitter:description" content={description} />
       <meta name="twitter:image" content={image} />
+
+      {schemas.map((schema, i) => (
+        <script key={i} type="application/ld+json">
+          {JSON.stringify(schema)}
+        </script>
+      ))}
     </Helmet>
   );
 }

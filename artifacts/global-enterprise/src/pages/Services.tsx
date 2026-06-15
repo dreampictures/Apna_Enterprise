@@ -106,6 +106,14 @@ export default function Services() {
         title="Our Services — Travel, Documents, Finance & More"
         description="Browse 50+ services at Apna Enterprise Firozepur — air & train tickets, PAN card, Aadhaar, passport, voter ID, printing, financial services, international parcels and more."
         keywords="services Firozepur, air ticket booking, train ticket, PAN card, Aadhaar update, passport apply, printing services, money transfer, international parcel Firozepur"
+        jsonLd={{
+          "@context": "https://schema.org",
+          "@type": "BreadcrumbList",
+          "itemListElement": [
+            { "@type": "ListItem", "position": 1, "name": "Home", "item": "https://apnaenterprise.in/" },
+            { "@type": "ListItem", "position": 2, "name": "Services", "item": "https://apnaenterprise.in/services" }
+          ]
+        }}
         path="/services"
       />
       {/* ── Page Header ── */}

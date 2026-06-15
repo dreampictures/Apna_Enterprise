@@ -127,6 +127,14 @@ export default function Apply() {
         description="Apply online for any service at Apna Enterprise Firozepur. Fill in your details, choose your service, and we'll get back to you on WhatsApp promptly."
         keywords="apply service Firozepur, online application Apna Enterprise, service request Punjab, PAN card apply online, Aadhaar apply Firozepur"
         path="/apply"
+        jsonLd={{
+          "@context": "https://schema.org",
+          "@type": "BreadcrumbList",
+          "itemListElement": [
+            { "@type": "ListItem", "position": 1, "name": "Home", "item": "https://apnaenterprise.in/" },
+            { "@type": "ListItem", "position": 2, "name": "Apply Now", "item": "https://apnaenterprise.in/apply" }
+          ]
+        }}
       />
       {/* ── Header ── */}
       <section className="hero-navy text-white py-16">
