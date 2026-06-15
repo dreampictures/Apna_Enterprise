@@ -46,7 +46,7 @@ function mapRow(row: any) {
 
 // GET /announcements — public list
 router.get("/announcements", async (req, res) => {
-  const { category, limit = "20", offset = "0", published } = req.query as Record<string, string>;
+  const { category, limit = "20", offset = "0", published, q } = req.query as Record<string, string>;
   const lim = Math.min(parseInt(limit) || 20, 100);
   const off = parseInt(offset) || 0;
 
@@ -60,6 +60,11 @@ router.get("/announcements", async (req, res) => {
     if (category) {
       values.push(category);
       conditions.push(`category = $${values.length}`);
+    }
+    if (q && q.trim()) {
+      const pattern = `%${q.trim()}%`;
+      values.push(pattern);
+      conditions.push(`(title ILIKE $${values.length} OR department ILIKE $${values.length} OR short_desc ILIKE $${values.length})`);
     }
 
     const where = conditions.length ? `WHERE ${conditions.join(" AND ")}` : "";

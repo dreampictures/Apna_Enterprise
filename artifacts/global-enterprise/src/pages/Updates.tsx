@@ -1,10 +1,10 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { Link, useLocation } from "wouter";
 import Seo from "@/components/Seo";
 import {
   FaBriefcase, FaFileAlt, FaCheckCircle, FaHandHoldingUsd,
   FaBullhorn, FaStar, FaWhatsapp, FaExternalLinkAlt, FaArrowRight,
-  FaCalendarAlt, FaBuilding, FaUsers, FaFire, FaClock,
+  FaCalendarAlt, FaBuilding, FaUsers, FaFire, FaClock, FaSearch, FaTimes,
 } from "react-icons/fa";
 import { useT } from "@/i18n";
 
@@ -76,8 +76,26 @@ export default function Updates() {
   const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(true);
   const [page, setPage] = useState(0);
+  const [searchInput, setSearchInput] = useState("");
+  const [searchQuery, setSearchQuery] = useState("");
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const limit = 12;
   const { t } = useT();
+
+  function handleSearchChange(val: string) {
+    setSearchInput(val);
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+    debounceRef.current = setTimeout(() => {
+      setSearchQuery(val.trim());
+      setPage(0);
+    }, 400);
+  }
+
+  function clearSearch() {
+    setSearchInput("");
+    setSearchQuery("");
+    setPage(0);
+  }
 
   const CATEGORIES = [
     { id: "All", label: t.updates_cat_all, icon: FaBullhorn },
@@ -91,14 +109,14 @@ export default function Updates() {
   ];
 
   useEffect(() => {
-    setLoading(true);
     setPage(0);
-  }, [activeCategory]);
+  }, [activeCategory, searchQuery]);
 
   useEffect(() => {
     setLoading(true);
     const params = new URLSearchParams({ limit: String(limit), offset: String(page * limit), published: "1" });
     if (activeCategory !== "All") params.set("category", activeCategory);
+    if (searchQuery) params.set("q", searchQuery);
     fetch(`/api/announcements?${params}`)
       .then((r) => r.json())
       .then((data) => {
@@ -107,7 +125,7 @@ export default function Updates() {
       })
       .catch(() => setItems([]))
       .finally(() => setLoading(false));
-  }, [activeCategory, page]);
+  }, [activeCategory, page, searchQuery]);
 
   return (
     <div className="flex flex-col min-h-full">
@@ -126,9 +144,38 @@ export default function Updates() {
           </p>
           <h1 className="text-4xl md:text-5xl font-extrabold mb-4 tracking-tight">{t.updates_title}</h1>
           <div className="w-16 h-1 rounded-full mx-auto mb-5" style={{ background: GOLD }} />
-          <p className="max-w-xl mx-auto text-base md:text-lg leading-relaxed" style={{ color: "rgba(255,255,255,0.7)" }}>
+          <p className="max-w-xl mx-auto text-base md:text-lg leading-relaxed mb-8" style={{ color: "rgba(255,255,255,0.7)" }}>
             {t.updates_subtitle}
           </p>
+
+          {/* Search Bar */}
+          <div className="max-w-xl mx-auto relative">
+            <div className="flex items-center rounded-2xl overflow-hidden" style={{ background: "rgba(255,255,255,0.12)", border: "1.5px solid rgba(255,255,255,0.25)", backdropFilter: "blur(8px)" }}>
+              <FaSearch className="ml-4 flex-shrink-0 text-sm" style={{ color: "rgba(255,255,255,0.6)" }} />
+              <input
+                type="text"
+                value={searchInput}
+                onChange={(e) => handleSearchChange(e.target.value)}
+                placeholder="Search jobs, schemes, results..."
+                className="flex-1 bg-transparent px-3 py-3.5 text-sm font-medium outline-none placeholder:font-normal"
+                style={{ color: "#fff", caretColor: GOLD }}
+              />
+              {searchInput && (
+                <button
+                  onClick={clearSearch}
+                  className="mr-3 flex-shrink-0 w-6 h-6 rounded-full flex items-center justify-center transition-opacity hover:opacity-80"
+                  style={{ background: "rgba(255,255,255,0.2)" }}
+                >
+                  <FaTimes className="text-xs text-white" />
+                </button>
+              )}
+            </div>
+            {searchQuery && (
+              <p className="mt-2 text-xs font-medium" style={{ color: "rgba(255,255,255,0.6)" }}>
+                Showing results for "<span style={{ color: GOLD }}>{searchQuery}</span>"
+              </p>
+            )}
+          </div>
         </div>
       </section>
 
