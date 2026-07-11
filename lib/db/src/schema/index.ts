@@ -99,6 +99,7 @@ export const announcementsTable = pgTable("announcements", {
   ogTitle: text("og_title"),
   ogDescription: text("og_description"),
   ogImage: text("og_image"),
+  robots: text("robots").default("index, follow"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 

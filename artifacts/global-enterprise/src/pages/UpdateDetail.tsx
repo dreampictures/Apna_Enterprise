@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link, useParams } from "wouter";
 import Seo from "@/components/Seo";
+import { FaChevronDown } from "react-icons/fa";
 import {
   FaArrowLeft, FaCalendarAlt, FaBuilding, FaUsers,
   FaGlobe, FaFileAlt, FaExternalLinkAlt, FaWhatsapp,
@@ -15,14 +16,16 @@ interface CellData { value: string; url?: string }
 type TableCell = string | CellData;
 
 interface LinkItem { label: string; url: string; tag?: string }
+interface FaqItem { question: string; answer: string }
 interface Section {
   id: string;
-  type: "text" | "table" | "links";
+  type: "text" | "table" | "links" | "faq";
   title: string;
   content?: string;
   columns?: string[];
   rows?: TableCell[][];
   links?: LinkItem[];
+  faqs?: FaqItem[];
 }
 interface Announcement {
   id: number;
@@ -49,6 +52,91 @@ interface Announcement {
   ogTitle?: string | null;
   ogDescription?: string | null;
   ogImage?: string | null;
+  robots?: string | null;
+}
+
+const BASE_URL = "https://apnaenterprise.in";
+const SITE_NAME = "Apna Enterprise";
+
+function buildJsonLd(item: Announcement): object[] {
+  const schemas: object[] = [];
+  const canonical = item.canonicalUrl || `${BASE_URL}/updates/${item.slug}`;
+  const image = item.ogImage || `${BASE_URL}/logo.png`;
+  const description = item.seoDescription || item.shortDesc || `${item.category} — ${item.title}`;
+  const datePublished = item.publishDate ? new Date(item.publishDate).toISOString() : new Date().toISOString();
+  const dateModified = datePublished;
+
+  schemas.push({
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    "itemListElement": [
+      { "@type": "ListItem", "position": 1, "name": "Home", "item": BASE_URL },
+      { "@type": "ListItem", "position": 2, "name": "Updates", "item": `${BASE_URL}/updates` },
+      { "@type": "ListItem", "position": 3, "name": item.title, "item": canonical },
+    ],
+  });
+
+  const articleType =
+    item.category === "Government Job" ? "JobPosting" :
+    ["Result", "Admit Card"].includes(item.category) ? "NewsArticle" : "Article";
+
+  if (articleType === "JobPosting" && item.department) {
+    schemas.push({
+      "@context": "https://schema.org",
+      "@type": "JobPosting",
+      "title": item.title,
+      "description": description,
+      "datePosted": datePublished,
+      "validThrough": item.lastDate ? new Date(item.lastDate).toISOString() : undefined,
+      "hiringOrganization": {
+        "@type": "Organization",
+        "name": item.department || SITE_NAME,
+        "sameAs": item.officialWebsite || BASE_URL,
+      },
+      "jobLocation": { "@type": "Place", "address": { "@type": "PostalAddress", "addressCountry": "IN" } },
+      ...(item.vacancyCount ? { "totalJobOpenings": item.vacancyCount } : {}),
+      "employmentType": "FULL_TIME",
+      "url": canonical,
+    });
+  } else {
+    schemas.push({
+      "@context": "https://schema.org",
+      "@type": articleType,
+      "headline": item.title,
+      "description": description,
+      "image": image,
+      "datePublished": datePublished,
+      "dateModified": dateModified,
+      "url": canonical,
+      "author": { "@type": "Organization", "name": SITE_NAME, "url": BASE_URL },
+      "publisher": {
+        "@type": "Organization",
+        "name": SITE_NAME,
+        "url": BASE_URL,
+        "logo": { "@type": "ImageObject", "url": `${BASE_URL}/logo.png` },
+      },
+      "mainEntityOfPage": { "@type": "WebPage", "@id": canonical },
+    });
+  }
+
+  const faqItems = item.sections
+    .filter((s) => s.type === "faq" && s.faqs && s.faqs.length > 0)
+    .flatMap((s) => s.faqs || [])
+    .filter((f) => f.question.trim() && f.answer.trim());
+
+  if (faqItems.length > 0) {
+    schemas.push({
+      "@context": "https://schema.org",
+      "@type": "FAQPage",
+      "mainEntity": faqItems.map((f) => ({
+        "@type": "Question",
+        "name": f.question,
+        "acceptedAnswer": { "@type": "Answer", "text": f.answer },
+      })),
+    });
+  }
+
+  return schemas;
 }
 
 function fmtDate(d?: string) {
@@ -172,6 +260,29 @@ function isDefaultColumnHeader(col: string, idx: number) {
   return col === `Column ${idx + 1}` || col.trim() === "";
 }
 
+function FaqAccordionItem({ question, answer }: { question: string; answer: string }) {
+  const [open, setOpen] = useState(false);
+  return (
+    <div>
+      <button
+        onClick={() => setOpen((o) => !o)}
+        className="w-full flex items-center justify-between px-5 py-4 text-left hover:bg-slate-50 transition-colors"
+      >
+        <span className="font-semibold text-slate-800 text-sm leading-snug pr-4">{question}</span>
+        <FaChevronDown
+          className="flex-shrink-0 text-slate-400 transition-transform duration-200"
+          style={{ transform: open ? "rotate(180deg)" : "rotate(0deg)" }}
+        />
+      </button>
+      {open && (
+        <div className="px-5 pb-4 text-sm text-slate-600 leading-relaxed" style={{ borderTop: "1px solid #f1f5f9" }}>
+          {answer}
+        </div>
+      )}
+    </div>
+  );
+}
+
 export default function UpdateDetail() {
   const params = useParams<{ slug: string }>();
   const slug = params.slug;
@@ -233,6 +344,8 @@ export default function UpdateDetail() {
         ogTitle={item.ogTitle || undefined}
         ogDescription={item.ogDescription || undefined}
         image={item.ogImage || undefined}
+        robotsStr={item.robots || "index, follow"}
+        jsonLd={buildJsonLd(item)}
       />
 
       {/* Header */}
@@ -312,6 +425,10 @@ export default function UpdateDetail() {
               if (sec.type === "links") {
                 const hasLinks = sec.links && sec.links.some((l) => l.label.trim() && l.url.trim());
                 if (!hasLinks) return null;
+              }
+              if (sec.type === "faq") {
+                const hasFaqs = sec.faqs && sec.faqs.some((f) => f.question.trim() && f.answer.trim());
+                if (!hasFaqs) return null;
               }
 
               return (
@@ -397,6 +514,19 @@ export default function UpdateDetail() {
                             ))}
                           </tbody>
                         </table>
+                      </div>
+                    );
+                  })()}
+
+                  {/* ── FAQ Section ── */}
+                  {sec.type === "faq" && sec.faqs && (() => {
+                    const activeFaqs = sec.faqs!.filter((f) => f.question.trim() && f.answer.trim());
+                    if (activeFaqs.length === 0) return null;
+                    return (
+                      <div className="divide-y divide-slate-100">
+                        {activeFaqs.map((faq, i) => (
+                          <FaqAccordionItem key={i} question={faq.question} answer={faq.answer} />
+                        ))}
                       </div>
                     );
                   })()}

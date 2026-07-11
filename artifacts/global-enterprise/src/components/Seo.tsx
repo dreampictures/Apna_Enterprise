@@ -14,6 +14,7 @@ interface SeoProps {
   ogTitle?: string;
   ogDescription?: string;
   noindex?: boolean;
+  robotsStr?: string;
   jsonLd?: object | object[];
 }
 
@@ -27,12 +28,14 @@ export default function Seo({
   ogTitle,
   ogDescription,
   noindex = false,
+  robotsStr,
   jsonLd,
 }: SeoProps) {
   const fullTitle = `${title} | ${SITE_NAME}`;
   const canonical = canonicalOverride || `${BASE_URL}${path}`;
   const resolvedOgTitle = ogTitle ? `${ogTitle} | ${SITE_NAME}` : fullTitle;
   const resolvedOgDesc = ogDescription || description;
+  const robotsContent = robotsStr || (noindex ? "noindex, nofollow" : "index, follow");
 
   const schemas = jsonLd
     ? Array.isArray(jsonLd)
@@ -45,7 +48,7 @@ export default function Seo({
       <title>{fullTitle}</title>
       <meta name="description" content={description} />
       {keywords && <meta name="keywords" content={keywords} />}
-      <meta name="robots" content={noindex ? "noindex, nofollow" : "index, follow"} />
+      <meta name="robots" content={robotsContent} />
       <link rel="canonical" href={canonical} />
 
       <meta property="og:type" content="website" />

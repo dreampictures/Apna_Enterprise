@@ -12,9 +12,10 @@ import {
 const GOLD = "#D4A017";
 const CATEGORIES = ["Government Job", "Admit Card", "Result", "Govt Scheme", "Govt Notice", "Announcement", "Offer / Update"];
 
-type SectionType = "text" | "table" | "links";
+type SectionType = "text" | "table" | "links" | "faq";
 interface CellData { value: string; url: string }
 interface LinkItem { label: string; url: string; tag: string }
+interface FaqItem { question: string; answer: string }
 interface Section {
   id: string;
   type: SectionType;
@@ -23,6 +24,7 @@ interface Section {
   columns: string[];
   rows: CellData[][];
   links: LinkItem[];
+  faqs: FaqItem[];
 }
 interface Ann {
   id: number;
@@ -50,6 +52,7 @@ interface Ann {
   ogTitle?: string;
   ogDescription?: string;
   ogImage?: string;
+  robots?: string;
   createdAt: string;
 }
 
@@ -77,6 +80,7 @@ function normalizeSections(raw: Section[]): Section[] {
       (row as unknown[]).map((cell) => normalizeCell(cell))
     ),
     links: s.links || [],
+    faqs: s.faqs || [],
   }));
 }
 function emptyForm(): Omit<Ann, "id" | "isExpired" | "createdAt"> {
@@ -87,7 +91,7 @@ function emptyForm(): Omit<Ann, "id" | "isExpired" | "createdAt"> {
     officialWebsite: "", officialNotificationUrl: "", applyUrl: "",
     isPublished: false, isUrgent: false, isFeatured: false, sections: [],
     seoTitle: "", seoDescription: "", focusKeywords: "",
-    canonicalUrl: "", ogTitle: "", ogDescription: "", ogImage: "",
+    canonicalUrl: "", ogTitle: "", ogDescription: "", ogImage: "", robots: "index, follow",
   };
 }
 
@@ -201,6 +205,7 @@ export default function AdminAnnouncements({ token }: { token: string | null }) 
       seoTitle: a.seoTitle || "", seoDescription: a.seoDescription || "",
       focusKeywords: a.focusKeywords || "", canonicalUrl: a.canonicalUrl || "",
       ogTitle: a.ogTitle || "", ogDescription: a.ogDescription || "", ogImage: a.ogImage || "",
+      robots: a.robots || "index, follow",
     });
     setEditId(a.id);
     setError("");
@@ -256,10 +261,11 @@ export default function AdminAnnouncements({ token }: { token: string | null }) 
   // Section helpers
   function addSection(type: SectionType, afterId?: string) {
     const s: Section = {
-      id: uid(), type, title: "", content: "",
+      id: uid(), type, title: type === "faq" ? "Frequently Asked Questions" : "", content: "",
       columns: ["Column 1", "Column 2"],
       rows: [[emptyCell(), emptyCell()]],
       links: [{ label: "", url: "", tag: "default" }],
+      faqs: type === "faq" ? [{ question: "", answer: "" }] : [],
     };
     setForm((p) => {
       if (!afterId) return { ...p, sections: [...p.sections, s] };
@@ -691,11 +697,12 @@ export default function AdminAnnouncements({ token }: { token: string | null }) 
         <div className="bg-white rounded-2xl border border-slate-100 p-6">
           <div className="flex items-center justify-between mb-5 pb-3 border-b border-slate-100">
             <h3 className="text-sm font-bold text-slate-700 uppercase tracking-wider">Content Sections</h3>
-            <div className="flex gap-2">
+            <div className="flex flex-wrap gap-2">
               {([
                 { type: "text" as SectionType, icon: FaAlignLeft, label: "Text" },
                 { type: "table" as SectionType, icon: FaTable, label: "Table" },
                 { type: "links" as SectionType, icon: FaLink, label: "Links" },
+                { type: "faq" as SectionType, icon: FaSearch, label: "FAQ" },
               ]).map(({ type, icon: Icon, label }) => (
                 <button
                   key={type}
@@ -718,7 +725,7 @@ export default function AdminAnnouncements({ token }: { token: string | null }) 
                 {/* Section Header */}
                 <div className="flex items-center gap-2 px-4 py-3 bg-slate-50 border-b border-slate-200">
                   <span className="text-xs font-bold uppercase text-slate-500 bg-slate-200 px-2 py-0.5 rounded">
-                    {sec.type === "text" ? "📝 TEXT" : sec.type === "table" ? "📊 TABLE" : "🔗 LINKS"}
+                    {sec.type === "text" ? "📝 TEXT" : sec.type === "table" ? "📊 TABLE" : sec.type === "faq" ? "❓ FAQ" : "🔗 LINKS"}
                   </span>
                   <Input
                     className="flex-1 h-8 text-sm border-slate-200"
@@ -831,6 +838,57 @@ export default function AdminAnnouncements({ token }: { token: string | null }) 
                     </div>
                   )}
 
+                  {/* ── FAQ Section ── */}
+                  {sec.type === "faq" && (
+                    <div className="space-y-3">
+                      <p className="text-xs text-slate-400 mb-2">Each Q&amp;A pair generates a <strong>FAQPage schema</strong> for Google rich results.</p>
+                      {(sec.faqs || []).map((faq, fi) => (
+                        <div key={fi} className="rounded-xl border border-slate-200 p-3 space-y-2" style={{ background: "#f8fafd" }}>
+                          <div className="flex items-center gap-2">
+                            <span className="text-xs font-bold text-slate-500 bg-slate-200 px-2 py-0.5 rounded-full">Q{fi + 1}</span>
+                            <Input
+                              className="flex-1 h-8 text-sm"
+                              value={faq.question}
+                              onChange={(e) => {
+                                const faqs = (sec.faqs || []).map((f, i) => i === fi ? { ...f, question: e.target.value } : f);
+                                updateSection(sec.id, { faqs });
+                              }}
+                              placeholder="Enter question…"
+                            />
+                            <button
+                              onClick={() => {
+                                const faqs = (sec.faqs || []).filter((_, i) => i !== fi);
+                                updateSection(sec.id, { faqs });
+                              }}
+                              className="p-1.5 text-red-400 hover:text-red-600 flex-shrink-0"
+                            >
+                              <FaTrash className="text-xs" />
+                            </button>
+                          </div>
+                          <textarea
+                            className="w-full rounded-lg text-sm border border-slate-200 px-3 py-2 resize-none"
+                            rows={3}
+                            value={faq.answer}
+                            onChange={(e) => {
+                              const faqs = (sec.faqs || []).map((f, i) => i === fi ? { ...f, answer: e.target.value } : f);
+                              updateSection(sec.id, { faqs });
+                            }}
+                            placeholder="Enter answer…"
+                          />
+                        </div>
+                      ))}
+                      <button
+                        onClick={() => {
+                          const faqs = [...(sec.faqs || []), { question: "", answer: "" }];
+                          updateSection(sec.id, { faqs });
+                        }}
+                        className="text-xs px-3 py-1.5 rounded-lg border border-slate-200 text-slate-600 hover:border-slate-400 transition-colors"
+                      >
+                        + Add Question
+                      </button>
+                    </div>
+                  )}
+
                   {/* ── Links Section ── */}
                   {sec.type === "links" && (
                     <div className="space-y-2">
@@ -886,6 +944,7 @@ export default function AdminAnnouncements({ token }: { token: string | null }) 
                     { type: "text" as SectionType, icon: FaAlignLeft, label: "Text" },
                     { type: "table" as SectionType, icon: FaTable, label: "Table" },
                     { type: "links" as SectionType, icon: FaLink, label: "Links" },
+                    { type: "faq" as SectionType, icon: FaSearch, label: "FAQ" },
                   ]).map(({ type, icon: Icon, label }) => (
                     <button
                       key={type}
@@ -987,6 +1046,20 @@ export default function AdminAnnouncements({ token }: { token: string | null }) 
                     placeholder="https://apnaenterprise.in/updates/… — leave blank to auto-set"
                   />
                   <p className="text-xs text-slate-400 mt-1">Only set if this post is a duplicate of another URL.</p>
+                </div>
+                <div>
+                  <label className={labelCls}>Robots</label>
+                  <select
+                    className="w-full h-10 rounded-lg text-sm border border-slate-200 px-3"
+                    value={form.robots || "index, follow"}
+                    onChange={(e) => setF("robots", e.target.value)}
+                  >
+                    <option value="index, follow">index, follow — Normal (default)</option>
+                    <option value="noindex, follow">noindex, follow — Hide from Google</option>
+                    <option value="index, nofollow">index, nofollow — Index but don't follow links</option>
+                    <option value="noindex, nofollow">noindex, nofollow — Block completely</option>
+                  </select>
+                  <p className="text-xs text-slate-400 mt-1">Controls how search engines crawl this post.</p>
                 </div>
               </div>
             </div>

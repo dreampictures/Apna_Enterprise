@@ -71,6 +71,14 @@ export default defineConfig({
         target: `http://localhost:${process.env.API_PORT ?? 3001}`,
         changeOrigin: true,
       },
+      "/sitemap.xml": {
+        target: `http://localhost:${process.env.API_PORT ?? 3001}`,
+        changeOrigin: true,
+      },
+      "/robots.txt": {
+        target: `http://localhost:${process.env.API_PORT ?? 3001}`,
+        changeOrigin: true,
+      },
     },
   },
   preview: {
