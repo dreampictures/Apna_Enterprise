@@ -42,6 +42,13 @@ interface Announcement {
   isFeatured: boolean;
   isExpired: boolean;
   sections: Section[];
+  seoTitle?: string | null;
+  seoDescription?: string | null;
+  focusKeywords?: string | null;
+  canonicalUrl?: string | null;
+  ogTitle?: string | null;
+  ogDescription?: string | null;
+  ogImage?: string | null;
 }
 
 function fmtDate(d?: string) {
@@ -218,9 +225,14 @@ export default function UpdateDetail() {
   return (
     <div className="flex flex-col min-h-full" style={{ background: "#f8fafd" }}>
       <Seo
-        title={`${item.title} — Apna Enterprise`}
-        description={item.shortDesc || `${item.category} — ${item.title}`}
+        title={item.seoTitle || item.title}
+        description={item.seoDescription || item.shortDesc || `${item.category} — ${item.title}`}
+        keywords={item.focusKeywords || undefined}
         path={`/updates/${item.slug}`}
+        canonicalOverride={item.canonicalUrl || undefined}
+        ogTitle={item.ogTitle || undefined}
+        ogDescription={item.ogDescription || undefined}
+        image={item.ogImage || undefined}
       />
 
       {/* Header */}

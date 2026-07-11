@@ -92,6 +92,13 @@ export const announcementsTable = pgTable("announcements", {
   isUrgent: boolean("is_urgent").default(false).notNull(),
   isFeatured: boolean("is_featured").default(false).notNull(),
   sections: text("sections").default("[]").notNull(),
+  seoTitle: text("seo_title"),
+  seoDescription: text("seo_description"),
+  focusKeywords: text("focus_keywords"),
+  canonicalUrl: text("canonical_url"),
+  ogTitle: text("og_title"),
+  ogDescription: text("og_description"),
+  ogImage: text("og_image"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 

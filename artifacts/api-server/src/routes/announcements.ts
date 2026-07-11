@@ -40,6 +40,13 @@ function mapRow(row: any) {
     isFeatured: row.is_featured,
     isExpired: expired,
     sections: (() => { try { return JSON.parse(row.sections || "[]"); } catch { return []; } })(),
+    seoTitle: row.seo_title || null,
+    seoDescription: row.seo_description || null,
+    focusKeywords: row.focus_keywords || null,
+    canonicalUrl: row.canonical_url || null,
+    ogTitle: row.og_title || null,
+    ogDescription: row.og_description || null,
+    ogImage: row.og_image || null,
     createdAt: row.created_at,
   };
 }
@@ -110,6 +117,7 @@ router.post("/announcements", requireAuth, async (req, res) => {
     publishDate, startDate, lastDate, vacancyCount,
     officialWebsite, officialNotificationUrl, applyUrl,
     isPublished, isUrgent, isFeatured, sections,
+    seoTitle, seoDescription, focusKeywords, canonicalUrl, ogTitle, ogDescription, ogImage,
   } = req.body;
 
   if (!title) {
@@ -125,14 +133,17 @@ router.post("/announcements", requireAuth, async (req, res) => {
       `INSERT INTO announcements
         (title, slug, short_desc, category, department, publish_date, start_date, last_date,
          vacancy_count, official_website, official_notification_url, apply_url,
-         is_published, is_urgent, is_featured, sections)
-       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16)
+         is_published, is_urgent, is_featured, sections,
+         seo_title, seo_description, focus_keywords, canonical_url, og_title, og_description, og_image)
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20,$21,$22,$23)
        RETURNING *`,
       [
         title, finalSlug, shortDesc || null, category || "General", department || null,
         publishDate || null, startDate || null, lastDate || null,
         vacancyCount || null, officialWebsite || null, officialNotificationUrl || null, applyUrl || null,
         isPublished ?? false, isUrgent ?? false, isFeatured ?? false, finalSections,
+        seoTitle || null, seoDescription || null, focusKeywords || null, canonicalUrl || null,
+        ogTitle || null, ogDescription || null, ogImage || null,
       ]
     );
     res.status(201).json(mapRow(result.rows[0]));
@@ -156,6 +167,7 @@ router.put("/announcements/:id", requireAuth, async (req, res) => {
     publishDate, startDate, lastDate, vacancyCount,
     officialWebsite, officialNotificationUrl, applyUrl,
     isPublished, isUrgent, isFeatured, sections,
+    seoTitle, seoDescription, focusKeywords, canonicalUrl, ogTitle, ogDescription, ogImage,
   } = req.body;
 
   const finalSections = JSON.stringify(sections || []);
@@ -166,13 +178,17 @@ router.put("/announcements/:id", requireAuth, async (req, res) => {
         title=$1, slug=$2, short_desc=$3, category=$4, department=$5,
         publish_date=$6, start_date=$7, last_date=$8, vacancy_count=$9,
         official_website=$10, official_notification_url=$11, apply_url=$12,
-        is_published=$13, is_urgent=$14, is_featured=$15, sections=$16
-       WHERE id=$17 RETURNING *`,
+        is_published=$13, is_urgent=$14, is_featured=$15, sections=$16,
+        seo_title=$17, seo_description=$18, focus_keywords=$19, canonical_url=$20,
+        og_title=$21, og_description=$22, og_image=$23
+       WHERE id=$24 RETURNING *`,
       [
         title, slug, shortDesc || null, category || "General", department || null,
         publishDate || null, startDate || null, lastDate || null,
         vacancyCount || null, officialWebsite || null, officialNotificationUrl || null, applyUrl || null,
-        isPublished ?? false, isUrgent ?? false, isFeatured ?? false, finalSections, id,
+        isPublished ?? false, isUrgent ?? false, isFeatured ?? false, finalSections,
+        seoTitle || null, seoDescription || null, focusKeywords || null, canonicalUrl || null,
+        ogTitle || null, ogDescription || null, ogImage || null, id,
       ]
     );
     if (!result.rows[0]) { res.status(404).json({ error: "Not found" }); return; }

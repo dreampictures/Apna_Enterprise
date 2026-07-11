@@ -6,6 +6,7 @@ import {
   FaPlus, FaEdit, FaTrash, FaArrowLeft, FaSave, FaEye, FaEyeSlash,
   FaFire, FaStar, FaArrowUp, FaArrowDown, FaTable, FaAlignLeft, FaLink,
   FaMagic, FaTimes, FaCheckCircle, FaExclamationTriangle, FaSpinner,
+  FaSearch, FaRobot,
 } from "react-icons/fa";
 
 const GOLD = "#D4A017";
@@ -42,6 +43,13 @@ interface Ann {
   isFeatured: boolean;
   isExpired: boolean;
   sections: Section[];
+  seoTitle?: string;
+  seoDescription?: string;
+  focusKeywords?: string;
+  canonicalUrl?: string;
+  ogTitle?: string;
+  ogDescription?: string;
+  ogImage?: string;
   createdAt: string;
 }
 
@@ -78,6 +86,8 @@ function emptyForm(): Omit<Ann, "id" | "isExpired" | "createdAt"> {
     startDate: "", lastDate: "", vacancyCount: undefined,
     officialWebsite: "", officialNotificationUrl: "", applyUrl: "",
     isPublished: false, isUrgent: false, isFeatured: false, sections: [],
+    seoTitle: "", seoDescription: "", focusKeywords: "",
+    canonicalUrl: "", ogTitle: "", ogDescription: "", ogImage: "",
   };
 }
 
@@ -188,6 +198,9 @@ export default function AdminAnnouncements({ token }: { token: string | null }) 
       officialNotificationUrl: a.officialNotificationUrl || "", applyUrl: a.applyUrl || "",
       isPublished: a.isPublished, isUrgent: a.isUrgent, isFeatured: a.isFeatured,
       sections: normalizeSections(a.sections || []),
+      seoTitle: a.seoTitle || "", seoDescription: a.seoDescription || "",
+      focusKeywords: a.focusKeywords || "", canonicalUrl: a.canonicalUrl || "",
+      ogTitle: a.ogTitle || "", ogDescription: a.ogDescription || "", ogImage: a.ogImage || "",
     });
     setEditId(a.id);
     setError("");
@@ -885,6 +898,156 @@ export default function AdminAnnouncements({ token }: { token: string | null }) 
                 </div>
               </div>
             ))}
+          </div>
+        </div>
+
+        {/* SEO */}
+        <div className="bg-white rounded-2xl border border-slate-100 p-6">
+          <div className="flex items-center justify-between mb-5 pb-3 border-b border-slate-100">
+            <div className="flex items-center gap-2">
+              <FaSearch className="text-slate-400" />
+              <h3 className="text-sm font-bold text-slate-700 uppercase tracking-wider">SEO Settings</h3>
+            </div>
+            <button
+              type="button"
+              onClick={() => {
+                const autoTitle = form.title.slice(0, 65);
+                const plainText = form.sections
+                  .filter((s) => s.type === "text" && s.content)
+                  .map((s) => s.content.replace(/\n/g, " ").replace(/[^:]+:\s*/g, "").trim())
+                  .join(" ");
+                const autoDesc = (form.shortDesc || plainText || form.title).slice(0, 160);
+                setForm((p) => ({
+                  ...p,
+                  seoTitle: p.seoTitle || autoTitle,
+                  seoDescription: p.seoDescription || autoDesc,
+                  ogTitle: p.ogTitle || autoTitle,
+                  ogDescription: p.ogDescription || autoDesc,
+                }));
+              }}
+              className="flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-lg transition-colors"
+              style={{ background: "rgba(212,160,23,0.1)", color: "#B8891A", border: "1.5px solid rgba(212,160,23,0.35)" }}
+            >
+              <FaRobot className="text-xs" /> Auto-fill from content
+            </button>
+          </div>
+
+          <div className="space-y-5">
+            {/* Meta Title + Description */}
+            <div className="p-4 rounded-xl border border-slate-100" style={{ background: "#f8fafd" }}>
+              <p className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-3">Meta Tags</p>
+              <div className="space-y-3">
+                <div>
+                  <div className="flex items-center justify-between mb-1">
+                    <label className={labelCls}>SEO Meta Title</label>
+                    <span className={`text-xs font-mono ${(form.seoTitle?.length ?? 0) > 65 ? "text-red-500" : "text-slate-400"}`}>
+                      {form.seoTitle?.length ?? 0}/65
+                    </span>
+                  </div>
+                  <Input
+                    className={inputCls}
+                    value={form.seoTitle || ""}
+                    onChange={(e) => setF("seoTitle", e.target.value)}
+                    placeholder="Leave blank to auto-generate from post title…"
+                  />
+                  <p className="text-xs text-slate-400 mt-1">Appears as the browser tab title &amp; Google headline. Max 60–65 chars.</p>
+                </div>
+                <div>
+                  <div className="flex items-center justify-between mb-1">
+                    <label className={labelCls}>SEO Meta Description</label>
+                    <span className={`text-xs font-mono ${(form.seoDescription?.length ?? 0) > 160 ? "text-red-500" : "text-slate-400"}`}>
+                      {form.seoDescription?.length ?? 0}/160
+                    </span>
+                  </div>
+                  <textarea
+                    className="w-full rounded-lg text-sm border border-slate-200 px-3 py-2.5 resize-none"
+                    rows={3}
+                    value={form.seoDescription || ""}
+                    onChange={(e) => setF("seoDescription", e.target.value)}
+                    placeholder="Leave blank to auto-generate from short description or content…"
+                  />
+                  <p className="text-xs text-slate-400 mt-0.5">Shown in Google search snippet. Max 160 chars.</p>
+                </div>
+                <div>
+                  <label className={labelCls}>Focus Keywords</label>
+                  <Input
+                    className={inputCls}
+                    value={form.focusKeywords || ""}
+                    onChange={(e) => setF("focusKeywords", e.target.value)}
+                    placeholder="e.g. punjab police recruitment, constable vacancy 2025"
+                  />
+                  <p className="text-xs text-slate-400 mt-1">Comma-separated. Used for <code className="bg-slate-100 px-1 rounded">meta keywords</code>.</p>
+                </div>
+                <div>
+                  <label className={labelCls}>Canonical URL <span className="font-normal text-slate-400">(optional)</span></label>
+                  <Input
+                    className={inputCls}
+                    value={form.canonicalUrl || ""}
+                    onChange={(e) => setF("canonicalUrl", e.target.value)}
+                    placeholder="https://apnaenterprise.in/updates/… — leave blank to auto-set"
+                  />
+                  <p className="text-xs text-slate-400 mt-1">Only set if this post is a duplicate of another URL.</p>
+                </div>
+              </div>
+            </div>
+
+            {/* Open Graph */}
+            <div className="p-4 rounded-xl border border-slate-100" style={{ background: "#f8fafd" }}>
+              <p className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-3">Open Graph (Facebook / WhatsApp Preview)</p>
+              <div className="space-y-3">
+                <div>
+                  <div className="flex items-center justify-between mb-1">
+                    <label className={labelCls}>OG Title</label>
+                    <span className="text-xs font-mono text-slate-400">{form.ogTitle?.length ?? 0} chars</span>
+                  </div>
+                  <Input
+                    className={inputCls}
+                    value={form.ogTitle || ""}
+                    onChange={(e) => setF("ogTitle", e.target.value)}
+                    placeholder="Leave blank to use SEO Meta Title…"
+                  />
+                </div>
+                <div>
+                  <div className="flex items-center justify-between mb-1">
+                    <label className={labelCls}>OG Description</label>
+                    <span className={`text-xs font-mono ${(form.ogDescription?.length ?? 0) > 200 ? "text-amber-500" : "text-slate-400"}`}>
+                      {form.ogDescription?.length ?? 0} chars
+                    </span>
+                  </div>
+                  <textarea
+                    className="w-full rounded-lg text-sm border border-slate-200 px-3 py-2.5 resize-none"
+                    rows={2}
+                    value={form.ogDescription || ""}
+                    onChange={(e) => setF("ogDescription", e.target.value)}
+                    placeholder="Leave blank to use SEO Meta Description…"
+                  />
+                </div>
+                <div>
+                  <label className={labelCls}>OG Image URL <span className="font-normal text-slate-400">(optional)</span></label>
+                  <Input
+                    className={inputCls}
+                    value={form.ogImage || ""}
+                    onChange={(e) => setF("ogImage", e.target.value)}
+                    placeholder="https://… (1200×630 recommended) — leave blank for site logo"
+                  />
+                  <p className="text-xs text-slate-400 mt-1">Image shown when post is shared on WhatsApp, Facebook, Twitter.</p>
+                </div>
+              </div>
+            </div>
+
+            {/* Preview card */}
+            {(form.seoTitle || form.title) && (
+              <div className="p-4 rounded-xl" style={{ background: "#f0f4ff", border: "1px solid #c7d2fe" }}>
+                <p className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Google Preview</p>
+                <div className="text-xs text-green-700 mb-0.5 font-mono">apnaenterprise.in › updates › {form.slug || "post-slug"}</div>
+                <div className="text-base font-semibold text-blue-700 leading-snug mb-0.5 truncate">
+                  {(form.seoTitle || form.title).slice(0, 65)} | Apna Enterprise
+                </div>
+                <div className="text-sm text-slate-600 leading-snug line-clamp-2">
+                  {(form.seoDescription || form.shortDesc || "Your meta description will appear here…").slice(0, 160)}
+                </div>
+              </div>
+            )}
           </div>
         </div>
 
