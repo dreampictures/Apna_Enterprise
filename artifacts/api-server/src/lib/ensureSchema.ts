@@ -68,6 +68,15 @@ export async function ensureSchema() {
         created_at TIMESTAMP DEFAULT NOW() NOT NULL
       );
 
+      ALTER TABLE announcements ADD COLUMN IF NOT EXISTS seo_title TEXT;
+      ALTER TABLE announcements ADD COLUMN IF NOT EXISTS seo_description TEXT;
+      ALTER TABLE announcements ADD COLUMN IF NOT EXISTS focus_keywords TEXT;
+      ALTER TABLE announcements ADD COLUMN IF NOT EXISTS canonical_url TEXT;
+      ALTER TABLE announcements ADD COLUMN IF NOT EXISTS og_title TEXT;
+      ALTER TABLE announcements ADD COLUMN IF NOT EXISTS og_description TEXT;
+      ALTER TABLE announcements ADD COLUMN IF NOT EXISTS og_image TEXT;
+      ALTER TABLE announcements ADD COLUMN IF NOT EXISTS robots TEXT DEFAULT 'index, follow';
+
       CREATE TABLE IF NOT EXISTS khaata_clients (
         id SERIAL PRIMARY KEY,
         name TEXT NOT NULL,
