@@ -43,7 +43,7 @@ const avatarBg = (bal: number) =>
 /* ── Types ───────────────────────────────────────────────────── */
 interface Client {
   id: number; name: string; phone: string; note: string | null; createdAt: string;
-  totalDebit: number; totalCredit: number; balance: number;
+  totalDebit: number; totalCredit: number; balance: number; latestTxnAt: string | null;
 }
 interface Transaction {
   id: number; clientId: number; amount: number;
@@ -585,7 +585,7 @@ export default function KhaataBook() {
   const [selected, setSelected] = useState<Client | null>(null);
   const [search, setSearch] = useState("");
   const [tab, setTab] = useState<FilterTab>("all");
-  const [sortBy, setSortBy] = useState<"name" | "balance_desc" | "balance_asc" | "newest">("newest");
+  const [sortBy, setSortBy] = useState<"latest_entry" | "name" | "balance_desc" | "balance_asc" | "newest">("latest_entry");
 
   useEffect(() => { if (sessionStorage.getItem("khaata_auth") === "1") setAuthed(true); }, []);
 
@@ -619,6 +619,11 @@ export default function KhaataBook() {
     .filter(c => c.name.toLowerCase().includes(search.toLowerCase()) || c.phone.includes(search))
     .slice()
     .sort((a, b) => {
+      if (sortBy === "latest_entry") {
+        const da = a.latestTxnAt ?? a.createdAt;
+        const db = b.latestTxnAt ?? b.createdAt;
+        return db > da ? 1 : db < da ? -1 : 0;
+      }
       if (sortBy === "name") return a.name.localeCompare(b.name);
       if (sortBy === "balance_desc") return Math.abs(b.balance) - Math.abs(a.balance);
       if (sortBy === "balance_asc") return Math.abs(a.balance) - Math.abs(b.balance);
@@ -768,7 +773,8 @@ export default function KhaataBook() {
               onChange={e => setSortBy(e.target.value as typeof sortBy)}
               className="bg-white rounded-2xl px-3 text-xs font-bold text-slate-600 outline-none border border-slate-100 shadow-lg flex-shrink-0 cursor-pointer"
               style={{ boxShadow: "0 8px 32px rgba(7,27,74,0.08)" }}>
-              <option value="newest">Newest</option>
+              <option value="latest_entry">Latest Entry</option>
+              <option value="newest">Newest Client</option>
               <option value="name">A → Z</option>
               <option value="balance_desc">Highest Balance</option>
               <option value="balance_asc">Lowest Balance</option>

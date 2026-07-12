@@ -1,6 +1,6 @@
 import { Router } from "express";
 import { db, khaataClientsTable, khaataTransactionsTable } from "@workspace/db";
-import { eq, desc, sum } from "drizzle-orm";
+import { eq, desc, sum, max } from "drizzle-orm";
 
 const router = Router();
 
@@ -17,26 +17,38 @@ router.get("/khaata/clients", async (req, res) => {
         clientId: khaataTransactionsTable.clientId,
         type: khaataTransactionsTable.type,
         total: sum(khaataTransactionsTable.amount),
+        latestTxnAt: max(khaataTransactionsTable.date),
       })
       .from(khaataTransactionsTable)
       .groupBy(khaataTransactionsTable.clientId, khaataTransactionsTable.type);
 
-    const balMap: Record<number, { debit: number; credit: number }> = {};
+    const balMap: Record<number, { debit: number; credit: number; latestTxnAt: string | null }> = {};
     for (const b of balances) {
-      if (!balMap[b.clientId]) balMap[b.clientId] = { debit: 0, credit: 0 };
+      if (!balMap[b.clientId]) balMap[b.clientId] = { debit: 0, credit: 0, latestTxnAt: null };
       if (b.type === "debit") balMap[b.clientId].debit = Number(b.total) || 0;
       if (b.type === "credit") balMap[b.clientId].credit = Number(b.total) || 0;
+      const txnDate = b.latestTxnAt ? (b.latestTxnAt instanceof Date ? b.latestTxnAt.toISOString() : String(b.latestTxnAt)) : null;
+      if (txnDate && (!balMap[b.clientId].latestTxnAt || txnDate > balMap[b.clientId].latestTxnAt!)) {
+        balMap[b.clientId].latestTxnAt = txnDate;
+      }
     }
 
     const result = clients.map((c) => {
-      const bal = balMap[c.id] ?? { debit: 0, credit: 0 };
+      const bal = balMap[c.id] ?? { debit: 0, credit: 0, latestTxnAt: null };
       return {
         ...c,
         createdAt: c.createdAt.toISOString(),
         totalDebit: bal.debit,
         totalCredit: bal.credit,
         balance: bal.debit - bal.credit,
+        latestTxnAt: bal.latestTxnAt,
       };
+    });
+
+    result.sort((a, b) => {
+      const da = a.latestTxnAt ?? a.createdAt;
+      const db_ = b.latestTxnAt ?? b.createdAt;
+      return db_ > da ? 1 : db_ < da ? -1 : 0;
     });
 
     res.json(result);
