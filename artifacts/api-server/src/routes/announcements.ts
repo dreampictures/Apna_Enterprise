@@ -1,6 +1,7 @@
 import { Router } from "express";
 import { pool } from "@workspace/db";
 import { requireAuth } from "../middlewares/auth";
+import { deleteFromR2 } from "../lib/r2";
 
 const router = Router();
 
@@ -48,6 +49,8 @@ function mapRow(row: any) {
     ogDescription: row.og_description || null,
     ogImage: row.og_image || null,
     robots: row.robots || "index, follow",
+    pdfUrl: row.pdf_url || null,
+    pdfKey: row.pdf_key || null,
     createdAt: row.created_at,
   };
 }
@@ -119,6 +122,7 @@ router.post("/announcements", requireAuth, async (req, res) => {
     officialWebsite, officialNotificationUrl, applyUrl,
     isPublished, isUrgent, isFeatured, sections,
     seoTitle, seoDescription, focusKeywords, canonicalUrl, ogTitle, ogDescription, ogImage, robots,
+    pdfUrl, pdfKey,
   } = req.body;
 
   if (!title) {
@@ -135,8 +139,9 @@ router.post("/announcements", requireAuth, async (req, res) => {
         (title, slug, short_desc, category, department, publish_date, start_date, last_date,
          vacancy_count, official_website, official_notification_url, apply_url,
          is_published, is_urgent, is_featured, sections,
-         seo_title, seo_description, focus_keywords, canonical_url, og_title, og_description, og_image, robots)
-       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20,$21,$22,$23,$24)
+         seo_title, seo_description, focus_keywords, canonical_url, og_title, og_description, og_image, robots,
+         pdf_url, pdf_key)
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20,$21,$22,$23,$24,$25,$26)
        RETURNING *`,
       [
         title, finalSlug, shortDesc || null, category || "General", department || null,
@@ -145,6 +150,7 @@ router.post("/announcements", requireAuth, async (req, res) => {
         isPublished ?? false, isUrgent ?? false, isFeatured ?? false, finalSections,
         seoTitle || null, seoDescription || null, focusKeywords || null, canonicalUrl || null,
         ogTitle || null, ogDescription || null, ogImage || null, robots || "index, follow",
+        pdfUrl || null, pdfKey || null,
       ]
     );
     res.status(201).json(mapRow(result.rows[0]));
@@ -169,6 +175,7 @@ router.put("/announcements/:id", requireAuth, async (req, res) => {
     officialWebsite, officialNotificationUrl, applyUrl,
     isPublished, isUrgent, isFeatured, sections,
     seoTitle, seoDescription, focusKeywords, canonicalUrl, ogTitle, ogDescription, ogImage, robots,
+    pdfUrl, pdfKey,
   } = req.body;
 
   const finalSections = JSON.stringify(sections || []);
@@ -181,15 +188,17 @@ router.put("/announcements/:id", requireAuth, async (req, res) => {
         official_website=$10, official_notification_url=$11, apply_url=$12,
         is_published=$13, is_urgent=$14, is_featured=$15, sections=$16,
         seo_title=$17, seo_description=$18, focus_keywords=$19, canonical_url=$20,
-        og_title=$21, og_description=$22, og_image=$23, robots=$24
-       WHERE id=$25 RETURNING *`,
+        og_title=$21, og_description=$22, og_image=$23, robots=$24,
+        pdf_url=$25, pdf_key=$26
+       WHERE id=$27 RETURNING *`,
       [
         title, slug, shortDesc || null, category || "General", department || null,
         publishDate || null, startDate || null, lastDate || null,
         vacancyCount || null, officialWebsite || null, officialNotificationUrl || null, applyUrl || null,
         isPublished ?? false, isUrgent ?? false, isFeatured ?? false, finalSections,
         seoTitle || null, seoDescription || null, focusKeywords || null, canonicalUrl || null,
-        ogTitle || null, ogDescription || null, ogImage || null, robots || "index, follow", id,
+        ogTitle || null, ogDescription || null, ogImage || null, robots || "index, follow",
+        pdfUrl || null, pdfKey || null, id,
       ]
     );
     if (!result.rows[0]) { res.status(404).json({ error: "Not found" }); return; }
@@ -210,7 +219,17 @@ router.delete("/announcements/:id", requireAuth, async (req, res) => {
   if (isNaN(id)) { res.status(400).json({ error: "Invalid id" }); return; }
 
   try {
+    // Fetch pdf_key before deleting so we can clean up R2
+    const existing = await pool.query("SELECT pdf_key FROM announcements WHERE id = $1", [id]);
+    const pdfKey = existing.rows[0]?.pdf_key as string | null;
+
     await pool.query("DELETE FROM announcements WHERE id = $1", [id]);
+
+    // Best-effort R2 cleanup — don't fail if this errors
+    if (pdfKey) {
+      deleteFromR2(pdfKey).catch((err) => req.log.warn({ err, pdfKey }, "R2 cleanup failed after announcement delete"));
+    }
+
     res.status(204).send();
   } catch (err) {
     req.log.error({ err }, "Failed to delete announcement");

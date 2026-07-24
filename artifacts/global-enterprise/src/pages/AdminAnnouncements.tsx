@@ -6,7 +6,7 @@ import {
   FaPlus, FaEdit, FaTrash, FaArrowLeft, FaSave, FaEye, FaEyeSlash,
   FaFire, FaStar, FaArrowUp, FaArrowDown, FaTable, FaAlignLeft, FaLink,
   FaMagic, FaTimes, FaCheckCircle, FaExclamationTriangle, FaSpinner,
-  FaSearch, FaRobot,
+  FaSearch, FaRobot, FaFilePdf, FaCloudUploadAlt, FaTimesCircle,
 } from "react-icons/fa";
 
 const GOLD = "#D4A017";
@@ -53,6 +53,8 @@ interface Ann {
   ogDescription?: string;
   ogImage?: string;
   robots?: string;
+  pdfUrl?: string;
+  pdfKey?: string;
   createdAt: string;
 }
 
@@ -92,6 +94,7 @@ function emptyForm(): Omit<Ann, "id" | "isExpired" | "createdAt"> {
     isPublished: false, isUrgent: false, isFeatured: false, sections: [],
     seoTitle: "", seoDescription: "", focusKeywords: "",
     canonicalUrl: "", ogTitle: "", ogDescription: "", ogImage: "", robots: "index, follow",
+    pdfUrl: "", pdfKey: "",
   };
 }
 
@@ -105,6 +108,8 @@ export default function AdminAnnouncements({ token }: { token: string | null }) 
   const [form, setForm] = useState(emptyForm());
   const [error, setError] = useState("");
   const [expandedCells, setExpandedCells] = useState<Set<string>>(new Set());
+  const [pdfUploading, setPdfUploading] = useState(false);
+  const [pdfError, setPdfError] = useState("");
 
   // Import from URL state
   const [importModal, setImportModal] = useState(false);
@@ -206,6 +211,7 @@ export default function AdminAnnouncements({ token }: { token: string | null }) 
       focusKeywords: a.focusKeywords || "", canonicalUrl: a.canonicalUrl || "",
       ogTitle: a.ogTitle || "", ogDescription: a.ogDescription || "", ogImage: a.ogImage || "",
       robots: a.robots || "index, follow",
+      pdfUrl: a.pdfUrl || "", pdfKey: a.pdfKey || "",
     });
     setEditId(a.id);
     setError("");
@@ -216,6 +222,32 @@ export default function AdminAnnouncements({ token }: { token: string | null }) 
   function setF<K extends keyof typeof form>(k: K, v: (typeof form)[K]) {
     setForm((p) => ({ ...p, [k]: v }));
     if (k === "title" && !editId) setForm((p) => ({ ...p, title: v as string, slug: slugify(v as string) }));
+  }
+
+  async function handlePdfUpload(file: File) {
+    setPdfUploading(true);
+    setPdfError("");
+    const fd = new FormData();
+    fd.append("file", file);
+    try {
+      const res = await fetch("/api/upload/pdf?folder=announcements", {
+        method: "POST",
+        headers: { Authorization: `Bearer ${token}` },
+        body: fd,
+      });
+      const data = await res.json();
+      if (!res.ok) { setPdfError(data.error || "Upload failed"); return; }
+      setForm((p) => ({ ...p, pdfUrl: data.url, pdfKey: data.key }));
+    } catch {
+      setPdfError("Network error — upload failed.");
+    } finally {
+      setPdfUploading(false);
+    }
+  }
+
+  function removePdf() {
+    setForm((p) => ({ ...p, pdfUrl: "", pdfKey: "" }));
+    setPdfError("");
   }
 
   async function handleSave() {
@@ -230,6 +262,8 @@ export default function AdminAnnouncements({ token }: { token: string | null }) 
       officialWebsite: form.officialWebsite || null,
       officialNotificationUrl: form.officialNotificationUrl || null,
       applyUrl: form.applyUrl || null,
+      pdfUrl: form.pdfUrl || null,
+      pdfKey: form.pdfKey || null,
     };
     const url = editId ? `/api/announcements/${editId}` : "/api/announcements";
     const method = editId ? "PUT" : "POST";
@@ -667,6 +701,82 @@ export default function AdminAnnouncements({ token }: { token: string | null }) 
               <Input className={inputCls} value={form.applyUrl} onChange={(e) => setF("applyUrl", e.target.value)} placeholder="https://..." />
             </div>
           </div>
+        </div>
+
+        {/* PDF Upload */}
+        <div className="bg-white rounded-2xl border border-slate-100 p-6">
+          <h3 className="text-sm font-bold text-slate-700 uppercase tracking-wider mb-5 pb-3 border-b border-slate-100">
+            PDF Attachment <span className="font-normal text-slate-400 normal-case">(optional)</span>
+          </h3>
+
+          {form.pdfUrl ? (
+            <div className="flex items-center gap-3 p-4 rounded-xl" style={{ background: "#f0fdf4", border: "1.5px solid #86efac" }}>
+              <FaFilePdf className="text-2xl flex-shrink-0" style={{ color: "#dc2626" }} />
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-semibold text-slate-800 truncate">PDF uploaded</p>
+                <a
+                  href={form.pdfUrl}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="text-xs text-blue-600 underline break-all"
+                >
+                  {form.pdfUrl}
+                </a>
+              </div>
+              <button
+                type="button"
+                onClick={removePdf}
+                title="Remove PDF"
+                className="flex-shrink-0 p-1.5 rounded-lg text-red-400 hover:text-red-600 hover:bg-red-50 transition-colors"
+              >
+                <FaTimesCircle />
+              </button>
+            </div>
+          ) : (
+            <div>
+              <label
+                className="flex flex-col items-center justify-center gap-3 p-8 rounded-xl cursor-pointer transition-colors"
+                style={{ border: "2px dashed #cbd5e1", background: pdfUploading ? "#f8fafd" : "#fff" }}
+                onDragOver={(e) => e.preventDefault()}
+                onDrop={(e) => {
+                  e.preventDefault();
+                  const file = e.dataTransfer.files[0];
+                  if (file) handlePdfUpload(file);
+                }}
+              >
+                <input
+                  type="file"
+                  accept="application/pdf"
+                  className="hidden"
+                  disabled={pdfUploading}
+                  onChange={(e) => {
+                    const file = e.target.files?.[0];
+                    if (file) handlePdfUpload(file);
+                    e.target.value = "";
+                  }}
+                />
+                {pdfUploading ? (
+                  <>
+                    <FaSpinner className="text-3xl text-blue-500 animate-spin" />
+                    <p className="text-sm font-semibold text-slate-600">Uploading to R2…</p>
+                  </>
+                ) : (
+                  <>
+                    <FaCloudUploadAlt className="text-3xl text-slate-300" />
+                    <div className="text-center">
+                      <p className="text-sm font-semibold text-slate-600">Click to upload PDF</p>
+                      <p className="text-xs text-slate-400 mt-0.5">or drag & drop • max 10 MB</p>
+                    </div>
+                  </>
+                )}
+              </label>
+              {pdfError && (
+                <p className="mt-2 text-xs text-red-500 flex items-center gap-1.5">
+                  <FaExclamationTriangle /> {pdfError}
+                </p>
+              )}
+            </div>
+          )}
         </div>
 
         {/* Settings */}

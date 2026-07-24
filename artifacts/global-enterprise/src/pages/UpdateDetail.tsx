@@ -5,7 +5,7 @@ import { FaChevronDown } from "react-icons/fa";
 import {
   FaArrowLeft, FaCalendarAlt, FaBuilding, FaUsers,
   FaGlobe, FaFileAlt, FaExternalLinkAlt, FaWhatsapp,
-  FaFire, FaStar, FaChevronRight,
+  FaFire, FaStar, FaChevronRight, FaFilePdf,
 } from "react-icons/fa";
 import { useT } from "@/i18n";
 
@@ -53,6 +53,7 @@ interface Announcement {
   ogDescription?: string | null;
   ogImage?: string | null;
   robots?: string | null;
+  pdfUrl?: string | null;
 }
 
 const BASE_URL = "https://apnaenterprise.in";
@@ -638,6 +639,25 @@ export default function UpdateDetail() {
                 >
                   <span className="flex items-center gap-2"><FaGlobe /> {t.detail_official_website}</span>
                   <FaExternalLinkAlt className="text-xs" />
+                </a>
+              )}
+              {item.pdfUrl && (
+                <a
+                  href={item.pdfUrl}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="flex items-center justify-between w-full px-4 py-3 rounded-xl font-semibold text-sm transition-all hover:opacity-90 hover:-translate-y-0.5"
+                  style={{
+                    background: "#fff5f5",
+                    color: "#dc2626",
+                    border: "2px solid #fca5a5",
+                    boxShadow: "0 2px 8px rgba(220,38,38,0.08)",
+                  }}
+                >
+                  <span className="flex items-center gap-2">
+                    <FaFilePdf /> Download PDF
+                  </span>
+                  <FaExternalLinkAlt className="text-xs opacity-70" />
                 </a>
               )}
               <a

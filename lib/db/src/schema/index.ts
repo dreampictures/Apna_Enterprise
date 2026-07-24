@@ -102,6 +102,8 @@ export const announcementsTable = pgTable("announcements", {
   ogDescription: text("og_description"),
   ogImage: text("og_image"),
   robots: text("robots").default("index, follow"),
+  pdfUrl: text("pdf_url"),
+  pdfKey: text("pdf_key"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
