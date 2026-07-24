@@ -81,6 +81,9 @@ JWT_SECRET = "global-enterprise-jwt-secret-2024-secure-key"
 API_PORT = "3001"
 BASE_PATH = "/"
 PORT = "5000"
+R2_ACCOUNT_ID = "11601344676365d00034b02c6586f6c9"
+R2_BUCKET_NAME = "apnaenterprise"
+R2_PUBLIC_URL = "https://pub-22a1b7a384c748b184e1c5894cea0d5b.r2.dev/"
 
 [nix]
 channel = "stable-25_05"

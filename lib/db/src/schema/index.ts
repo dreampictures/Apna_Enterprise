@@ -19,6 +19,8 @@ export const applicationsTable = pgTable("applications", {
   service: text("service").notNull(),
   message: text("message"),
   status: text("status").default("pending").notNull(),
+  documentUrl: text("document_url"),
+  documentKey: text("document_key"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 

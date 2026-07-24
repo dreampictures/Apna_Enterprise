@@ -9,6 +9,7 @@ import announcementsRouter from "./announcements";
 import extractUrlRouter from "./extract-url";
 import khaataRouter from "./khaata";
 import cametiRouter from "./cameti";
+import uploadRouter from "./upload";
 
 const router: IRouter = Router();
 
@@ -22,5 +23,6 @@ router.use(announcementsRouter);
 router.use(extractUrlRouter);
 router.use(khaataRouter);
 router.use(cametiRouter);
+router.use(uploadRouter);
 
 export default router;
