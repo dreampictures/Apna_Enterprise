@@ -22,6 +22,8 @@ export async function ensureSchema() {
       );
 
       ALTER TABLE applications ADD COLUMN IF NOT EXISTS status TEXT NOT NULL DEFAULT 'pending';
+      ALTER TABLE applications ADD COLUMN IF NOT EXISTS document_url TEXT;
+      ALTER TABLE applications ADD COLUMN IF NOT EXISTS document_key TEXT;
 
       CREATE TABLE IF NOT EXISTS visitors (
         id SERIAL PRIMARY KEY,
