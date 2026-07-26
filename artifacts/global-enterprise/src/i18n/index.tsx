@@ -80,17 +80,42 @@ export interface Translations {
   apply_service_placeholder: string;
   apply_message: string;
   apply_message_placeholder: string;
+  apply_callback_label: string;
+  apply_callback_desc: string;
   apply_submitting: string;
   apply_submit: string;
   apply_error: string;
   apply_submitted_title: string;
   apply_thank_you: string;
   apply_success_desc: (service: string) => string;
+  apply_tracking_label: string;
+  apply_tracking_copy: string;
+  apply_tracking_copied: string;
+  apply_tracking_note: string;
   apply_email_followup: string;
   apply_another: string;
   apply_val_name: string;
   apply_val_phone: string;
   apply_val_service: string;
+
+  // Track
+  track_title: string;
+  track_subtitle: string;
+  track_placeholder: string;
+  track_btn: string;
+  track_not_found: string;
+  track_not_found_sub: string;
+  track_status_label: string;
+  track_service_label: string;
+  track_date_label: string;
+  track_callback_yes: string;
+  track_callback_no: string;
+  track_status_pending: string;
+  track_status_review: string;
+  track_status_applying: string;
+  track_status_applied: string;
+  track_status_rejected: string;
+  track_status_completed: string;
 
   // Contact
   contact_reach_out: string;
@@ -244,11 +269,35 @@ const en: Translations = {
   apply_submitted_title: "Application Submitted",
   apply_thank_you: "Thank You!",
   apply_success_desc: (s) => `Your application for ${s} has been received. Our team will contact you shortly.`,
+  apply_callback_label: "Request a Callback",
+  apply_callback_desc: "Our team will call you to collect documents and guide you through the process.",
   apply_email_followup: "Email Us for Follow-up",
   apply_another: "Submit Another Application",
+  apply_tracking_label: "Your Tracking Number",
+  apply_tracking_copy: "Copy",
+  apply_tracking_copied: "Copied!",
+  apply_tracking_note: "Save this number to track your application status anytime at Track Application.",
   apply_val_name: "Name must be at least 2 characters",
   apply_val_phone: "Enter a valid phone number",
   apply_val_service: "Please select a service",
+
+  track_title: "Track Your Application",
+  track_subtitle: "Enter your tracking number to check the status of your application.",
+  track_placeholder: "e.g. AE260726ABCD",
+  track_btn: "Track",
+  track_not_found: "Application Not Found",
+  track_not_found_sub: "No application found with this tracking number. Please check and try again.",
+  track_status_label: "Status",
+  track_service_label: "Service",
+  track_date_label: "Submitted On",
+  track_callback_yes: "✓ Callback Requested",
+  track_callback_no: "No callback requested",
+  track_status_pending: "Pending — Awaiting Review",
+  track_status_review: "Under Review",
+  track_status_applying: "Application In Progress",
+  track_status_applied: "Applied",
+  track_status_rejected: "Rejected",
+  track_status_completed: "Completed ✓",
 
   contact_reach_out: "Reach Out",
   contact_title: "Contact Us",
@@ -398,11 +447,35 @@ const pa: Translations = {
   apply_submitted_title: "ਅਰਜ਼ੀ ਜਮ੍ਹਾਂ ਹੋ ਗਈ",
   apply_thank_you: "ਧੰਨਵਾਦ!",
   apply_success_desc: (s) => `ਤੁਹਾਡੀ ${s} ਲਈ ਅਰਜ਼ੀ ਪ੍ਰਾਪਤ ਹੋ ਗਈ ਹੈ। ਸਾਡੀ ਟੀਮ ਜਲਦੀ ਸੰਪਰਕ ਕਰੇਗੀ।`,
+  apply_callback_label: "ਕਾਲਬੈਕ ਦੀ ਬੇਨਤੀ ਕਰੋ",
+  apply_callback_desc: "ਸਾਡੀ ਟੀਮ ਦਸਤਾਵੇਜ਼ ਇਕੱਠੇ ਕਰਨ ਲਈ ਫ਼ੋਨ ਕਰੇਗੀ।",
   apply_email_followup: "ਫਾਲੋ-ਅੱਪ ਲਈ ਈਮੇਲ ਕਰੋ",
   apply_another: "ਹੋਰ ਅਰਜ਼ੀ ਦਿਓ",
+  apply_tracking_label: "ਤੁਹਾਡਾ ਟ੍ਰੈਕਿੰਗ ਨੰਬਰ",
+  apply_tracking_copy: "ਕਾਪੀ ਕਰੋ",
+  apply_tracking_copied: "ਕਾਪੀ ਹੋ ਗਿਆ!",
+  apply_tracking_note: "ਇਸ ਨੰਬਰ ਨਾਲ ਆਪਣੀ ਅਰਜ਼ੀ ਟ੍ਰੈਕ ਕਰ ਸਕਦੇ ਹੋ।",
   apply_val_name: "ਨਾਮ ਘੱਟੋ-ਘੱਟ 2 ਅੱਖਰਾਂ ਦਾ ਹੋਣਾ ਚਾਹੀਦਾ ਹੈ",
   apply_val_phone: "ਸਹੀ ਫ਼ੋਨ ਨੰਬਰ ਦਾਖਲ ਕਰੋ",
   apply_val_service: "ਕਿਰਪਾ ਕਰਕੇ ਸੇਵਾ ਚੁਣੋ",
+
+  track_title: "ਅਰਜ਼ੀ ਟ੍ਰੈਕ ਕਰੋ",
+  track_subtitle: "ਆਪਣੀ ਅਰਜ਼ੀ ਦੀ ਸਥਿਤੀ ਜਾਣਨ ਲਈ ਟ੍ਰੈਕਿੰਗ ਨੰਬਰ ਦਾਖਲ ਕਰੋ।",
+  track_placeholder: "ਜਿਵੇਂ AE260726ABCD",
+  track_btn: "ਟ੍ਰੈਕ ਕਰੋ",
+  track_not_found: "ਅਰਜ਼ੀ ਨਹੀਂ ਮਿਲੀ",
+  track_not_found_sub: "ਇਸ ਨੰਬਰ ਨਾਲ ਕੋਈ ਅਰਜ਼ੀ ਨਹੀਂ ਮਿਲੀ। ਦੁਬਾਰਾ ਕੋਸ਼ਿਸ਼ ਕਰੋ।",
+  track_status_label: "ਸਥਿਤੀ",
+  track_service_label: "ਸੇਵਾ",
+  track_date_label: "ਜਮ੍ਹਾਂ ਕੀਤੀ ਤਾਰੀਖ",
+  track_callback_yes: "✓ ਕਾਲਬੈਕ ਬੇਨਤੀ ਕੀਤੀ",
+  track_callback_no: "ਕਾਲਬੈਕ ਬੇਨਤੀ ਨਹੀਂ",
+  track_status_pending: "ਉਡੀਕ ਵਿੱਚ — ਸਮੀਖਿਆ ਬਾਕੀ",
+  track_status_review: "ਸਮੀਖਿਆ ਹੋ ਰਹੀ ਹੈ",
+  track_status_applying: "ਅਰਜ਼ੀ ਪ੍ਰਕਿਰਿਆ ਜਾਰੀ",
+  track_status_applied: "ਅਰਜ਼ੀ ਦਿੱਤੀ ਗਈ",
+  track_status_rejected: "ਰੱਦ ਕੀਤੀ ਗਈ",
+  track_status_completed: "ਮੁਕੰਮਲ ✓",
 
   contact_reach_out: "ਸੰਪਰਕ ਕਰੋ",
   contact_title: "ਸਾਡੇ ਨਾਲ ਜੁੜੋ",

@@ -64,6 +64,7 @@ export const CreateApplicationBody = zod.object({
     "Online Payments",
   ]),
   message: zod.string().max(createApplicationBodyMessageMax).optional(),
+  callbackRequested: zod.boolean().optional(),
 });
 
 /**
@@ -78,18 +79,32 @@ export const ListApplicationsQueryParams = zod.object({
   offset: zod.coerce.number().default(listApplicationsQueryOffsetDefault),
 });
 
+export const ApplicationStatuses = ["pending", "review", "applying", "applied", "rejected", "completed"] as const;
+export type ApplicationStatus = (typeof ApplicationStatuses)[number];
+
 export const ListApplicationsResponse = zod.object({
   applications: zod.array(
     zod.object({
       id: zod.number(),
+      trackingNumber: zod.string(),
       name: zod.string(),
       phone: zod.string(),
       service: zod.string(),
       message: zod.string().nullish(),
+      status: zod.string(),
+      callbackRequested: zod.boolean(),
       createdAt: zod.coerce.date(),
     }),
   ),
   total: zod.number(),
+});
+
+export const TrackApplicationResponse = zod.object({
+  trackingNumber: zod.string(),
+  service: zod.string(),
+  status: zod.string(),
+  createdAt: zod.coerce.date(),
+  callbackRequested: zod.boolean(),
 });
 
 /**

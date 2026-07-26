@@ -14,11 +14,13 @@ export type User = typeof usersTable.$inferSelect;
 
 export const applicationsTable = pgTable("applications", {
   id: serial("id").primaryKey(),
+  trackingNumber: text("tracking_number").notNull().unique(),
   name: text("name").notNull(),
   phone: text("phone").notNull(),
   service: text("service").notNull(),
   message: text("message"),
   status: text("status").default("pending").notNull(),
+  callbackRequested: boolean("callback_requested").default(false).notNull(),
   documentUrl: text("document_url"),
   documentKey: text("document_key"),
   createdAt: timestamp("created_at").defaultNow().notNull(),

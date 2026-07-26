@@ -137,20 +137,33 @@ export default function AdminDashboard() {
     );
   }, [applicationsData, categoryFilter]);
 
-  const [appStatuses, setAppStatuses] = useState<Record<number, "pending" | "done">>({});
+  type AppStatus = "pending" | "review" | "applying" | "applied" | "rejected" | "completed";
+  const ALL_APP_STATUSES: AppStatus[] = ["pending", "review", "applying", "applied", "rejected", "completed"];
+
+  const STATUS_STYLE: Record<AppStatus, { bg: string; color: string; border: string; label: string }> = {
+    pending:   { bg: "#fef3c7", color: "#92400e", border: "#fcd34d", label: "Pending" },
+    review:    { bg: "#dbeafe", color: "#1d4ed8", border: "#93c5fd", label: "Under Review" },
+    applying:  { bg: "#ede9fe", color: "#7c3aed", border: "#c4b5fd", label: "In Progress" },
+    applied:   { bg: "#d1fae5", color: "#065f46", border: "#6ee7b7", label: "Applied" },
+    rejected:  { bg: "#fee2e2", color: "#991b1b", border: "#fca5a5", label: "Rejected" },
+    completed: { bg: "#dcfce7", color: "#14532d", border: "#86efac", label: "Completed ✓" },
+  };
+
+  const [appStatuses, setAppStatuses] = useState<Record<number, AppStatus>>({});
   useEffect(() => {
     if (!applicationsData?.applications) return;
     setAppStatuses((prev) => {
       const next = { ...prev };
       for (const a of applicationsData.applications) {
-        if (!(a.id in next)) next[a.id] = ((a as any).status ?? "pending") as "pending" | "done";
+        if (!(a.id in next)) next[a.id] = ((a as any).status ?? "pending") as AppStatus;
       }
       return next;
     });
   }, [applicationsData]);
 
-  const updateStatus = useCallback(async (id: number, newStatus: "pending" | "done") => {
-    setAppStatuses((prev) => ({ ...prev, [id]: newStatus }));
+  const updateStatus = useCallback(async (id: number, newStatus: AppStatus) => {
+    const prev = appStatuses[id];
+    setAppStatuses((s) => ({ ...s, [id]: newStatus }));
     try {
       await fetch(`/api/applications/${id}/status`, {
         method: "PATCH",
@@ -158,9 +171,9 @@ export default function AdminDashboard() {
         body: JSON.stringify({ status: newStatus }),
       });
     } catch {
-      setAppStatuses((prev) => ({ ...prev, [id]: newStatus === "done" ? "pending" : "done" }));
+      setAppStatuses((s) => ({ ...s, [id]: prev }));
     }
-  }, [token]);
+  }, [token, appStatuses]);
 
   async function handleExport() {
     const result = await fetchCsv();
@@ -427,62 +440,69 @@ export default function AdminDashboard() {
                   <table className="w-full text-sm">
                     <thead>
                       <tr className="bg-slate-50 border-b border-slate-100">
-                        <th className="text-left py-3 px-6 font-semibold text-slate-600 uppercase tracking-wider text-xs">Name</th>
-                        <th className="text-left py-3 px-6 font-semibold text-slate-600 uppercase tracking-wider text-xs">Phone</th>
-                        <th className="text-left py-3 px-6 font-semibold text-slate-600 uppercase tracking-wider text-xs">Category</th>
-                        <th className="text-left py-3 px-6 font-semibold text-slate-600 uppercase tracking-wider text-xs">Service</th>
-                        <th className="text-left py-3 px-6 font-semibold text-slate-600 uppercase tracking-wider text-xs hidden md:table-cell">Message</th>
-                        <th className="text-left py-3 px-6 font-semibold text-slate-600 uppercase tracking-wider text-xs hidden lg:table-cell">Date</th>
-                        <th className="text-left py-3 px-6 font-semibold text-slate-600 uppercase tracking-wider text-xs">Status</th>
+                        <th className="text-left py-3 px-4 font-semibold text-slate-600 uppercase tracking-wider text-xs">Name</th>
+                        <th className="text-left py-3 px-4 font-semibold text-slate-600 uppercase tracking-wider text-xs hidden sm:table-cell">Tracking #</th>
+                        <th className="text-left py-3 px-4 font-semibold text-slate-600 uppercase tracking-wider text-xs">Phone</th>
+                        <th className="text-left py-3 px-4 font-semibold text-slate-600 uppercase tracking-wider text-xs hidden lg:table-cell">Service</th>
+                        <th className="text-left py-3 px-4 font-semibold text-slate-600 uppercase tracking-wider text-xs hidden xl:table-cell">Message</th>
+                        <th className="text-left py-3 px-4 font-semibold text-slate-600 uppercase tracking-wider text-xs hidden md:table-cell">Callback</th>
+                        <th className="text-left py-3 px-4 font-semibold text-slate-600 uppercase tracking-wider text-xs hidden lg:table-cell">Date</th>
+                        <th className="text-left py-3 px-4 font-semibold text-slate-600 uppercase tracking-wider text-xs">Status</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-50">
                       {displayedApplications.map((app) => {
                         const catName = SERVICE_TO_CATEGORY[app.service] ?? "Other";
-                        const badgeClass = CATEGORY_BADGE[catName] ?? "bg-slate-100 text-slate-600";
+                        const st = (appStatuses[app.id] ?? (app as any).status ?? "pending") as typeof ALL_APP_STATUSES[number];
+                        const stStyle = STATUS_STYLE[st] ?? STATUS_STYLE.pending;
+                        const callbackReq = (app as any).callbackRequested;
                         return (
                           <tr key={app.id} className="hover:bg-slate-50 transition-colors">
-                            <td className="py-4 px-6 font-medium text-slate-900">{app.name}</td>
-                            <td className="py-4 px-6 text-slate-700">{app.phone}</td>
-                            <td className="py-4 px-6">
-                              <span className={`text-xs font-semibold px-2.5 py-1 rounded-full whitespace-nowrap ${badgeClass}`}>
-                                {catName}
+                            <td className="py-3 px-4">
+                              <div className="font-medium text-slate-900 text-sm">{app.name}</div>
+                              <div className="text-xs text-slate-400 lg:hidden">{catName}</div>
+                            </td>
+                            <td className="py-3 px-4 hidden sm:table-cell">
+                              <span className="font-mono text-xs text-slate-600 bg-slate-100 px-2 py-0.5 rounded tracking-wider">
+                                {(app as any).trackingNumber ?? "—"}
                               </span>
                             </td>
-                            <td className="py-4 px-6">
-                              <span className="bg-primary/10 text-primary text-xs font-semibold px-2.5 py-1 rounded-full whitespace-nowrap">
+                            <td className="py-3 px-4 text-slate-700 text-sm whitespace-nowrap">{app.phone}</td>
+                            <td className="py-3 px-4 hidden lg:table-cell">
+                              <span className="bg-primary/10 text-primary text-xs font-semibold px-2 py-1 rounded-full whitespace-nowrap">
                                 {app.service}
                               </span>
                             </td>
-                            <td className="py-4 px-6 text-slate-500 hidden md:table-cell max-w-xs truncate">
+                            <td className="py-3 px-4 text-slate-500 hidden xl:table-cell max-w-xs truncate text-sm">
                               {app.message ?? <span className="text-slate-300 italic">—</span>}
                             </td>
-                            <td className="py-4 px-6 text-slate-500 hidden lg:table-cell whitespace-nowrap">
+                            <td className="py-3 px-4 hidden md:table-cell">
+                              {callbackReq ? (
+                                <span className="inline-flex items-center gap-1 text-xs font-semibold px-2 py-1 rounded-full bg-amber-50 text-amber-700 border border-amber-200">
+                                  <FaPhoneAlt className="text-xs" /> Yes
+                                </span>
+                              ) : (
+                                <span className="text-xs text-slate-300 italic">—</span>
+                              )}
+                            </td>
+                            <td className="py-3 px-4 text-slate-500 hidden lg:table-cell whitespace-nowrap text-sm">
                               {new Date(app.createdAt).toLocaleDateString("en-IN", {
                                 day: "numeric", month: "short", year: "numeric",
                               })}
                             </td>
-                            <td className="py-4 px-6 whitespace-nowrap">
-                              {(() => {
-                                const st = appStatuses[app.id] ?? "pending";
-                                const isDone = st === "done";
-                                return (
-                                  <button
-                                    onClick={() => updateStatus(app.id, isDone ? "pending" : "done")}
-                                    title={isDone ? "Mark as Pending" : "Mark as Done"}
-                                    className="inline-flex items-center gap-1.5 text-xs font-bold px-3 py-1.5 rounded-full border-2 transition-all duration-150 hover:opacity-80"
-                                    style={
-                                      isDone
-                                        ? { background: "#dcfce7", color: "#15803d", borderColor: "#86efac" }
-                                        : { background: "#fef3c7", color: "#92400e", borderColor: "#fcd34d" }
-                                    }
-                                  >
-                                    {isDone
-                                      ? <><FaCheck className="text-xs" /> Done</>
-                                      : <><FaHourglassHalf className="text-xs" /> Pending</>}
-                                  </button>
-                                );
-                              })()}
+                            <td className="py-3 px-4 whitespace-nowrap">
+                              <select
+                                value={st}
+                                onChange={(e) => updateStatus(app.id, e.target.value as typeof ALL_APP_STATUSES[number])}
+                                className="text-xs font-bold px-2 py-1.5 rounded-full border-2 cursor-pointer transition-all duration-150 hover:opacity-80 focus:outline-none"
+                                style={{ background: stStyle.bg, color: stStyle.color, borderColor: stStyle.border }}
+                              >
+                                {ALL_APP_STATUSES.map((s) => (
+                                  <option key={s} value={s} style={{ background: "white", color: "#1e293b" }}>
+                                    {STATUS_STYLE[s].label}
+                                  </option>
+                                ))}
+                              </select>
                             </td>
                           </tr>
                         );

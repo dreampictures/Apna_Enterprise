@@ -6,6 +6,20 @@ import { requireAuth } from "../middlewares/auth";
 
 const router = Router();
 
+const VALID_STATUSES = ["pending", "review", "applying", "applied", "rejected", "completed"] as const;
+type AppStatus = (typeof VALID_STATUSES)[number];
+
+function generateTrackingNumber(): string {
+  const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+  const d = new Date();
+  const yy = d.getFullYear().toString().slice(2);
+  const mm = String(d.getMonth() + 1).padStart(2, "0");
+  const dd = String(d.getDate()).padStart(2, "0");
+  let rand = "";
+  for (let i = 0; i < 4; i++) rand += chars[Math.floor(Math.random() * chars.length)];
+  return `AE${yy}${mm}${dd}${rand}`;
+}
+
 // POST /applications - Submit a new service application
 router.post("/applications", async (req, res) => {
   const parsed = CreateApplicationBody.safeParse(req.body);
@@ -14,25 +28,86 @@ router.post("/applications", async (req, res) => {
     return;
   }
 
-  const { name, phone, service, message } = parsed.data;
+  const { name, phone, service, message, callbackRequested } = parsed.data;
+
+  // Generate unique tracking number (retry on collision)
+  let trackingNumber = generateTrackingNumber();
+  let attempts = 0;
+  while (attempts < 5) {
+    try {
+      const [app] = await db
+        .insert(applicationsTable)
+        .values({
+          trackingNumber,
+          name,
+          phone,
+          service,
+          message: message ?? null,
+          callbackRequested: callbackRequested ?? false,
+        })
+        .returning();
+
+      res.status(201).json({
+        id: app.id,
+        trackingNumber: app.trackingNumber,
+        name: app.name,
+        phone: app.phone,
+        service: app.service,
+        message: app.message,
+        createdAt: app.createdAt.toISOString(),
+      });
+      return;
+    } catch (err: any) {
+      // Retry on unique constraint violation for tracking number
+      if (err?.code === "23505" && err?.constraint?.includes("tracking_number")) {
+        trackingNumber = generateTrackingNumber();
+        attempts++;
+        continue;
+      }
+      req.log.error({ err }, "Failed to create application");
+      res.status(500).json({ error: "Failed to save application" });
+      return;
+    }
+  }
+  res.status(500).json({ error: "Failed to generate tracking number" });
+});
+
+// GET /applications/track/:trackingNumber - Public tracking endpoint
+router.get("/applications/track/:trackingNumber", async (req, res) => {
+  const { trackingNumber } = req.params;
+  if (!trackingNumber || trackingNumber.length > 20) {
+    res.status(400).json({ error: "Invalid tracking number" });
+    return;
+  }
 
   try {
     const [app] = await db
-      .insert(applicationsTable)
-      .values({ name, phone, service, message: message ?? null })
-      .returning();
+      .select({
+        trackingNumber: applicationsTable.trackingNumber,
+        service: applicationsTable.service,
+        status: applicationsTable.status,
+        callbackRequested: applicationsTable.callbackRequested,
+        createdAt: applicationsTable.createdAt,
+      })
+      .from(applicationsTable)
+      .where(eq(applicationsTable.trackingNumber, trackingNumber.toUpperCase()))
+      .limit(1);
 
-    res.status(201).json({
-      id: app.id,
-      name: app.name,
-      phone: app.phone,
+    if (!app) {
+      res.status(404).json({ error: "Application not found" });
+      return;
+    }
+
+    res.json({
+      trackingNumber: app.trackingNumber,
       service: app.service,
-      message: app.message,
+      status: app.status,
+      callbackRequested: app.callbackRequested,
       createdAt: app.createdAt.toISOString(),
     });
   } catch (err) {
-    req.log.error({ err }, "Failed to create application");
-    res.status(500).json({ error: "Failed to save application" });
+    req.log.error({ err }, "Failed to track application");
+    res.status(500).json({ error: "Failed to fetch application" });
   }
 });
 
@@ -62,11 +137,13 @@ router.get("/applications", requireAuth, async (req, res) => {
     res.json({
       applications: applications.map((a) => ({
         id: a.id,
+        trackingNumber: a.trackingNumber,
         name: a.name,
         phone: a.phone,
         service: a.service,
         message: a.message,
         status: a.status,
+        callbackRequested: a.callbackRequested,
         createdAt: a.createdAt.toISOString(),
       })),
       total,
@@ -86,8 +163,8 @@ router.patch("/applications/:id/status", requireAuth, async (req, res) => {
   }
 
   const { status } = req.body as { status?: string };
-  if (!status || !["pending", "done"].includes(status)) {
-    res.status(400).json({ error: "Status must be 'pending' or 'done'" });
+  if (!status || !(VALID_STATUSES as readonly string[]).includes(status)) {
+    res.status(400).json({ error: `Status must be one of: ${VALID_STATUSES.join(", ")}` });
     return;
   }
 
@@ -112,12 +189,15 @@ router.get("/applications/export", requireAuth, async (req, res) => {
     }
     const applications = await query;
 
-    const headers = ["ID", "Name", "Phone", "Service", "Message", "Date"];
+    const headers = ["ID", "Tracking No", "Name", "Phone", "Service", "Status", "Callback Requested", "Message", "Date"];
     const rows = applications.map((a) => [
       a.id,
+      `"${a.trackingNumber}"`,
       `"${a.name.replace(/"/g, '""')}"`,
       `"${a.phone}"`,
       `"${a.service}"`,
+      `"${a.status}"`,
+      a.callbackRequested ? "Yes" : "No",
       `"${(a.message ?? "").replace(/"/g, '""')}"`,
       a.createdAt.toISOString(),
     ]);

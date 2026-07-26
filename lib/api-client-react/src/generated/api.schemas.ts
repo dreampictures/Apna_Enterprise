@@ -39,20 +39,41 @@ export interface CreateApplicationBody {
   service: CreateApplicationBodyService;
   /** @maxLength 1000 */
   message?: string;
+  callbackRequested?: boolean;
 }
 
 export interface Application {
   id: number;
+  trackingNumber: string;
   name: string;
   phone: string;
   service: string;
   message?: string | null;
+  status: string;
+  callbackRequested: boolean;
+  createdAt: string;
+}
+
+export interface ApplicationCreateResponse {
+  id: number;
+  trackingNumber: string;
+  name: string;
+  phone: string;
+  service: string;
   createdAt: string;
 }
 
 export interface ApplicationListResponse {
   applications: Application[];
   total: number;
+}
+
+export interface TrackApplicationResponse {
+  trackingNumber: string;
+  service: string;
+  status: string;
+  createdAt: string;
+  callbackRequested: boolean;
 }
 
 export interface AdminLoginBody {

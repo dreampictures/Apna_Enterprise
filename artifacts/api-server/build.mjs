@@ -70,6 +70,8 @@ async function buildAll() {
       "@sentry/profiling-node",
       "@tree-sitter/*",
       "aws-sdk",
+      "@aws-sdk/*",
+      "multer",
       "classic-level",
       "dd-trace",
       "ffi-napi",

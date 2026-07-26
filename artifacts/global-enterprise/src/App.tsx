@@ -11,6 +11,7 @@ import NotFound from "@/pages/not-found";
 import Home from "./pages/Home";
 import Services from "./pages/Services";
 import Apply from "./pages/Apply";
+import Track from "./pages/Track";
 import Contact from "./pages/Contact";
 import Updates from "./pages/Updates";
 import UpdateDetail from "./pages/UpdateDetail";
@@ -114,6 +115,7 @@ function Router() {
         <Route path="/updates" component={Updates} />
         <Route path="/updates/:slug" component={UpdateDetail} />
         <Route path="/apply" component={Apply} />
+        <Route path="/track" component={Track} />
         <Route path="/contact" component={Contact} />
         <Route path="/admin/login" component={AdminLogin} />
         <Route path="/admin/dashboard" component={AdminDashboard} />
