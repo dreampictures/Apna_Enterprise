@@ -10,6 +10,7 @@ import extractUrlRouter from "./extract-url";
 import khaataRouter from "./khaata";
 import cametiRouter from "./cameti";
 import uploadRouter from "./upload";
+import excelImportRouter from "./excel-import";
 
 const router: IRouter = Router();
 
@@ -24,5 +25,6 @@ router.use(extractUrlRouter);
 router.use(khaataRouter);
 router.use(cametiRouter);
 router.use(uploadRouter);
+router.use(excelImportRouter);
 
 export default router;

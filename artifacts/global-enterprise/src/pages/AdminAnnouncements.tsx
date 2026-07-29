@@ -6,8 +6,9 @@ import {
   FaPlus, FaEdit, FaTrash, FaArrowLeft, FaSave, FaEye, FaEyeSlash,
   FaFire, FaStar, FaArrowUp, FaArrowDown, FaTable, FaAlignLeft, FaLink,
   FaMagic, FaTimes, FaCheckCircle, FaExclamationTriangle, FaSpinner,
-  FaSearch, FaRobot, FaFilePdf, FaCloudUploadAlt, FaTimesCircle,
+  FaSearch, FaRobot, FaFilePdf, FaCloudUploadAlt, FaTimesCircle, FaFileExcel,
 } from "react-icons/fa";
+import AdminExcelImport from "./AdminExcelImport";
 
 const GOLD = "#D4A017";
 const CATEGORIES = ["Government Job", "Admit Card", "Result", "Govt Scheme", "Govt Notice", "Announcement", "Offer / Update"];
@@ -99,7 +100,7 @@ function emptyForm(): Omit<Ann, "id" | "isExpired" | "createdAt"> {
 }
 
 export default function AdminAnnouncements({ token }: { token: string | null }) {
-  const [view, setView] = useState<"list" | "form">("list");
+  const [view, setView] = useState<"list" | "form" | "excel-import">("list");
   const [items, setItems] = useState<Ann[]>([]);
   const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(true);
@@ -385,8 +386,30 @@ export default function AdminAnnouncements({ token }: { token: string | null }) 
     }));
   }
 
+  async function openPostById(id: number) {
+    try {
+      const res = await fetch(`/api/announcements/${id}`, { headers: authHeaders });
+      if (!res.ok) { const all = items.find(a => a.id === id); if (all) { openEdit(all); return; } }
+      // Fetch from admin list
+      const listRes = await fetch(`/api/announcements?limit=200&offset=0`, { headers: authHeaders });
+      const listData = await listRes.json();
+      const found = (listData.announcements || []).find((a: Ann) => a.id === id);
+      if (found) { openEdit(found); } else { loadList(); setView("list"); }
+    } catch { setView("list"); }
+  }
+
   const inputCls = "h-10 rounded-lg text-sm border-slate-200";
   const labelCls = "text-xs font-semibold text-slate-600 mb-1 block";
+
+  if (view === "excel-import") {
+    return (
+      <AdminExcelImport
+        token={token}
+        onBack={() => setView("list")}
+        onOpenPost={(id) => openPostById(id)}
+      />
+    );
+  }
 
   if (view === "list") {
     return (
@@ -524,6 +547,13 @@ export default function AdminAnnouncements({ token }: { token: string | null }) 
               style={{ background: "rgba(212,160,23,0.1)", color: "#B8891A", border: "1.5px solid rgba(212,160,23,0.35)" }}
             >
               <FaMagic className="text-xs" /> Import from URL
+            </button>
+            <button
+              onClick={() => setView("excel-import")}
+              className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold transition-all"
+              style={{ background: "rgba(22,163,74,0.1)", color: "#15803d", border: "1.5px solid rgba(22,163,74,0.3)" }}
+            >
+              <FaFileExcel className="text-xs" /> Import Excel
             </button>
             <Button onClick={openCreate} className="gap-2 text-sm" style={{ background: GOLD, color: "#fff" }}>
               <FaPlus /> New Post

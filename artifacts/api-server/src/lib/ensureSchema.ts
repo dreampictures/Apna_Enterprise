@@ -141,6 +141,22 @@ export async function ensureSchema() {
         note TEXT,
         created_at TIMESTAMP DEFAULT NOW() NOT NULL
       );
+
+      CREATE TABLE IF NOT EXISTS excel_import_logs (
+        id SERIAL PRIMARY KEY,
+        file_name TEXT NOT NULL,
+        file_hash TEXT NOT NULL,
+        row_count INTEGER NOT NULL DEFAULT 0,
+        column_count INTEGER NOT NULL DEFAULT 0,
+        import_mode TEXT NOT NULL DEFAULT 'create',
+        status TEXT NOT NULL DEFAULT 'success',
+        admin_user TEXT NOT NULL DEFAULT 'admin',
+        announcement_id INTEGER,
+        imported_at TIMESTAMP DEFAULT NOW() NOT NULL
+      );
+
+      ALTER TABLE announcements ADD COLUMN IF NOT EXISTS pdf_url TEXT;
+      ALTER TABLE announcements ADD COLUMN IF NOT EXISTS pdf_key TEXT;
     `);
 
     logger.info("Database schema verified / created successfully");
