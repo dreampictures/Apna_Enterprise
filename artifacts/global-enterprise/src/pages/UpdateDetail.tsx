@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
 import { Link, useParams } from "wouter";
 import Seo from "@/components/Seo";
 import { FaChevronDown } from "react-icons/fa";
@@ -455,17 +455,36 @@ export default function UpdateDetail() {
                     const showHeader = sec.columns.some((col, i) => !isDefaultColumnHeader(col, i));
                     const visibleRows = sec.rows.filter((r) => r.some((c) => getCellValue(c).trim()));
                     if (visibleRows.length === 0) return null;
+
+                    // Detect if first column is a serial/number column
+                    const isSerialCol = (col: string) => /^(sr\.?\s*no\.?|s\.?\s*no\.?|#|no\.?)$/i.test(col.trim());
+                    const firstColSerial = sec.columns.length > 0 && isSerialCol(sec.columns[0]);
+
                     return (
-                      <div className="overflow-x-auto">
-                        <table className="w-full text-sm" style={{ borderCollapse: "collapse" }}>
+                      <div style={{ overflowX: "auto", WebkitOverflowScrolling: "touch" }}>
+                        <table style={{ width: "100%", borderCollapse: "separate", borderSpacing: 0, fontSize: "0.82rem" }}>
                           {showHeader && (
                             <thead>
-                              <tr style={{ background: "#f1f5f9" }}>
+                              <tr>
                                 {sec.columns.map((col, i) => (
                                   <th
                                     key={i}
-                                    className="py-3 px-4 text-left text-xs font-bold text-slate-700 uppercase tracking-wider"
-                                    style={{ border: "1px solid #e2e8f0" }}
+                                    style={{
+                                      background: NAVY,
+                                      color: "#fff",
+                                      padding: "11px 14px",
+                                      textAlign: "left",
+                                      fontWeight: 700,
+                                      fontSize: "0.7rem",
+                                      textTransform: "uppercase",
+                                      letterSpacing: "0.06em",
+                                      whiteSpace: "nowrap",
+                                      borderRight: i < (sec.columns?.length ?? 0) - 1 ? "1px solid rgba(255,255,255,0.12)" : "none",
+                                      borderBottom: `2px solid ${GOLD}`,
+                                      ...(i === 0 && firstColSerial
+                                        ? { width: "52px", textAlign: "center" }
+                                        : {}),
+                                    }}
                                   >
                                     {col}
                                   </th>
@@ -477,36 +496,87 @@ export default function UpdateDetail() {
                             {visibleRows.map((row, ri) => (
                               <tr
                                 key={ri}
-                                style={{ background: ri % 2 === 0 ? "#fff" : "#f8fafd" }}
+                                style={{
+                                  background: ri % 2 === 0 ? "#fff" : "#f4f7fc",
+                                  transition: "background 0.15s",
+                                }}
+                                onMouseEnter={e => (e.currentTarget.style.background = "#eef3fb")}
+                                onMouseLeave={e => (e.currentTarget.style.background = ri % 2 === 0 ? "#fff" : "#f4f7fc")}
                               >
                                 {row.map((cell, ci) => {
                                   const val = getCellValue(cell);
                                   const url = getCellUrl(cell);
+                                  const isLast = ci === row.length - 1;
+                                  const isFirstSerial = ci === 0 && firstColSerial;
+
+                                  const tdStyle: React.CSSProperties = {
+                                    padding: isFirstSerial ? "10px 6px" : "10px 14px",
+                                    borderBottom: "1px solid #e8edf5",
+                                    borderRight: !isLast ? "1px solid #e8edf5" : "none",
+                                    verticalAlign: "top",
+                                    textAlign: isFirstSerial ? "center" : "left",
+                                    color: "#334155",
+                                    lineHeight: 1.55,
+                                  };
+
                                   if (!val.trim() && !url) {
                                     return (
-                                      <td key={ci} className="py-3 px-4 text-slate-400 italic" style={{ border: "1px solid #e2e8f0" }}>
+                                      <td key={ci} style={{ ...tdStyle, color: "#94a3b8", fontStyle: "italic" }}>
                                         —
                                       </td>
                                     );
                                   }
+
+                                  if (isFirstSerial) {
+                                    return (
+                                      <td key={ci} style={tdStyle}>
+                                        <span style={{
+                                          display: "inline-flex",
+                                          alignItems: "center",
+                                          justifyContent: "center",
+                                          width: 28,
+                                          height: 28,
+                                          borderRadius: "50%",
+                                          background: NAVY,
+                                          color: "#fff",
+                                          fontWeight: 700,
+                                          fontSize: "0.72rem",
+                                          margin: "0 auto",
+                                        }}>
+                                          {val}
+                                        </span>
+                                      </td>
+                                    );
+                                  }
+
                                   return (
-                                    <td
-                                      key={ci}
-                                      className={`py-3 px-4 ${ci === 0 ? "font-bold text-slate-800" : "text-slate-700"}`}
-                                      style={{ border: "1px solid #e2e8f0" }}
-                                    >
+                                    <td key={ci} style={{
+                                      ...tdStyle,
+                                      fontWeight: ci === 1 ? 600 : 400,
+                                      color: ci === 1 ? "#1e293b" : "#475569",
+                                    }}>
                                       {url ? (
                                         <a
                                           href={url}
                                           target="_blank"
                                           rel="noreferrer"
-                                          className="inline-flex items-center gap-1 text-xs font-bold rounded-full hover:opacity-80 transition-opacity"
-                                          style={{ background: "#dbeafe", color: "#1d4ed8", padding: "4px 12px" }}
+                                          style={{
+                                            display: "inline-flex",
+                                            alignItems: "center",
+                                            gap: 5,
+                                            background: "#dbeafe",
+                                            color: "#1d4ed8",
+                                            padding: "3px 10px",
+                                            borderRadius: 20,
+                                            fontWeight: 700,
+                                            fontSize: "0.72rem",
+                                            textDecoration: "none",
+                                          }}
                                         >
-                                          {val} <FaExternalLinkAlt className="text-xs opacity-70" />
+                                          {val} <FaExternalLinkAlt style={{ fontSize: "0.6rem", opacity: 0.7 }} />
                                         </a>
                                       ) : (
-                                        ci === 0 ? val : highlightValue(val)
+                                        ci === 1 && !firstColSerial ? val : highlightValue(val)
                                       )}
                                     </td>
                                   );
@@ -514,6 +584,26 @@ export default function UpdateDetail() {
                               </tr>
                             ))}
                           </tbody>
+                          {visibleRows.length > 5 && (
+                            <tfoot>
+                              <tr>
+                                <td
+                                  colSpan={sec.columns.length}
+                                  style={{
+                                    padding: "8px 14px",
+                                    background: "#f8fafd",
+                                    color: "#64748b",
+                                    fontSize: "0.72rem",
+                                    textAlign: "right",
+                                    borderTop: "2px solid #e2e8f0",
+                                    fontWeight: 500,
+                                  }}
+                                >
+                                  Total: {visibleRows.length} records
+                                </td>
+                              </tr>
+                            </tfoot>
+                          )}
                         </table>
                       </div>
                     );

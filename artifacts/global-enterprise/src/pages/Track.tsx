@@ -2,7 +2,7 @@ import { useState } from "react";
 import Seo from "@/components/Seo";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { FaSearch, FaCheckCircle, FaClock, FaTimesCircle, FaClipboardList, FaPhone, FaArrowRight } from "react-icons/fa";
+import { FaSearch, FaCheckCircle, FaClock, FaTimesCircle, FaClipboardList, FaPhone, FaArrowRight, FaCheck } from "react-icons/fa";
 import { Link } from "wouter";
 import { useT } from "@/i18n";
 
