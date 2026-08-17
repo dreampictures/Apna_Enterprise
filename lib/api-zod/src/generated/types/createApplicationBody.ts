@@ -21,4 +21,5 @@ export interface CreateApplicationBody {
   service: CreateApplicationBodyService;
   /** @maxLength 1000 */
   message?: string;
+  callbackRequested?: boolean;
 }

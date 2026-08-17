@@ -156,7 +156,7 @@ router.get("/applications", requireAuth, async (req, res) => {
 
 // PATCH /applications/:id/status - Update application status (admin only)
 router.patch("/applications/:id/status", requireAuth, async (req, res) => {
-  const id = parseInt(req.params.id, 10);
+  const id = parseInt(String(req.params.id), 10);
   if (isNaN(id)) {
     res.status(400).json({ error: "Invalid application ID" });
     return;

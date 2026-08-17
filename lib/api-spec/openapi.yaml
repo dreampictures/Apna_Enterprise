@@ -92,6 +92,32 @@ paths:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
 
+  /applications/track/{trackingNumber}:
+    get:
+      operationId: trackApplication
+      tags: [applications]
+      summary: Track an application by its reference number
+      parameters:
+        - name: trackingNumber
+          in: path
+          required: true
+          schema:
+            type: string
+            maxLength: 20
+      responses:
+        "200":
+          description: Application tracking details
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TrackApplicationResponse"
+        "404":
+          description: Application not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
   /applications/export:
     get:
       operationId: exportApplicationsCsv
@@ -258,6 +284,8 @@ components:
         message:
           type: string
           maxLength: 1000
+        callbackRequested:
+          type: boolean
       required:
         - name
         - phone
@@ -268,6 +296,8 @@ components:
       properties:
         id:
           type: integer
+        trackingNumber:
+          type: string
         name:
           type: string
         phone:
@@ -277,14 +307,21 @@ components:
         message:
           type: string
           nullable: true
+        status:
+          type: string
+        callbackRequested:
+          type: boolean
         createdAt:
           type: string
           format: date-time
       required:
         - id
+        - trackingNumber
         - name
         - phone
         - service
+        - status
+        - callbackRequested
         - createdAt
 
     ApplicationListResponse:
@@ -299,6 +336,27 @@ components:
       required:
         - applications
         - total
+
+    TrackApplicationResponse:
+      type: object
+      properties:
+        trackingNumber:
+          type: string
+        service:
+          type: string
+        status:
+          type: string
+        callbackRequested:
+          type: boolean
+        createdAt:
+          type: string
+          format: date-time
+      required:
+        - trackingNumber
+        - service
+        - status
+        - callbackRequested
+        - createdAt
 
     AdminLoginBody:
       type: object

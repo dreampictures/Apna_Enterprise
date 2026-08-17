@@ -23,6 +23,28 @@ export const CreateApplicationBodyService = {
   PAN_Card_Apply: "PAN Card Apply",
   Aadhaar_Card_Services: "Aadhaar Card Services",
   Voter_Card_Apply: "Voter Card Apply",
+  Passport_Apply: "Passport Apply",
+  Learning_License: "Learning License",
+  Driving_License: "Driving License",
+  UDID_Certificate_Apply: "UDID Certificate Apply",
+  "E-Shram_Card": "E-Shram Card",
+  Schedule_Caste_Certificate: "Schedule Caste Certificate",
+  Punjab_Resident_Certificate: "Punjab Resident Certificate",
+  Income_Certificate: "Income Certificate",
+  "UDYAM_Certificate_(MSME)": "UDYAM Certificate (MSME)",
+  GST_Registration: "GST Registration",
+  "Job_Application_Forms_(Govt_Naukri)": "Job Application Forms (Govt Naukri)",
+  College_Admission_Forms: "College Admission Forms",
+  School_Admission_Forms: "School Admission Forms",
+  Competitive_Exam_Forms: "Competitive Exam Forms",
+  Scholarship_Forms: "Scholarship Forms",
+  General_Online_Form_Filling: "General Online Form Filling",
+  Document_Scanning: "Document Scanning",
+  Printing_Services: "Printing Services",
+  Website_Design_Services: "Website Design Services",
+  "AEPS_(Aadhaar_Enabled_Payment_System)":
+    "AEPS (Aadhaar Enabled Payment System)",
+  Online_Payments: "Online Payments",
 } as const;
 
 export interface CreateApplicationBody {
@@ -54,15 +76,6 @@ export interface Application {
   createdAt: string;
 }
 
-export interface ApplicationCreateResponse {
-  id: number;
-  trackingNumber: string;
-  name: string;
-  phone: string;
-  service: string;
-  createdAt: string;
-}
-
 export interface ApplicationListResponse {
   applications: Application[];
   total: number;
@@ -72,8 +85,8 @@ export interface TrackApplicationResponse {
   trackingNumber: string;
   service: string;
   status: string;
-  createdAt: string;
   callbackRequested: boolean;
+  createdAt: string;
 }
 
 export interface AdminLoginBody {

@@ -27,6 +27,7 @@ import type {
   ExportApplicationsCsvParams,
   HealthStatus,
   ListApplicationsParams,
+  TrackApplicationResponse,
   VisitorCount,
 } from "./api.schemas";
 
@@ -289,6 +290,98 @@ export function useListApplications<
   },
 ): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
   const queryOptions = getListApplicationsQueryOptions(params, options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary Track an application by its reference number
+ */
+export const getTrackApplicationUrl = (trackingNumber: string) => {
+  return `/api/applications/track/${trackingNumber}`;
+};
+
+export const trackApplication = async (
+  trackingNumber: string,
+  options?: RequestInit,
+): Promise<TrackApplicationResponse> => {
+  return customFetch<TrackApplicationResponse>(
+    getTrackApplicationUrl(trackingNumber),
+    {
+      ...options,
+      method: "GET",
+    },
+  );
+};
+
+export const getTrackApplicationQueryKey = (trackingNumber: string) => {
+  return [`/api/applications/track/${trackingNumber}`] as const;
+};
+
+export const getTrackApplicationQueryOptions = <
+  TData = Awaited<ReturnType<typeof trackApplication>>,
+  TError = ErrorType<ErrorResponse>,
+>(
+  trackingNumber: string,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof trackApplication>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getTrackApplicationQueryKey(trackingNumber);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof trackApplication>>
+  > = ({ signal }) =>
+    trackApplication(trackingNumber, { signal, ...requestOptions });
+
+  return {
+    queryKey,
+    queryFn,
+    enabled: !!trackingNumber,
+    ...queryOptions,
+  } as UseQueryOptions<
+    Awaited<ReturnType<typeof trackApplication>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type TrackApplicationQueryResult = NonNullable<
+  Awaited<ReturnType<typeof trackApplication>>
+>;
+export type TrackApplicationQueryError = ErrorType<ErrorResponse>;
+
+/**
+ * @summary Track an application by its reference number
+ */
+
+export function useTrackApplication<
+  TData = Awaited<ReturnType<typeof trackApplication>>,
+  TError = ErrorType<ErrorResponse>,
+>(
+  trackingNumber: string,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof trackApplication>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getTrackApplicationQueryOptions(trackingNumber, options);
 
   const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
     queryKey: QueryKey;

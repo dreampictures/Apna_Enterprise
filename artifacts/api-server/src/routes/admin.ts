@@ -75,10 +75,13 @@ router.get("/admin/dashboard", requireAuth, async (req, res) => {
       totalApplications: total,
       recentApplications: recentApplications.map((a) => ({
         id: a.id,
+        trackingNumber: a.trackingNumber,
         name: a.name,
         phone: a.phone,
         service: a.service,
         message: a.message,
+        status: a.status,
+        callbackRequested: a.callbackRequested,
         createdAt: a.createdAt.toISOString(),
       })),
       applicationsByService: byService.map((s) => ({

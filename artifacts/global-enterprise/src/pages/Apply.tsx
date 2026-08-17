@@ -4,7 +4,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { useSearch, Link } from "wouter";
-import { useCreateApplication } from "@workspace/api-client-react";
+import { useCreateApplication, type CreateApplicationBody } from "@workspace/api-client-react";
 import { Button } from "@/components/ui/button";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
@@ -20,12 +20,12 @@ const GOLD_LIGHT = "#F2C14E";
 type FormValues = {
   name: string;
   phone: string;
-  service: (typeof ALL_SERVICE_IDS)[number];
+  service: CreateApplicationBody["service"];
   message?: string;
   callbackRequested?: boolean;
 };
 
-const isValidService = (s: string | null): s is (typeof ALL_SERVICE_IDS)[number] =>
+const isValidService = (s: string | null): s is FormValues["service"] =>
   !!s && (ALL_SERVICE_IDS as readonly string[]).includes(s);
 
 export default function Apply() {

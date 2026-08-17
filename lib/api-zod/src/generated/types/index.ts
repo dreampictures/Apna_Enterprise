@@ -18,4 +18,5 @@ export * from "./exportApplicationsCsvParams";
 export * from "./healthStatus";
 export * from "./listApplicationsParams";
 export * from "./serviceCount";
+export * from "./trackApplicationResponse";
 export * from "./visitorCount";

@@ -6,13 +6,9 @@
  * OpenAPI spec version: 0.1.0
  */
 
-export interface Application {
-  id: number;
+export interface TrackApplicationResponse {
   trackingNumber: string;
-  name: string;
-  phone: string;
   service: string;
-  message?: string | null;
   status: string;
   callbackRequested: boolean;
   createdAt: Date;
