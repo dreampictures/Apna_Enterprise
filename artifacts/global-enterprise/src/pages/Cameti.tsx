@@ -291,7 +291,7 @@ function EmptyState({ icon: Icon, title, sub }: {
   return (
     <div className="flex flex-col items-center justify-center py-14 text-center">
       <div className="w-16 h-16 rounded-3xl flex items-center justify-center mb-4" style={{ background: "#EEF2FF" }}>
-        <Icon className="text-2xl" style={{ color: NAVY }} />
+        <Icon className="text-2xl text-[#071B4A]" />
       </div>
       <p className="font-extrabold text-slate-700 text-base">{title}</p>
       <p className="text-slate-400 text-sm mt-1.5 font-medium">{sub}</p>

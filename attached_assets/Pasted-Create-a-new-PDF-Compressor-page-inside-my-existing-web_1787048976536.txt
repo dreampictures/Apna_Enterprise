@@ -1,0 +1,72 @@
+Create a new PDF Compressor page inside my existing website.
+
+Important: Do not create a new visual style for this page. First inspect my existing website and reuse its current design system exactly, including:
+* Existing brand colors and color variables
+* Typography and font pairing
+* Header, footer, navigation, and page width
+* Button styles, input styles, border radius, shadows, spacing, and hover states
+* Existing responsive behavior
+* Existing light/dark mode behavior, if available
+
+The new page must look like it was always part of the old website. Do not use the paper/less visual style, parchment colors, or a separate brand identity. Do not change the styling of existing pages or global components.
+
+Create a new route such as `/pdf-compressor` titled “PDF Compressor”.
+
+Page functionality:
+1. Allow users to upload one or multiple PDF files at the same time.
+2. Support multi-page PDFs.
+3. Support drag-and-drop upload as well as file selection.
+4. Show an upload queue with:
+   - Original file name
+   - Original file size
+   - Number of pages, when available
+   - Compression status
+   - Output file size
+   - Progress indicator
+   - Remove action
+5. Add a target size control:
+   - Default value: 1.9 MB
+   - Manual slider from 0.5 MB to 10 MB
+   - Clearly show the selected target size
+6. Compress files locally in the browser.
+7. Never upload, store, or persist PDF files on the server.
+8. Do not use localStorage, IndexedDB, cookies, or database storage for PDF files.
+9. Keep visual quality as high as possible:
+   - Try lossless optimization first
+   - If needed, use a high-quality compression fallback
+   - Never silently reduce quality just to hit the target size
+   - If the target cannot be reached without visible quality reduction, keep the safest result and show a clear warning
+10. Provide individual download buttons.
+11. Add a “Download ZIP” button for multiple compressed files.
+12. The ZIP file should be named `compressed-pdfs.zip`.
+13. Preserve every original PDF filename:
+   - Individual downloads must use the original filename
+   - Files inside the ZIP must use the original filenames
+   - Do not add `-small`, `-compressed`, timestamps, or any other suffix to PDF filenames
+14. Add this English note clearly on the page:
+   “Original file names are preserved. Your PDF files are not renamed.”
+15. After download:
+   - Revoke object URLs
+   - Remove temporary in-memory file references
+   - Clear the downloaded file data from the page state
+16. Add a “Clear session” action that removes all files and temporary data from the page.
+17. Include polished loading, empty, success, warning, and error states.
+18. Show a clear privacy message:
+   “Your PDF files are processed locally in your browser and are never uploaded or stored.”
+19. Make the page fully responsive for mobile, tablet, and desktop.
+20. Follow the existing website’s accessibility patterns:
+   - Keyboard-accessible controls
+   - Proper labels
+   - Visible focus states
+   - Accessible status messages
+   - Clear error messages
+
+Technical requirements:
+* Reuse the existing website’s components and utilities wherever possible.
+* Use the existing project’s framework and package conventions.
+* Do not introduce a separate CSS theme.
+* Do not modify unrelated pages.
+* Do not create fake compression results or mock download buttons.
+* All upload, compression, ZIP creation, download, and cleanup actions must work.
+* Add a unique page title and meta description for the new page.
+* Before finishing, test the page with multiple PDFs, multi-page PDFs, individual downloads, ZIP download, filename preservation, target-size changes, invalid files, and clear-session behavior.

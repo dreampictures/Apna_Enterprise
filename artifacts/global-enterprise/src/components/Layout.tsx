@@ -19,6 +19,8 @@ export default function Layout({ children }: { children: React.ReactNode }) {
     { href: "/services", label: t.nav_services },
     { href: "/updates", label: t.nav_updates },
     { href: "/apply", label: t.nav_apply },
+    { href: "/track", label: "Track" },
+    { href: "/pdf-compressor", label: "PDF Compressor" },
     { href: "/contact", label: t.nav_contact },
   ];
 

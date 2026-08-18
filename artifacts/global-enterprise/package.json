@@ -75,6 +75,9 @@
     "zod": "catalog:"
   },
   "dependencies": {
+    "jszip": "^3.10.1",
+    "pdf-lib": "^1.17.1",
+    "pdfjs-dist": "^4.10.38",
     "react-helmet-async": "^3.0.0"
   }
 }
