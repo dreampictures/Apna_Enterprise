@@ -19,7 +19,7 @@ import AdminLogin from "./pages/AdminLogin";
 import AdminDashboard from "./pages/AdminDashboard";
 import KhaataBook from "./pages/KhaataBook";
 import Cameti from "./pages/Cameti";
-import PdfCompressor from "./pages/PdfCompressor";
+import DocumentTools from "./pages/DocumentTools";
 import Layout from "./components/Layout";
 import LeadPopup from "./components/LeadPopup";
 
@@ -117,7 +117,7 @@ function Router() {
         <Route path="/updates/:slug" component={UpdateDetail} />
         <Route path="/apply" component={Apply} />
         <Route path="/track" component={Track} />
-        <Route path="/pdf-compressor" component={PdfCompressor} />
+        <Route path="/pdf-compressor" component={DocumentTools} />
         <Route path="/contact" component={Contact} />
         <Route path="/admin/login" component={AdminLogin} />
         <Route path="/admin/dashboard" component={AdminDashboard} />

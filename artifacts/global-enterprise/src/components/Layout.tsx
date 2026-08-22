@@ -8,6 +8,7 @@ import { useT } from "@/i18n";
 
 const GOLD = "#D4A017";
 const GOLD_LIGHT = "#F2C14E";
+const APP_VERSION = "1.0.0";
 
 export default function Layout({ children }: { children: React.ReactNode }) {
   const [location] = useLocation();
@@ -281,6 +282,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
           >
             <div className="flex flex-col sm:flex-row items-center gap-1 sm:gap-3 text-xs text-slate-500">
               <span>&copy; {new Date().getFullYear()} Apna Enterprise. {t.footer_rights}. | apnaenterprise.in</span>
+              <span className="ml-2 rounded border px-2 py-0.5 text-[10px] font-semibold" style={{ borderColor: "rgba(242,193,78,.3)", color: GOLD_LIGHT }}>App v{APP_VERSION}</span>
               <span className="hidden sm:inline" style={{ color: "rgba(255,255,255,0.12)" }}>|</span>
               <span>
                 {t.footer_managed_by}{" "}
