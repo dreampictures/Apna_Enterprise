@@ -27,6 +27,7 @@ import { getDocument, GlobalWorkerOptions } from "pdfjs-dist";
 import pdfWorkerUrl from "pdfjs-dist/build/pdf.worker.min.mjs?url";
 import Seo from "@/components/Seo";
 import { Button } from "@/components/ui/button";
+import { useT } from "@/i18n";
 
 GlobalWorkerOptions.workerSrc = pdfWorkerUrl;
 
@@ -47,6 +48,49 @@ type EditorPage = {
   preview: string;
   name: string;
 };
+
+const COPY = {
+  en: {
+    private: "100% private & local", hero: "PDF & Image Tools",
+    heroDesc: "Compress, convert, merge and edit — your files never leave this browser.",
+    pdfCompress: "PDF Compress", imageCompress: "Image Compress", imagesPdf: "Images → PDF", pdfEdit: "Merge / Edit PDF",
+    pdfTitle: "PDF Compressor", pdfDetail: "Compress one or many PDF files locally and download them.",
+    imageTitle: "Image Compressor", imageDetail: "Compress one or many images to your target size. Files stay on your device.",
+    imagesPdfTitle: "Images to PDF", imagesPdfDetail: "Create one PDF from images and arrange the page order.",
+    editorTitle: "Merge & Edit PDF Pages", editorDetail: "Merge PDFs, delete pages, and add PDFs or images anywhere in the document.",
+    dropImages: "Drop images here", dropPdfs: "Drop PDFs here", browse: "Browse files",
+    imageHint: "JPG, PNG, WEBP, GIF — one or many", pdfHint: "One or many PDF files, up to 50 MB each",
+    target: "Target size", each: "each", compressImages: "Compress images", compressing: "Compressing…",
+    createPdf: "Create & download PDF", creating: "Creating…", addPdf: "Add PDF pages", addImage: "Add image pages",
+    pdfUploadHint: "Upload one or many PDFs", imagePageHint: "Images can be added anywhere in the order",
+    createMerged: "Create merged PDF", processing: "Processing locally…", selected: "pages selected",
+    localNote: "Drag a page card to arrange 1-2-3 in any order. Use the trash icon to delete. PDFs and images can be mixed.",
+    imageNote: "The tool keeps the original dimensions and starts with high quality. It only reduces quality or dimensions as much as needed to reach your target size.",
+    privateLabel: "Private", privateText: "No upload or sign-in", flexible: "Flexible", flexibleText: "Choose your target size",
+    easy: "Easy", easyText: "Download when ready", clear: "Clear", noFiles: "Choose at least one file first.",
+    targetHint: "Quality is preserved as much as possible. Very small targets may require some visual compression.",
+  },
+  pa: {
+    private: "100% ਨਿੱਜੀ ਅਤੇ ਲੋਕਲ", hero: "PDF ਅਤੇ ਤਸਵੀਰਾਂ ਦੇ ਸੰਦ",
+    heroDesc: "ਸੰਕੁਚਿਤ, ਤਬਦੀਲ, ਜੋੜ ਅਤੇ ਸੋਧ ਕਰੋ—ਤੁਹਾਡੀਆਂ ਫਾਈਲਾਂ ਇਸ ਬਰਾਊਜ਼ਰ ਤੋਂ ਬਾਹਰ ਨਹੀਂ ਜਾਂਦੀਆਂ।",
+    pdfCompress: "PDF ਸੰਕੁਚਿਤ", imageCompress: "ਤਸਵੀਰ ਸੰਕੁਚਿਤ", imagesPdf: "ਤਸਵੀਰਾਂ → PDF", pdfEdit: "PDF ਜੋੜੋ / ਸੋਧੋ",
+    pdfTitle: "PDF ਸੰਕੁਚਕ", pdfDetail: "ਇੱਕ ਜਾਂ ਕਈ PDF ਫਾਈਲਾਂ ਨੂੰ ਇੱਥੇ ਹੀ ਸੰਕੁਚਿਤ ਕਰਕੇ ਡਾਊਨਲੋਡ ਕਰੋ।",
+    imageTitle: "ਤਸਵੀਰ ਸੰਕੁਚਕ", imageDetail: "ਇੱਕ ਜਾਂ ਕਈ ਤਸਵੀਰਾਂ ਦਾ ਆਕਾਰ ਆਪਣੇ ਨਿਸ਼ਾਨੇ ਮੁਤਾਬਕ ਘਟਾਓ। ਫਾਈਲਾਂ ਡਿਵਾਈਸ ਤੋਂ ਬਾਹਰ ਨਹੀਂ ਜਾਂਦੀਆਂ।",
+    imagesPdfTitle: "ਤਸਵੀਰਾਂ ਤੋਂ PDF", imagesPdfDetail: "ਤਸਵੀਰਾਂ ਦੀ ਇੱਕ PDF ਬਣਾਓ ਅਤੇ ਪੰਨਿਆਂ ਦੀ ਤਰਤੀਬ ਆਪਣੀ ਮਰਜ਼ੀ ਨਾਲ ਰੱਖੋ।",
+    editorTitle: "PDF ਪੰਨੇ ਜੋੜੋ ਅਤੇ ਸੋਧੋ", editorDetail: "ਕਈ PDFs ਜੋੜੋ, ਪੰਨੇ ਮਿਟਾਓ ਅਤੇ PDFs/ਤਸਵੀਰਾਂ ਕਿਸੇ ਵੀ ਥਾਂ ਸ਼ਾਮਲ ਕਰੋ।",
+    dropImages: "ਤਸਵੀਰਾਂ ਇੱਥੇ ਸੁੱਟੋ", dropPdfs: "PDFs ਇੱਥੇ ਸੁੱਟੋ", browse: "ਫਾਈਲਾਂ ਚੁਣੋ",
+    imageHint: "JPG, PNG, WEBP, GIF — ਇੱਕ ਜਾਂ ਕਈ", pdfHint: "ਇੱਕ ਜਾਂ ਕਈ PDF ਫਾਈਲਾਂ, ਹਰ ਇੱਕ 50 MB ਤੱਕ",
+    target: "ਨਿਸ਼ਾਨਾ ਆਕਾਰ", each: "ਹਰ ਇੱਕ", compressImages: "ਤਸਵੀਰਾਂ ਸੰਕੁਚਿਤ ਕਰੋ", compressing: "ਸੰਕੁਚਿਤ ਹੋ ਰਿਹਾ ਹੈ…",
+    createPdf: "PDF ਬਣਾਓ ਅਤੇ ਡਾਊਨਲੋਡ ਕਰੋ", creating: "ਬਣ ਰਿਹਾ ਹੈ…", addPdf: "PDF ਪੰਨੇ ਸ਼ਾਮਲ ਕਰੋ", addImage: "ਤਸਵੀਰ ਪੰਨੇ ਸ਼ਾਮਲ ਕਰੋ",
+    pdfUploadHint: "ਇੱਕ ਜਾਂ ਕਈ PDFs ਚੁਣੋ", imagePageHint: "ਤਸਵੀਰਾਂ ਨੂੰ ਤਰਤੀਬ ਵਿੱਚ ਕਿਸੇ ਵੀ ਥਾਂ ਸ਼ਾਮਲ ਕਰ ਸਕਦੇ ਹੋ",
+    createMerged: "ਜੋੜੀ ਹੋਈ PDF ਬਣਾਓ", processing: "ਇੱਥੇ ਹੀ ਤਿਆਰ ਹੋ ਰਿਹਾ ਹੈ…", selected: "ਪੰਨੇ ਚੁਣੇ",
+    localNote: "ਪੰਨੇ ਨੂੰ ਖਿੱਚ ਕੇ 1-2-3 ਕਿਸੇ ਵੀ ਤਰਤੀਬ ਵਿੱਚ ਰੱਖੋ। ਕੂੜੇਦਾਨ ਨਾਲ ਮਿਟਾਓ। PDFs ਅਤੇ ਤਸਵੀਰਾਂ ਇਕੱਠੀਆਂ ਵਰਤ ਸਕਦੇ ਹੋ।",
+    imageNote: "ਸੰਦ ਪਹਿਲਾਂ ਅਸਲ ਮਾਪ ਅਤੇ ਵਧੀਆ ਗੁਣਵੱਤਾ ਰੱਖਦਾ ਹੈ। ਨਿਸ਼ਾਨੇ ਆਕਾਰ ਲਈ ਜਿੰਨਾ ਲੋੜੀਂਦਾ ਹੋਵੇ, ਸਿਰਫ਼ ਉਨਾ ਹੀ ਗੁਣਵੱਤਾ ਜਾਂ ਮਾਪ ਘਟਾਇਆ ਜਾਂਦਾ ਹੈ।",
+    privateLabel: "ਨਿੱਜੀ", privateText: "ਕੋਈ upload ਜਾਂ sign-in ਨਹੀਂ", flexible: "ਲਚਕੀਲਾ", flexibleText: "ਨਿਸ਼ਾਨਾ ਆਕਾਰ ਚੁਣੋ",
+    easy: "ਸੌਖਾ", easyText: "ਤਿਆਰ ਹੋਣ ਤੇ ਡਾਊਨਲੋਡ ਕਰੋ", clear: "ਸਾਫ਼ ਕਰੋ", noFiles: "ਪਹਿਲਾਂ ਘੱਟੋ-ਘੱਟ ਇੱਕ ਫਾਈਲ ਚੁਣੋ।",
+    targetHint: "ਗੁਣਵੱਤਾ ਨੂੰ ਜਿੰਨਾ ਹੋ ਸਕੇ ਬਚਾਇਆ ਜਾਂਦਾ ਹੈ। ਬਹੁਤ ਛੋਟੇ ਨਿਸ਼ਾਨੇ ਆਕਾਰ ਲਈ ਕੁਝ visual compression ਲੋੜੀਂਦੀ ਹੋ ਸਕਦੀ ਹੈ।",
+  },
+} as const;
 
 function bytesLabel(bytes: number) {
   if (bytes < 1024) return `${bytes} B`;
@@ -98,6 +142,8 @@ function DropZone({
   label: string;
   hint: string;
 }) {
+  const { lang } = useT();
+  const c = COPY[lang];
   const inputRef = useRef<HTMLInputElement>(null);
   const [dragging, setDragging] = useState(false);
   const choose = (list: FileList | null) => {
@@ -121,7 +167,7 @@ function DropZone({
       <UploadCloud className="mx-auto h-10 w-10" style={{ color: GOLD }} />
       <h3 className="mt-4 font-bold" style={{ color: NAVY }}>{label}</h3>
       <p className="mt-1 text-sm text-slate-500">{hint}</p>
-      <span className="mt-4 inline-flex rounded-lg border bg-white px-3 py-2 text-xs font-semibold text-slate-600">Browse files</span>
+      <span className="mt-4 inline-flex rounded-lg border bg-white px-3 py-2 text-xs font-semibold text-slate-600">{c.browse}</span>
     </div>
   );
 }
@@ -155,64 +201,71 @@ async function imageBytesForPdf(file: File) {
   return { bytes: await blob.arrayBuffer(), type: "jpg" as const };
 }
 
-async function compressToTarget(file: File, targetBytes: number, maxWidth: number) {
+async function compressToTarget(file: File, targetBytes: number) {
+  const bitmap = await createImageBitmap(file);
+  const originalWidth = bitmap.width;
+  bitmap.close();
   let quality = 0.96;
+  let maxWidth = originalWidth;
   let blob = await canvasBlob(file, quality, maxWidth);
-  for (let attempt = 0; attempt < 7 && blob.size > targetBytes && quality > 0.45; attempt += 1) {
-    quality -= 0.08;
+  for (let attempt = 0; attempt < 8 && blob.size > targetBytes; attempt += 1) {
+    if (quality > 0.58) quality -= 0.06;
+    else maxWidth = Math.max(320, Math.round(maxWidth * 0.82));
     blob = await canvasBlob(file, quality, maxWidth);
   }
   return blob;
 }
 
 function ImageQueue({ items, onRemove, onDownload }: { items: ImageItem[]; onRemove: (id: string) => void; onDownload: (item: ImageItem) => void }) {
+  const { lang } = useT();
+  const c = COPY[lang];
   return <div className="mt-5 space-y-2">{items.map((item) => {
     const preview = item.preview;
     return <div key={item.id} className="flex items-center gap-3 rounded-xl border bg-white p-3" style={{ borderColor: "#e5ebf4" }}>
       <img src={preview} alt="" className="h-14 w-14 rounded-lg object-cover" />
       <div className="min-w-0 flex-1"><p className="truncate text-sm font-bold text-slate-700">{item.file.name}</p><p className="text-xs text-slate-500">{bytesLabel(item.file.size)} {item.output ? `→ ${bytesLabel(item.output.size)}` : ""}</p></div>
-      {item.output && <Button onClick={() => onDownload(item)} className="btn-gold h-9 rounded-lg px-3 text-xs"><Download className="mr-1.5 h-3.5 w-3.5" />Save</Button>}
+      {item.output && <Button onClick={() => onDownload(item)} className="btn-gold h-9 rounded-lg px-3 text-xs"><Download className="mr-1.5 h-3.5 w-3.5" />{c.browse === "Browse files" ? "Save" : "ਸੇਵ ਕਰੋ"}</Button>}
       <button className="rounded-lg p-2 text-slate-400 hover:bg-red-50 hover:text-red-600" onClick={() => onRemove(item.id)} aria-label={`Remove ${item.file.name}`}><X className="h-4 w-4" /></button>
     </div>;
   })}</div>;
 }
 
 function ImageCompressor() {
+  const { lang } = useT();
+  const c = COPY[lang];
   const [items, setItems] = useState<ImageItem[]>([]);
   const [targetKb, setTargetKb] = useState(500);
-  const [maxWidth, setMaxWidth] = useState(2400);
   const [working, setWorking] = useState(false);
   const add = (files: File[]) => setItems((current) => [...current, ...files.filter(isImage).filter((file) => file.size <= MAX_FILE_BYTES).map((file) => ({ id: idFor(file), file, preview: URL.createObjectURL(file) }))]);
   const process = async () => {
     setWorking(true);
     for (const item of items) {
-      const output = await compressToTarget(item.file, targetKb * 1024, maxWidth);
+      const output = await compressToTarget(item.file, targetKb * 1024);
       setItems((current) => current.map((entry) => entry.id === item.id ? { ...entry, output, outputName: `${item.file.name.replace(/\.[^.]+$/, "")}-compressed.jpg` } : entry));
     }
     setWorking(false);
   };
   const clear = () => { items.forEach((item) => URL.revokeObjectURL(item.preview)); setItems([]); };
   return <ToolCard>
-    <SectionTitle icon={FileImage} title="Image Compressor" detail="ਇੱਕ ਜਾਂ ਕਈ images ਦਾ size ਆਪਣੇ target ਮੁਤਾਬਕ ਘਟਾਓ। Files device ਤੋਂ ਬਾਹਰ ਨਹੀਂ ਜਾਂਦੀਆਂ।" />
-    <DropZone accept="image/*" multiple onFiles={add} label="Images ਇੱਥੇ drop ਕਰੋ" hint="JPG, PNG, WEBP, GIF — one by one ਜਾਂ multiple" />
-    <div className="mt-5 grid gap-4 rounded-xl border p-4 sm:grid-cols-2" style={{ borderColor: "#e5ebf4", background: "#fbfcfe" }}>
-      <label className="text-sm font-bold text-slate-700">Target size (KB)
-        <div className="mt-2 flex items-center gap-2"><input type="number" min="20" max="10000" value={targetKb} onChange={(e) => setTargetKb(Math.max(20, Number(e.target.value)))} className="w-full rounded-lg border px-3 py-2" /><span className="text-xs text-slate-400">KB each</span></div>
-      </label>
-      <label className="text-sm font-bold text-slate-700">Maximum width (px)
-        <input type="number" min="320" max="8000" value={maxWidth} onChange={(e) => setMaxWidth(Math.max(320, Number(e.target.value)))} className="mt-2 w-full rounded-lg border px-3 py-2" />
+    <SectionTitle icon={FileImage} title={c.imageTitle} detail={c.imageDetail} />
+    <DropZone accept="image/*" multiple onFiles={add} label={c.dropImages} hint={c.imageHint} />
+    <div className="mt-5 rounded-xl border p-4" style={{ borderColor: "#e5ebf4", background: "#fbfcfe" }}>
+      <label className="text-sm font-bold text-slate-700">{c.target} (KB)
+        <div className="mt-2 flex items-center gap-2"><input type="number" min="20" max="10000" value={targetKb} onChange={(e) => setTargetKb(Math.max(20, Number(e.target.value)))} className="w-full rounded-lg border px-3 py-2" /><span className="text-xs text-slate-400">{c.each}</span></div>
       </label>
     </div>
     {items.length > 0 && <ImageQueue items={items} onRemove={(id) => setItems((current) => current.filter((item) => item.id !== id))} onDownload={(item) => item.output && download(item.output, item.outputName || "compressed-image.jpg")} />}
     <div className="mt-5 flex flex-wrap justify-end gap-2">
-      {items.length > 0 && <Button variant="ghost" onClick={clear} className="text-xs"><Trash2 className="mr-1.5 h-4 w-4" />Clear</Button>}
-      {items.length > 0 && <Button disabled={working} onClick={process} className="btn-gold rounded-xl">{working ? <RefreshCw className="mr-2 h-4 w-4 animate-spin" /> : <Zap className="mr-2 h-4 w-4" />}{working ? "Compressing…" : "Compress images"}</Button>}
+      {items.length > 0 && <Button variant="ghost" onClick={clear} className="text-xs"><Trash2 className="mr-1.5 h-4 w-4" />{c.clear}</Button>}
+      {items.length > 0 && <Button disabled={working} onClick={process} className="btn-gold rounded-xl">{working ? <RefreshCw className="mr-2 h-4 w-4 animate-spin" /> : <Zap className="mr-2 h-4 w-4" />}{working ? c.compressing : c.compressImages}</Button>}
     </div>
-    <Note>100% original quality ਅਤੇ smaller size ਇਕੱਠੇ ਹਰ image ਲਈ mathematically possible ਨਹੀਂ ਹੁੰਦੇ। Tool ਪਹਿਲਾਂ high quality ਰੱਖਦਾ ਹੈ ਅਤੇ ਸਿਰਫ਼ target ਨਾ ਆਏ ਤਾਂ quality ਘਟਾਉਂਦਾ ਹੈ।</Note>
+    <Note>{c.imageNote}</Note>
   </ToolCard>;
 }
 
 function ImagesToPdf() {
+  const { lang } = useT();
+  const c = COPY[lang];
   const [items, setItems] = useState<ImageItem[]>([]);
   const [working, setWorking] = useState(false);
   const add = (files: File[]) => setItems((current) => [...current, ...files.filter(isImage).map((file) => ({ id: idFor(file), file, preview: URL.createObjectURL(file) }))]);
@@ -230,10 +283,10 @@ function ImagesToPdf() {
     download(new Blob([await pdf.save()], { type: "application/pdf" }), "images-to-pdf.pdf");
     setWorking(false);
   };
-  return <ToolCard><SectionTitle icon={ImagePlus} title="Images to PDF" detail="Images ਨੂੰ ਇਕ PDF ਵਿੱਚ ਬਣਾਓ ਅਤੇ pages ਦਾ order ਆਪਣੀ ਮਰਜ਼ੀ ਨਾਲ set ਕਰੋ।" />
-    <DropZone accept="image/*" multiple onFiles={add} label="Images ਇੱਥੇ drop ਕਰੋ" hint="ਹਰ image ਇੱਕ PDF page ਬਣੇਗੀ" />
+  return <ToolCard><SectionTitle icon={ImagePlus} title={c.imagesPdfTitle} detail={c.imagesPdfDetail} />
+    <DropZone accept="image/*" multiple onFiles={add} label={c.dropImages} hint={c.imageHint} />
     <div className="mt-5 space-y-2">{items.map((item, index) => <div key={item.id} className="flex items-center gap-3 rounded-xl border bg-white p-3" style={{ borderColor: "#e5ebf4" }}><GripVertical className="h-4 w-4 text-slate-300" /><img src={item.preview} alt="" className="h-14 w-14 rounded-lg object-cover" /><p className="min-w-0 flex-1 truncate text-sm font-bold text-slate-700">{index + 1}. {item.file.name}</p><button disabled={index === 0} onClick={() => move(index, -1)} className="rounded p-1 disabled:opacity-30"><ArrowLeft className="h-4 w-4" /></button><button disabled={index === items.length - 1} onClick={() => move(index, 1)} className="rounded p-1 disabled:opacity-30"><ArrowRight className="h-4 w-4" /></button><button onClick={() => setItems((current) => current.filter((entry) => entry.id !== item.id))} className="rounded p-1 text-slate-400 hover:text-red-600"><X className="h-4 w-4" /></button></div>)}</div>
-    {items.length > 0 && <div className="mt-5 flex justify-end"><Button disabled={working} onClick={createPdf} className="btn-gold rounded-xl">{working ? "Creating…" : "Create & download PDF"}<Download className="ml-2 h-4 w-4" /></Button></div>}
+    {items.length > 0 && <div className="mt-5 flex justify-end"><Button disabled={working} onClick={createPdf} className="btn-gold rounded-xl">{working ? c.creating : c.createPdf}<Download className="ml-2 h-4 w-4" /></Button></div>}
   </ToolCard>;
 }
 
@@ -252,6 +305,8 @@ async function pagePreview(file: File, pageNumber: number) {
 }
 
 function PdfEditor() {
+  const { lang } = useT();
+  const c = COPY[lang];
   const [pages, setPages] = useState<EditorPage[]>([]);
   const [working, setWorking] = useState(false);
   const [message, setMessage] = useState("");
@@ -291,16 +346,18 @@ function PdfEditor() {
     } catch (error) { setMessage(error instanceof Error ? error.message : "PDF could not be created."); }
     setWorking(false);
   };
-  return <ToolCard><SectionTitle icon={Merge} title="Merge & Edit PDF Pages" detail="Multiple PDFs merge ਕਰੋ, pages delete ਕਰੋ ਅਤੇ PDFs/images ਨੂੰ slide ਕਰਕੇ ਕਿਸੇ ਵੀ position ਤੇ add ਕਰੋ।" />
-    <div className="grid gap-3 sm:grid-cols-2"><DropZone accept=".pdf,application/pdf" multiple onFiles={addPdfs} label="PDF pages add ਕਰੋ" hint="ਇੱਕ ਜਾਂ ਕਈ PDFs upload ਕਰੋ" /><DropZone accept="image/*" multiple onFiles={addImages} label="Image pages add ਕਰੋ" hint="Images PDF ਦੇ ਕਿਸੇ ਵੀ point ਤੇ add ਹੋਣਗੀਆਂ" /></div>
-    {working && <p className="mt-4 flex items-center gap-2 text-sm font-semibold text-slate-500"><RefreshCw className="h-4 w-4 animate-spin" />Processing locally…</p>}
+  return <ToolCard><SectionTitle icon={Merge} title={c.editorTitle} detail={c.editorDetail} />
+    <div className="grid gap-3 sm:grid-cols-2"><DropZone accept=".pdf,application/pdf" multiple onFiles={addPdfs} label={c.addPdf} hint={c.pdfUploadHint} /><DropZone accept="image/*" multiple onFiles={addImages} label={c.addImage} hint={c.imagePageHint} /></div>
+    {working && <p className="mt-4 flex items-center gap-2 text-sm font-semibold text-slate-500"><RefreshCw className="h-4 w-4 animate-spin" />{c.processing}</p>}
     {message && <p className="mt-4 rounded-lg bg-red-50 p-3 text-sm text-red-700">{message}</p>}
-    {pages.length > 0 && <><div className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4">{pages.map((page, index) => <div key={page.id} draggable onDragStart={(event) => event.dataTransfer.setData("text/plain", String(index))} onDragOver={(event) => event.preventDefault()} onDrop={(event) => { const from = Number(event.dataTransfer.getData("text/plain")); move(from, index); }} className="group relative rounded-xl border bg-white p-2 shadow-sm" style={{ borderColor: "#e5ebf4" }}><img src={page.preview} alt="" className="h-36 w-full rounded-lg bg-slate-50 object-contain" /><p className="mt-2 truncate text-xs font-bold text-slate-600">{index + 1}. {page.name}</p><div className="mt-2 flex items-center justify-between"><GripVertical className="h-4 w-4 cursor-grab text-slate-300" /><div className="flex gap-1"><button onClick={() => move(index, index - 1)} disabled={index === 0} className="rounded bg-slate-50 p-1 disabled:opacity-30"><ArrowLeft className="h-3 w-3" /></button><button onClick={() => move(index, index + 1)} disabled={index === pages.length - 1} className="rounded bg-slate-50 p-1 disabled:opacity-30"><ArrowRight className="h-3 w-3" /></button><button onClick={() => setPages((current) => current.filter((entry) => entry.id !== page.id))} className="rounded bg-red-50 p-1 text-red-500"><Trash2 className="h-3 w-3" /></button></div></div></div>)}</div><div className="mt-5 flex flex-wrap items-center justify-between gap-3"><p className="text-sm font-semibold text-slate-500">{pages.length} page{pages.length === 1 ? "" : "s"} selected</p><Button disabled={working} onClick={createPdf} className="btn-gold rounded-xl">Create merged PDF <Download className="ml-2 h-4 w-4" /></Button></div></>}
-    <Note>Page card ਨੂੰ mouse ਨਾਲ drag ਕਰਕੇ 1-2-3 ਕਿਸੇ ਵੀ order ਵਿੱਚ ਰੱਖੋ। Trash ਨਾਲ delete ਕਰੋ। PDFs ਅਤੇ images ਦੋਵੇਂ mix ਕਰ ਸਕਦੇ ਹੋ।</Note>
+    {pages.length > 0 && <><div className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4">{pages.map((page, index) => <div key={page.id} draggable onDragStart={(event) => event.dataTransfer.setData("text/plain", String(index))} onDragOver={(event) => event.preventDefault()} onDrop={(event) => { const from = Number(event.dataTransfer.getData("text/plain")); move(from, index); }} className="group relative rounded-xl border bg-white p-2 shadow-sm" style={{ borderColor: "#e5ebf4" }}><img src={page.preview} alt="" className="h-36 w-full rounded-lg bg-slate-50 object-contain" /><p className="mt-2 truncate text-xs font-bold text-slate-600">{index + 1}. {page.name}</p><div className="mt-2 flex items-center justify-between"><GripVertical className="h-4 w-4 cursor-grab text-slate-300" /><div className="flex gap-1"><button onClick={() => move(index, index - 1)} disabled={index === 0} className="rounded bg-slate-50 p-1 disabled:opacity-30"><ArrowLeft className="h-3 w-3" /></button><button onClick={() => move(index, index + 1)} disabled={index === pages.length - 1} className="rounded bg-slate-50 p-1 disabled:opacity-30"><ArrowRight className="h-3 w-3" /></button><button onClick={() => setPages((current) => current.filter((entry) => entry.id !== page.id))} className="rounded bg-red-50 p-1 text-red-500"><Trash2 className="h-3 w-3" /></button></div></div></div>)}</div><div className="mt-5 flex flex-wrap items-center justify-between gap-3"><p className="text-sm font-semibold text-slate-500">{pages.length} {c.selected}</p><Button disabled={working} onClick={createPdf} className="btn-gold rounded-xl">{c.createMerged} <Download className="ml-2 h-4 w-4" /></Button></div></>}
+    <Note>{c.localNote}</Note>
   </ToolCard>;
 }
 
 function PdfCompression() {
+  const { lang } = useT();
+  const c = COPY[lang];
   const inputRef = useRef<HTMLInputElement>(null);
   const [files, setFiles] = useState<File[]>([]);
   const [targetMb, setTargetMb] = useState(1.9);
@@ -328,12 +385,12 @@ function PdfCompression() {
     }
     setWorking(false);
   };
-  return <ToolCard><SectionTitle icon={FileText} title="PDF Compressor" detail="ਇੱਕ ਜਾਂ ਕਈ PDF files ਨੂੰ locally compress ਕਰਕੇ download ਕਰੋ।" />
-    <DropZone accept=".pdf,application/pdf" multiple onFiles={add} label="PDFs ਇੱਥੇ drop ਕਰੋ" hint="PDF files up to 50 MB each" />
+  return <ToolCard><SectionTitle icon={FileText} title={c.pdfTitle} detail={c.pdfDetail} />
+    <DropZone accept=".pdf,application/pdf" multiple onFiles={add} label={c.dropPdfs} hint={c.pdfHint} />
     <input ref={inputRef} type="hidden" />
-    <div className="mt-5 rounded-xl border p-4" style={{ borderColor: "#e5ebf4", background: "#fbfcfe" }}><label className="flex items-center justify-between text-sm font-bold text-slate-700">Target size <span className="rounded-lg px-3 py-1" style={{ background: "rgba(212,160,23,.13)", color: NAVY }}>{targetMb.toFixed(1)} MB</span></label><input type="range" min="0.5" max="10" step="0.1" value={targetMb} onChange={(e) => setTargetMb(Number(e.target.value))} className="mt-3 w-full accent-[#D4A017]" /><p className="mt-1 text-xs text-slate-400">High-quality visual compression. Text selection may not remain in the output.</p></div>
+    <div className="mt-5 rounded-xl border p-4" style={{ borderColor: "#e5ebf4", background: "#fbfcfe" }}><label className="flex items-center justify-between text-sm font-bold text-slate-700">{c.target} <span className="rounded-lg px-3 py-1" style={{ background: "rgba(212,160,23,.13)", color: NAVY }}>{targetMb.toFixed(1)} MB</span></label><input type="range" min="0.5" max="10" step="0.1" value={targetMb} onChange={(e) => setTargetMb(Number(e.target.value))} className="mt-3 w-full accent-[#D4A017]" /><p className="mt-1 text-xs text-slate-400">{c.targetHint}</p></div>
     {files.length > 0 && <div className="mt-5 space-y-2">{files.map((file) => <div key={idFor(file)} className="flex items-center gap-3 rounded-xl border bg-white p-3" style={{ borderColor: "#e5ebf4" }}><FileText className="h-5 w-5" style={{ color: GOLD }} /><span className="min-w-0 flex-1 truncate text-sm font-bold text-slate-700">{file.name}</span><span className="text-xs text-slate-500">{bytesLabel(file.size)}</span><button onClick={() => setFiles((current) => current.filter((entry) => entry !== file))} className="text-slate-400 hover:text-red-600"><X className="h-4 w-4" /></button></div>)}</div>}
-    {files.length > 0 && <div className="mt-5 flex justify-end"><Button disabled={working} onClick={process} className="btn-gold rounded-xl">{working ? "Compressing…" : "Compress PDFs"}<Download className="ml-2 h-4 w-4" /></Button></div>}
+    {files.length > 0 && <div className="mt-5 flex justify-end"><Button disabled={working} onClick={process} className="btn-gold rounded-xl">{working ? c.compressing : c.pdfCompress}<Download className="ml-2 h-4 w-4" /></Button></div>}
   </ToolCard>;
 }
 
@@ -341,17 +398,19 @@ function ToolCard({ children }: { children: React.ReactNode }) { return <div cla
 function Note({ children }: { children: React.ReactNode }) { return <div className="mt-6 flex gap-2 rounded-xl border p-4 text-xs leading-5 text-slate-500" style={{ borderColor: "#e5ebf4", background: "#fbfcfe" }}><ShieldCheck className="mt-0.5 h-4 w-4 shrink-0" style={{ color: GOLD }} />{children}</div>; }
 
 export default function DocumentTools() {
+  const { lang } = useT();
+  const c = COPY[lang];
   const [tab, setTab] = useState<ToolTab>("pdf-compress");
   const tabs: { id: ToolTab; label: string; icon: typeof FileText }[] = [
-    { id: "pdf-compress", label: "PDF Compress", icon: FileText },
-    { id: "image-compress", label: "Image Compress", icon: FileImage },
-    { id: "images-pdf", label: "Images → PDF", icon: ImagePlus },
-    { id: "pdf-edit", label: "Merge / Edit PDF", icon: Layers3 },
+    { id: "pdf-compress", label: c.pdfCompress, icon: FileText },
+    { id: "image-compress", label: c.imageCompress, icon: FileImage },
+    { id: "images-pdf", label: c.imagesPdf, icon: ImagePlus },
+    { id: "pdf-edit", label: c.pdfEdit, icon: Layers3 },
   ];
   return <div className="min-h-screen" style={{ background: SOFT_BG }}>
-    <Seo title="PDF & Image Tools — Apna Enterprise" description="Compress images and PDFs, convert images to PDF, merge PDF files and edit PDF pages privately in your browser." path="/pdf-compressor" />
-    <section className="border-b py-12" style={{ background: "linear-gradient(135deg,#071B4A 0%,#102c68 100%)" }}><div className="container mx-auto px-4 lg:px-8"><div className="max-w-3xl"><div className="mb-4 inline-flex items-center gap-2 rounded-full border px-3 py-1 text-xs font-bold uppercase tracking-wider" style={{ borderColor: "rgba(242,193,78,.4)", color: GOLD_LIGHT }}><LockKeyhole className="h-3.5 w-3.5" /> 100% private & local</div><h1 className="text-3xl font-extrabold text-white md:text-5xl">PDF & Image Tools</h1><p className="mt-4 max-w-2xl text-base leading-7 text-blue-100/80 md:text-lg">Compress, convert, merge ਅਤੇ edit ਕਰੋ—ਤੁਹਾਡੀਆਂ files ਇਸ browser ਤੋਂ ਬਾਹਰ ਨਹੀਂ ਜਾਂਦੀਆਂ।</p></div></div></section>
-    <div className="container mx-auto px-4 py-8 lg:px-8"><div className="mb-6 grid grid-cols-2 gap-2 rounded-2xl border bg-white p-2 sm:grid-cols-4" style={{ borderColor: "#e5ebf4" }}>{tabs.map(({ id, label, icon: Icon }) => <button key={id} onClick={() => setTab(id)} className="flex min-h-16 items-center justify-center gap-2 rounded-xl px-2 text-center text-xs font-bold transition-colors sm:text-sm" style={{ background: tab === id ? "rgba(212,160,23,.14)" : "transparent", color: tab === id ? NAVY : "#64748b" }}><Icon className="h-4 w-4" style={{ color: tab === id ? GOLD : "currentColor" }} />{label}</button>)}</div>{tab === "pdf-compress" && <PdfCompression />}{tab === "image-compress" && <ImageCompressor />}{tab === "images-pdf" && <ImagesToPdf />}{tab === "pdf-edit" && <PdfEditor />}<div className="mt-6 grid gap-3 sm:grid-cols-3"><Trust icon={LockKeyhole} title="Private" text="No upload or sign-in" /><Trust icon={Zap} title="Flexible" text="Choose your target size" /><Trust icon={Check} title="Easy" text="Download when ready" /></div></div>
+    <Seo title={`${c.hero} — Apna Enterprise`} description={c.heroDesc} path="/pdf-compressor" />
+    <section className="border-b py-12" style={{ background: "linear-gradient(135deg,#071B4A 0%,#102c68 100%)" }}><div className="container mx-auto px-4 lg:px-8"><div className="max-w-3xl"><div className="mb-4 inline-flex items-center gap-2 rounded-full border px-3 py-1 text-xs font-bold uppercase tracking-wider" style={{ borderColor: "rgba(242,193,78,.4)", color: GOLD_LIGHT }}><LockKeyhole className="h-3.5 w-3.5" /> {c.private}</div><h1 className="text-3xl font-extrabold text-white md:text-5xl">{c.hero}</h1><p className="mt-4 max-w-2xl text-base leading-7 text-blue-100/80 md:text-lg">{c.heroDesc}</p></div></div></section>
+    <div className="container mx-auto px-4 py-8 lg:px-8"><div className="mb-6 grid grid-cols-2 gap-2 rounded-2xl border bg-white p-2 sm:grid-cols-4" style={{ borderColor: "#e5ebf4" }}>{tabs.map(({ id, label, icon: Icon }) => <button key={id} onClick={() => setTab(id)} className="flex min-h-16 items-center justify-center gap-2 rounded-xl px-2 text-center text-xs font-bold transition-colors sm:text-sm" style={{ background: tab === id ? "rgba(212,160,23,.14)" : "transparent", color: tab === id ? NAVY : "#64748b" }}><Icon className="h-4 w-4" style={{ color: tab === id ? GOLD : "currentColor" }} />{label}</button>)}</div>{tab === "pdf-compress" && <PdfCompression />}{tab === "image-compress" && <ImageCompressor />}{tab === "images-pdf" && <ImagesToPdf />}{tab === "pdf-edit" && <PdfEditor />}<div className="mt-6 grid gap-3 sm:grid-cols-3"><Trust icon={LockKeyhole} title={c.privateLabel} text={c.privateText} /><Trust icon={Zap} title={c.flexible} text={c.flexibleText} /><Trust icon={Check} title={c.easy} text={c.easyText} /></div></div>
   </div>;
 }
 
