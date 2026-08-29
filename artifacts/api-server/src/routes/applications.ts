@@ -21,7 +21,11 @@ function generateTrackingNumber(): string {
   return `AE${yy}${mm}${dd}${rand}`;
 }
 
-const PAYU_PAYMENT_URL = "https://secure.payu.in/_payment";
+function payuPaymentUrl(): string {
+  return process.env.PAYU_ENV === "test"
+    ? "https://test.payu.in/_payment"
+    : "https://secure.payu.in/_payment";
+}
 
 function publicAppUrl(req: any): string {
   if (process.env.PUBLIC_APP_URL) return process.env.PUBLIC_APP_URL.replace(/\/$/, "");
@@ -42,6 +46,7 @@ function createPayUHash({
   firstname,
   email,
   trackingNumber,
+  applicationId,
 }: {
   key: string;
   txnid: string;
@@ -50,12 +55,14 @@ function createPayUHash({
   firstname: string;
   email: string;
   trackingNumber: string;
+  applicationId: number;
 }) {
-  // PayU's request hash contains udf1-udf5 followed by the five optional
-  // split-payment fields, all of which are blank for this checkout.
+  // PayU's hosted checkout hash includes udf1-udf5 followed by the
+  // five optional split-payment fields. udf1/udf2 are echoed back to
+  // identify this application.
   return payuHash([
     key, txnid, amount, productinfo, firstname, email,
-    trackingNumber, "", "", "", "",
+    trackingNumber, String(applicationId), "", "", "",
     "", "", "", "", "", process.env.PAYU_MERCHANT_SALT!,
   ]);
 }
@@ -129,7 +136,7 @@ router.post("/applications", async (req, res) => {
         const txnid = `AE${Date.now()}${app.id}`;
         const amount = paymentAmount.toFixed(2);
         const productinfo = `${service} application`;
-        const action = PAYU_PAYMENT_URL;
+        const action = payuPaymentUrl();
         const appUrl = publicAppUrl(req);
         const fields = {
           key,
@@ -146,7 +153,16 @@ router.post("/applications", async (req, res) => {
           udf5: "",
           surl: `${appUrl}/api/payments/payu/success`,
           furl: `${appUrl}/api/payments/payu/failure`,
-          hash: createPayUHash({ key, txnid, amount, productinfo, firstname: name, email: email!, trackingNumber: app.trackingNumber }),
+           hash: createPayUHash({
+             key,
+             txnid,
+             amount,
+             productinfo,
+             firstname: name,
+             email: email!,
+             trackingNumber: app.trackingNumber,
+             applicationId: app.id,
+           }),
         };
         await db
           .update(applicationsTable)

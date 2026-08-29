@@ -50,6 +50,7 @@ export default function Apply() {
   const [copied, setCopied] = useState(false);
   const [paymentInfo, setPaymentInfo] = useState<PaymentInfo | null>(null);
   const [paymentFailed, setPaymentFailed] = useState(params.get("payment") === "failed");
+  const [paymentSubmitting, setPaymentSubmitting] = useState(false);
   const createApplication = useCreateApplication();
 
   const formSchema = useMemo(() =>
@@ -140,6 +141,13 @@ export default function Apply() {
     });
   }
 
+  function submitPayU(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    if (paymentSubmitting) return;
+    setPaymentSubmitting(true);
+    event.currentTarget.submit();
+  }
+
   if (paymentInfo) {
     return (
       <div className="flex flex-col min-h-full">
@@ -165,12 +173,12 @@ export default function Apply() {
                 <strong className="text-xl" style={{ color: GOLD }}>₹{paymentInfo.amount.toLocaleString("en-IN")}</strong>
               </div>
             </div>
-            <form action={paymentInfo.action} method="POST">
+            <form action={paymentInfo.action} method="POST" onSubmit={submitPayU}>
               {Object.entries(paymentInfo.fields).map(([key, value]) => (
                 <input key={key} type="hidden" name={key} value={value} />
               ))}
-              <button type="submit" className="btn-gold w-full h-12 rounded-xl font-bold text-base inline-flex items-center justify-center gap-2">
-                <FaCreditCard /> {t.apply_pay_now}
+              <button type="submit" disabled={paymentSubmitting} className="btn-gold w-full h-12 rounded-xl font-bold text-base inline-flex items-center justify-center gap-2 disabled:opacity-60">
+                <FaCreditCard /> {paymentSubmitting ? "Opening secure payment…" : t.apply_pay_now}
               </button>
             </form>
             <p className="text-xs text-slate-500 mt-4">{t.apply_payment_secure}</p>
