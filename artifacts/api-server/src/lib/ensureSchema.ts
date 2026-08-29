@@ -25,6 +25,13 @@ export async function ensureSchema() {
       ALTER TABLE applications ADD COLUMN IF NOT EXISTS callback_requested BOOLEAN NOT NULL DEFAULT false;
       ALTER TABLE applications ADD COLUMN IF NOT EXISTS document_url TEXT;
       ALTER TABLE applications ADD COLUMN IF NOT EXISTS document_key TEXT;
+       ALTER TABLE applications ADD COLUMN IF NOT EXISTS email TEXT;
+       ALTER TABLE applications ADD COLUMN IF NOT EXISTS payment_status TEXT NOT NULL DEFAULT 'not_required';
+       ALTER TABLE applications ADD COLUMN IF NOT EXISTS payment_txn_id TEXT;
+       ALTER TABLE applications ADD COLUMN IF NOT EXISTS payment_amount INTEGER;
+       ALTER TABLE applications ADD COLUMN IF NOT EXISTS paid_at TIMESTAMP;
+       CREATE UNIQUE INDEX IF NOT EXISTS applications_payment_txn_id_unique_idx
+         ON applications (payment_txn_id) WHERE payment_txn_id IS NOT NULL;
        ALTER TABLE applications ADD COLUMN IF NOT EXISTS service_details TEXT NOT NULL DEFAULT '{}';
       ALTER TABLE applications ADD COLUMN IF NOT EXISTS tracking_number TEXT;
       UPDATE applications SET tracking_number = 'AE' || TO_CHAR(created_at, 'YYMMDD') || LPAD(id::TEXT, 4, '0') WHERE tracking_number IS NULL;

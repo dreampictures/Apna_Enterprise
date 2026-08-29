@@ -11,10 +11,13 @@ export interface Application {
   trackingNumber: string;
   name: string;
   phone: string;
+  email?: string | null;
   service: string;
   message?: string | null;
   status: string;
   callbackRequested: boolean;
+  paymentStatus?: string;
+  paymentAmount?: number | null;
   /**
    * JSON-encoded service-specific application details
    * @maxLength 12000

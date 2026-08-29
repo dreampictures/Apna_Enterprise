@@ -18,6 +18,8 @@ export interface CreateApplicationBody {
    * @maxLength 15
    */
   phone: string;
+  /** @maxLength 254 */
+  email?: string;
   service: CreateApplicationBodyService;
   /** @maxLength 1000 */
   message?: string;

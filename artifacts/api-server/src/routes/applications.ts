@@ -1,5 +1,6 @@
 import { Router } from "express";
-import { db, applicationsTable } from "@workspace/db";
+import { createHash, timingSafeEqual } from "node:crypto";
+import { db, applicationsTable, servicePricesTable } from "@workspace/db";
 import { eq, desc, count, sql } from "drizzle-orm";
 import { CreateApplicationBody, ListApplicationsQueryParams, ExportApplicationsCsvQueryParams } from "@workspace/api-zod";
 import { requireAuth } from "../middlewares/auth";
@@ -20,6 +21,51 @@ function generateTrackingNumber(): string {
   return `AE${yy}${mm}${dd}${rand}`;
 }
 
+const PAYU_PAYMENT_URL = "https://secure.payu.in/_payment";
+
+function publicAppUrl(req: any): string {
+  if (process.env.PUBLIC_APP_URL) return process.env.PUBLIC_APP_URL.replace(/\/$/, "");
+  const forwardedProto = String(req.headers["x-forwarded-proto"] ?? "").split(",")[0];
+  const protocol = forwardedProto || req.protocol || "https";
+  return `${protocol}://${req.get("host")}`;
+}
+
+function payuHash(values: string[]): string {
+  return createHash("sha512").update(values.join("|")).digest("hex");
+}
+
+function createPayUHash({
+  key,
+  txnid,
+  amount,
+  productinfo,
+  firstname,
+  email,
+  trackingNumber,
+}: {
+  key: string;
+  txnid: string;
+  amount: string;
+  productinfo: string;
+  firstname: string;
+  email: string;
+  trackingNumber: string;
+}) {
+  // PayU's request hash contains udf1-udf5 followed by the five optional
+  // split-payment fields, all of which are blank for this checkout.
+  return payuHash([
+    key, txnid, amount, productinfo, firstname, email,
+    trackingNumber, "", "", "", "",
+    "", "", "", "", "", process.env.PAYU_MERCHANT_SALT!,
+  ]);
+}
+
+function isValidPayUHash(expected: string, actual: string): boolean {
+  const expectedBuffer = Buffer.from(expected.toLowerCase(), "utf8");
+  const actualBuffer = Buffer.from(actual.toLowerCase(), "utf8");
+  return expectedBuffer.length === actualBuffer.length && timingSafeEqual(expectedBuffer, actualBuffer);
+}
+
 // POST /applications - Submit a new service application
 router.post("/applications", async (req, res) => {
   const parsed = CreateApplicationBody.safeParse(req.body);
@@ -28,7 +74,22 @@ router.post("/applications", async (req, res) => {
     return;
   }
 
-  const { name, phone, service, message, callbackRequested, details } = parsed.data;
+  const { name, phone, email, service, message, callbackRequested, details } = parsed.data;
+  const [configuredPrice] = await db
+    .select({ price: servicePricesTable.price })
+    .from(servicePricesTable)
+    .where(eq(servicePricesTable.service, service))
+    .limit(1);
+  const paymentAmount = configuredPrice?.price ?? 0;
+
+  if (paymentAmount > 0 && (!process.env.PAYU_MERCHANT_KEY || !process.env.PAYU_MERCHANT_SALT)) {
+    res.status(503).json({ error: "Payment gateway is not configured. Please contact the office." });
+    return;
+  }
+  if (paymentAmount > 0 && !email) {
+    res.status(400).json({ error: "Email is required for online payment." });
+    return;
+  }
 
   // Generate unique tracking number (retry on collision)
   let trackingNumber = generateTrackingNumber();
@@ -41,23 +102,62 @@ router.post("/applications", async (req, res) => {
           trackingNumber,
           name,
           phone,
+          email: email ?? null,
           service,
           message: message ?? null,
-           serviceDetails: details ?? "{}",
+          serviceDetails: details ?? "{}",
           callbackRequested: callbackRequested ?? false,
+          paymentStatus: paymentAmount > 0 ? "initiated" : "not_required",
+          paymentAmount,
         })
         .returning();
 
-      res.status(201).json({
+      const response: Record<string, unknown> = {
         id: app.id,
         trackingNumber: app.trackingNumber,
         name: app.name,
         phone: app.phone,
+        email: app.email,
         service: app.service,
         message: app.message,
-         details: app.serviceDetails,
+        details: app.serviceDetails,
         createdAt: app.createdAt.toISOString(),
-      });
+      };
+
+      if (paymentAmount > 0) {
+        const key = process.env.PAYU_MERCHANT_KEY!;
+        const txnid = `AE${Date.now()}${app.id}`;
+        const amount = paymentAmount.toFixed(2);
+        const productinfo = `${service} application`;
+        const action = PAYU_PAYMENT_URL;
+        const appUrl = publicAppUrl(req);
+        const fields = {
+          key,
+          txnid,
+          amount,
+          productinfo,
+          firstname: name,
+          email: email!,
+          phone,
+          udf1: app.trackingNumber,
+          udf2: String(app.id),
+          udf3: "",
+          udf4: "",
+          udf5: "",
+          surl: `${appUrl}/api/payments/payu/success`,
+          furl: `${appUrl}/api/payments/payu/failure`,
+          hash: createPayUHash({ key, txnid, amount, productinfo, firstname: name, email: email!, trackingNumber: app.trackingNumber }),
+        };
+        await db
+          .update(applicationsTable)
+          .set({ paymentTxnId: txnid })
+          .where(eq(applicationsTable.id, app.id));
+        response.payment = { required: true, action, fields, amount: paymentAmount };
+      } else {
+        response.payment = { required: false, amount: 0 };
+      }
+
+      res.status(201).json(response);
       return;
     } catch (err: any) {
       // Retry on unique constraint violation for tracking number
@@ -72,6 +172,73 @@ router.post("/applications", async (req, res) => {
     }
   }
   res.status(500).json({ error: "Failed to generate tracking number" });
+});
+
+async function handlePayUResponse(req: any, res: any, success: boolean) {
+  const payload = req.body as Record<string, string | undefined>;
+  const txnid = String(payload.txnid ?? "");
+  const status = String(payload.status ?? "");
+  const [app] = await db
+    .select()
+    .from(applicationsTable)
+    .where(eq(applicationsTable.paymentTxnId, txnid))
+    .limit(1);
+
+  let valid = false;
+  if (app && process.env.PAYU_MERCHANT_SALT && payload.hash && payload.key) {
+    const reverseHash = payuHash([
+      process.env.PAYU_MERCHANT_SALT,
+      status,
+      "", "", "", "", "", "", "", "", "",
+      String(payload.udf5 ?? ""),
+      String(payload.udf4 ?? ""),
+      String(payload.udf3 ?? ""),
+      String(payload.udf2 ?? ""),
+      String(payload.udf1 ?? ""),
+      String(payload.email ?? ""),
+      String(payload.firstname ?? ""),
+      String(payload.productinfo ?? ""),
+      String(payload.amount ?? ""),
+      txnid,
+      String(payload.key),
+    ]);
+    valid = payload.key === process.env.PAYU_MERCHANT_KEY && isValidPayUHash(reverseHash, payload.hash);
+  }
+
+  const amountMatches = app && Number(payload.amount) === Number(app.paymentAmount);
+  if (app && valid && amountMatches && success && status.toLowerCase() === "success") {
+    await db
+      .update(applicationsTable)
+      .set({ paymentStatus: "paid", paidAt: new Date() })
+      .where(eq(applicationsTable.id, app.id));
+  } else if (app && valid && !success) {
+    await db
+      .update(applicationsTable)
+      .set({ paymentStatus: "failed" })
+      .where(eq(applicationsTable.id, app.id));
+  }
+
+  const result = valid && amountMatches && success && status.toLowerCase() === "success" ? "success" : "failed";
+  const tracking = app?.trackingNumber ?? "";
+  res.redirect(303, `${publicAppUrl(req)}/apply?payment=${result}&tracking=${encodeURIComponent(tracking)}`);
+}
+
+router.post("/payments/payu/success", async (req, res) => {
+  try {
+    await handlePayUResponse(req, res, true);
+  } catch (err) {
+    req.log.error({ err }, "Failed to process PayU success callback");
+    res.redirect(303, `${publicAppUrl(req)}/apply?payment=failed`);
+  }
+});
+
+router.post("/payments/payu/failure", async (req, res) => {
+  try {
+    await handlePayUResponse(req, res, false);
+  } catch (err) {
+    req.log.error({ err }, "Failed to process PayU failure callback");
+    res.redirect(303, `${publicAppUrl(req)}/apply?payment=failed`);
+  }
 });
 
 // GET /applications/track/:trackingNumber - Public tracking endpoint
@@ -89,6 +256,8 @@ router.get("/applications/track/:trackingNumber", async (req, res) => {
         service: applicationsTable.service,
         status: applicationsTable.status,
         callbackRequested: applicationsTable.callbackRequested,
+         paymentStatus: applicationsTable.paymentStatus,
+         paymentAmount: applicationsTable.paymentAmount,
          serviceDetails: applicationsTable.serviceDetails,
         createdAt: applicationsTable.createdAt,
       })
@@ -106,6 +275,8 @@ router.get("/applications/track/:trackingNumber", async (req, res) => {
       service: app.service,
       status: app.status,
       callbackRequested: app.callbackRequested,
+      paymentStatus: app.paymentStatus,
+      paymentAmount: app.paymentAmount ?? 0,
        details: app.serviceDetails,
       createdAt: app.createdAt.toISOString(),
     });

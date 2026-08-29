@@ -58,6 +58,8 @@ export interface CreateApplicationBody {
    * @maxLength 15
    */
   phone: string;
+  /** @maxLength 254 */
+  email?: string;
   service: CreateApplicationBodyService;
   /** @maxLength 1000 */
   message?: string;
@@ -74,10 +76,13 @@ export interface Application {
   trackingNumber: string;
   name: string;
   phone: string;
+  email?: string | null;
   service: string;
   message?: string | null;
   status: string;
   callbackRequested: boolean;
+  paymentStatus?: string;
+  paymentAmount?: number | null;
   /**
    * JSON-encoded service-specific application details
    * @maxLength 12000
@@ -85,6 +90,21 @@ export interface Application {
   details: string;
   createdAt: string;
 }
+
+export interface PayUPaymentFields {
+  [key: string]: string;
+}
+
+export interface ApplicationPayment {
+  required: boolean;
+  action?: string;
+  fields?: PayUPaymentFields;
+  amount: number;
+}
+
+export type ApplicationCreateResponse = Application & {
+  payment?: ApplicationPayment;
+};
 
 export interface ApplicationListResponse {
   applications: Application[];

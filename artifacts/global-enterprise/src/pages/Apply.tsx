@@ -10,7 +10,7 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { FaCheckCircle, FaEnvelope, FaFileAlt, FaPhone, FaCopy, FaCheck, FaSearch } from "react-icons/fa";
+import { FaCheckCircle, FaEnvelope, FaFileAlt, FaPhone, FaCopy, FaCheck, FaSearch, FaCreditCard } from "react-icons/fa";
 import { SERVICE_CATEGORIES, ALL_SERVICE_IDS } from "@/lib/services";
 import { getServiceFormConfig, type ServiceField } from "@/lib/service-application-fields";
 import { useT } from "@/i18n";
@@ -21,10 +21,18 @@ const GOLD_LIGHT = "#F2C14E";
 type FormValues = {
   name: string;
   phone: string;
+  email: string;
   service: CreateApplicationBody["service"];
   details: Record<string, unknown>;
   message?: string;
   callbackRequested?: boolean;
+};
+
+type PaymentInfo = {
+  required: boolean;
+  action: string;
+  fields: Record<string, string>;
+  amount: number;
 };
 
 const isValidService = (s: string | null): s is FormValues["service"] =>
@@ -36,16 +44,19 @@ export default function Apply() {
   const preSelectedService = params.get("service");
   const { t } = useT();
 
-  const [submitted, setSubmitted] = useState(false);
-  const [submittedService, setSubmittedService] = useState("");
-  const [trackingNumber, setTrackingNumber] = useState("");
+  const [submitted, setSubmitted] = useState(params.get("payment") === "success");
+  const [submittedService, setSubmittedService] = useState("your application");
+  const [trackingNumber, setTrackingNumber] = useState(params.get("tracking") ?? "");
   const [copied, setCopied] = useState(false);
+  const [paymentInfo, setPaymentInfo] = useState<PaymentInfo | null>(null);
+  const [paymentFailed, setPaymentFailed] = useState(params.get("payment") === "failed");
   const createApplication = useCreateApplication();
 
   const formSchema = useMemo(() =>
     z.object({
       name: z.string().min(2, t.apply_val_name).max(100),
       phone: z.string().min(10, t.apply_val_phone).max(15),
+      email: z.string().email(t.apply_val_email),
       service: z.enum(ALL_SERVICE_IDS, { required_error: t.apply_val_service }),
       details: z.record(z.unknown()).default({}),
       message: z.string().max(1000).optional(),
@@ -80,6 +91,7 @@ export default function Apply() {
     defaultValues: {
       name: "",
       phone: "",
+      email: "",
       service: isValidService(preSelectedService) ? preSelectedService : undefined,
       details: {},
       message: "",
@@ -99,6 +111,7 @@ export default function Apply() {
         data: {
           name: values.name,
           phone: values.phone,
+          email: values.email,
           service: values.service,
            details: JSON.stringify(values.details ?? {}),
           message: values.message || undefined,
@@ -109,7 +122,11 @@ export default function Apply() {
         onSuccess: (data: any) => {
           setSubmittedService(values.service);
           setTrackingNumber(data?.trackingNumber ?? "");
-          setSubmitted(true);
+          if (data?.payment?.required) {
+            setPaymentInfo(data.payment);
+          } else {
+            setSubmitted(true);
+          }
           form.reset();
         },
       }
@@ -121,6 +138,47 @@ export default function Apply() {
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
     });
+  }
+
+  if (paymentInfo) {
+    return (
+      <div className="flex flex-col min-h-full">
+        <section className="hero-navy text-white py-16">
+          <div className="container mx-auto px-4 lg:px-8 relative z-10 text-center">
+            <h1 className="text-4xl font-extrabold mb-4">{t.apply_payment_title}</h1>
+            <div className="gold-line w-20 mx-auto" />
+          </div>
+        </section>
+        <section className="flex-1 flex items-center justify-center py-20 px-4" style={{ background: "#f8fafd" }}>
+          <div className="bg-white rounded-2xl p-8 max-w-md w-full text-center" style={{ border: "1px solid #e8edf5", boxShadow: "0 8px 40px rgba(7,27,74,0.1)" }}>
+            <div className="w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-6" style={{ background: "rgba(212,160,23,0.12)" }}>
+              <FaCreditCard className="text-3xl" style={{ color: GOLD }} />
+            </div>
+            <h2 className="text-2xl font-extrabold text-slate-900 mb-3">{t.apply_payment_heading}</h2>
+            <p className="text-slate-600 mb-5 leading-relaxed">{t.apply_payment_desc}</p>
+            <div className="rounded-xl p-4 mb-5 text-left" style={{ background: "rgba(212,160,23,0.08)", border: "1.5px solid rgba(212,160,23,0.3)" }}>
+              <div className="flex justify-between text-sm text-slate-600 mb-2">
+                <span>{t.apply_payment_service}</span><strong className="text-slate-900">{submittedService}</strong>
+              </div>
+              <div className="flex justify-between items-center pt-2 border-t border-amber-200">
+                <span className="font-semibold text-slate-700">{t.apply_payment_amount}</span>
+                <strong className="text-xl" style={{ color: GOLD }}>₹{paymentInfo.amount.toLocaleString("en-IN")}</strong>
+              </div>
+            </div>
+            <form action={paymentInfo.action} method="POST">
+              {Object.entries(paymentInfo.fields).map(([key, value]) => (
+                <input key={key} type="hidden" name={key} value={value} />
+              ))}
+              <button type="submit" className="btn-gold w-full h-12 rounded-xl font-bold text-base inline-flex items-center justify-center gap-2">
+                <FaCreditCard /> {t.apply_pay_now}
+              </button>
+            </form>
+            <p className="text-xs text-slate-500 mt-4">{t.apply_payment_secure}</p>
+            <p className="font-mono text-xs text-slate-400 mt-2">{trackingNumber}</p>
+          </div>
+        </section>
+      </div>
+    );
   }
 
   if (submitted) {
@@ -252,6 +310,11 @@ export default function Apply() {
             <div className="p-8">
               <Form {...form}>
                 <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-5">
+                  {paymentFailed && (
+                    <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+                      {t.apply_payment_failed}
+                    </div>
+                  )}
                   <FormField
                     control={form.control}
                     name="name"
@@ -280,6 +343,26 @@ export default function Apply() {
                         <FormControl>
                           <Input
                             placeholder={t.apply_phone_placeholder}
+                            className="h-11 rounded-xl"
+                            style={{ color: "#071B4A", background: "rgba(7,27,74,0.03)", borderColor: "#d1d9e8" }}
+                            {...field}
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="email"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel className="text-sm font-semibold text-slate-700">{t.apply_email}</FormLabel>
+                        <FormControl>
+                          <Input
+                            type="email"
+                            placeholder={t.apply_email_placeholder}
                             className="h-11 rounded-xl"
                             style={{ color: "#071B4A", background: "rgba(7,27,74,0.03)", borderColor: "#d1d9e8" }}
                             {...field}
@@ -405,7 +488,7 @@ export default function Apply() {
 
                   {createApplication.isError && (
                     <p className="text-destructive text-sm text-center">
-                      {t.apply_error}
+                      {paymentFailed ? t.apply_payment_failed : t.apply_error}
                     </p>
                   )}
                 </form>

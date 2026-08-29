@@ -76,6 +76,8 @@ export interface Translations {
   apply_name_placeholder: string;
   apply_phone: string;
   apply_phone_placeholder: string;
+  apply_email: string;
+  apply_email_placeholder: string;
   apply_service: string;
   apply_service_placeholder: string;
   apply_message: string;
@@ -96,7 +98,16 @@ export interface Translations {
   apply_another: string;
   apply_val_name: string;
   apply_val_phone: string;
+  apply_val_email: string;
   apply_val_service: string;
+  apply_payment_title: string;
+  apply_payment_heading: string;
+  apply_payment_desc: string;
+  apply_payment_service: string;
+  apply_payment_amount: string;
+  apply_pay_now: string;
+  apply_payment_secure: string;
+  apply_payment_failed: string;
 
   // Track
   track_title: string;
@@ -259,6 +270,8 @@ const en: Translations = {
   apply_name_placeholder: "Enter your full name",
   apply_phone: "Phone Number",
   apply_phone_placeholder: "+91 98765 43210",
+  apply_email: "Email Address",
+  apply_email_placeholder: "Enter your email address",
   apply_service: "Service Type",
   apply_service_placeholder: "Select a service",
   apply_message: "Message (Optional)",
@@ -279,7 +292,16 @@ const en: Translations = {
   apply_tracking_note: "Save this number to track your application status anytime at Track Application.",
   apply_val_name: "Name must be at least 2 characters",
   apply_val_phone: "Enter a valid phone number",
+  apply_val_email: "Enter a valid email address",
   apply_val_service: "Please select a service",
+  apply_payment_title: "Secure Payment",
+  apply_payment_heading: "Complete Your Payment",
+  apply_payment_desc: "Your application is saved. Continue to PayU to securely pay the service fee.",
+  apply_payment_service: "Service",
+  apply_payment_amount: "Amount to pay",
+  apply_pay_now: "Pay Securely with PayU",
+  apply_payment_secure: "You will be redirected to PayU's secure payment page.",
+  apply_payment_failed: "Payment was not completed. You can try again or contact our office.",
 
   track_title: "Track Your Application",
   track_subtitle: "Enter your tracking number to check the status of your application.",

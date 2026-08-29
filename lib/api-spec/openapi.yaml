@@ -48,7 +48,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/Application"
+                  $ref: "#/components/schemas/ApplicationCreateResponse"
         "400":
           description: Validation error
           content:
@@ -317,6 +317,10 @@ components:
           type: string
           minLength: 10
           maxLength: 15
+        email:
+          type: string
+          format: email
+          maxLength: 254
         service:
           type: string
           enum:
@@ -372,6 +376,10 @@ components:
           type: string
         phone:
           type: string
+        email:
+          type: string
+          format: email
+          nullable: true
         service:
           type: string
         message:
@@ -381,6 +389,11 @@ components:
           type: string
         callbackRequested:
           type: boolean
+        paymentStatus:
+          type: string
+        paymentAmount:
+          type: integer
+          nullable: true
         details:
           type: string
           maxLength: 12000
@@ -398,6 +411,35 @@ components:
         - callbackRequested
         - details
         - createdAt
+
+    PayUPaymentFields:
+      type: object
+      additionalProperties:
+        type: string
+
+    ApplicationPayment:
+      type: object
+      properties:
+        required:
+          type: boolean
+        action:
+          type: string
+          format: uri
+        fields:
+          $ref: "#/components/schemas/PayUPaymentFields"
+        amount:
+          type: integer
+      required:
+        - required
+        - amount
+
+    ApplicationCreateResponse:
+      allOf:
+        - $ref: "#/components/schemas/Application"
+        - type: object
+          properties:
+            payment:
+              $ref: "#/components/schemas/ApplicationPayment"
 
     ApplicationListResponse:
       type: object

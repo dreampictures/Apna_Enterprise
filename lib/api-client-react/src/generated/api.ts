@@ -19,7 +19,7 @@ import type {
 import type {
   AdminLoginBody,
   AdminLoginResponse,
-  Application,
+  ApplicationCreateResponse,
   ApplicationListResponse,
   CreateApplicationBody,
   DashboardStats,
@@ -128,8 +128,8 @@ export const getCreateApplicationUrl = () => {
 export const createApplication = async (
   createApplicationBody: CreateApplicationBody,
   options?: RequestInit,
-): Promise<Application> => {
-  return customFetch<Application>(getCreateApplicationUrl(), {
+): Promise<ApplicationCreateResponse> => {
+  return customFetch<ApplicationCreateResponse>(getCreateApplicationUrl(), {
     ...options,
     method: "POST",
     headers: { "Content-Type": "application/json", ...options?.headers },

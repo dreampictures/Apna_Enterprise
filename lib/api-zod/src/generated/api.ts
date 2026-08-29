@@ -23,6 +23,8 @@ export const createApplicationBodyNameMax = 100;
 export const createApplicationBodyPhoneMin = 10;
 export const createApplicationBodyPhoneMax = 15;
 
+export const createApplicationBodyEmailMax = 254;
+
 export const createApplicationBodyMessageMax = 1000;
 
 export const createApplicationBodyDetailsMax = 12000;
@@ -36,6 +38,7 @@ export const CreateApplicationBody = zod.object({
     .string()
     .min(createApplicationBodyPhoneMin)
     .max(createApplicationBodyPhoneMax),
+  email: zod.string().email().max(createApplicationBodyEmailMax).optional(),
   service: zod.enum([
     "Air Ticket Booking",
     "Train Ticket Booking",
@@ -95,10 +98,13 @@ export const ListApplicationsResponse = zod.object({
       trackingNumber: zod.string(),
       name: zod.string(),
       phone: zod.string(),
+      email: zod.string().email().nullish(),
       service: zod.string(),
       message: zod.string().nullish(),
       status: zod.string(),
       callbackRequested: zod.boolean(),
+      paymentStatus: zod.string().optional(),
+      paymentAmount: zod.number().nullish(),
       details: zod
         .string()
         .max(listApplicationsResponseApplicationsItemDetailsMax)
@@ -161,10 +167,13 @@ export const GetDashboardStatsResponse = zod.object({
       trackingNumber: zod.string(),
       name: zod.string(),
       phone: zod.string(),
+      email: zod.string().email().nullish(),
       service: zod.string(),
       message: zod.string().nullish(),
       status: zod.string(),
       callbackRequested: zod.boolean(),
+      paymentStatus: zod.string().optional(),
+      paymentAmount: zod.number().nullish(),
       details: zod
         .string()
         .max(getDashboardStatsResponseRecentApplicationsItemDetailsMax)
