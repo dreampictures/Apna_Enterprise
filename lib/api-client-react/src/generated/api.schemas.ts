@@ -62,6 +62,11 @@ export interface CreateApplicationBody {
   /** @maxLength 1000 */
   message?: string;
   callbackRequested?: boolean;
+  /**
+   * JSON-encoded service-specific application details
+   * @maxLength 12000
+   */
+  details?: string;
 }
 
 export interface Application {
@@ -73,6 +78,11 @@ export interface Application {
   message?: string | null;
   status: string;
   callbackRequested: boolean;
+  /**
+   * JSON-encoded service-specific application details
+   * @maxLength 12000
+   */
+  details: string;
   createdAt: string;
 }
 
@@ -109,6 +119,18 @@ export interface DashboardStats {
   recentApplications: Application[];
   applicationsByService: ServiceCount[];
   visitorCount: number;
+  totalLeads?: number;
+}
+
+export interface ServicePrice {
+  service: string;
+  /** @minimum 0 */
+  price: number;
+  updatedAt: string;
+}
+
+export interface ServicePriceList {
+  prices: ServicePrice[];
 }
 
 export interface VisitorCount {
@@ -126,4 +148,9 @@ export type ListApplicationsParams = {
 
 export type ExportApplicationsCsvParams = {
   service?: string;
+};
+
+export type SetServicePriceBody = {
+  /** @minimum 0 */
+  price: number;
 };

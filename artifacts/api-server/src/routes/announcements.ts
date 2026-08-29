@@ -166,7 +166,7 @@ router.post("/announcements", requireAuth, async (req, res) => {
 
 // PUT /announcements/:id — admin update
 router.put("/announcements/:id", requireAuth, async (req, res) => {
-  const id = parseInt(req.params.id);
+  const id = parseInt(String(req.params.id), 10);
   if (isNaN(id)) { res.status(400).json({ error: "Invalid id" }); return; }
 
   const {
@@ -215,7 +215,7 @@ router.put("/announcements/:id", requireAuth, async (req, res) => {
 
 // DELETE /announcements/:id — admin delete
 router.delete("/announcements/:id", requireAuth, async (req, res) => {
-  const id = parseInt(req.params.id);
+  const id = parseInt(String(req.params.id), 10);
   if (isNaN(id)) { res.status(400).json({ error: "Invalid id" }); return; }
 
   try {

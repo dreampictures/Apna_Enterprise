@@ -25,6 +25,8 @@ export const createApplicationBodyPhoneMax = 15;
 
 export const createApplicationBodyMessageMax = 1000;
 
+export const createApplicationBodyDetailsMax = 12000;
+
 export const CreateApplicationBody = zod.object({
   name: zod
     .string()
@@ -65,6 +67,11 @@ export const CreateApplicationBody = zod.object({
   ]),
   message: zod.string().max(createApplicationBodyMessageMax).optional(),
   callbackRequested: zod.boolean().optional(),
+  details: zod
+    .string()
+    .max(createApplicationBodyDetailsMax)
+    .optional()
+    .describe("JSON-encoded service-specific application details"),
 });
 
 /**
@@ -79,6 +86,8 @@ export const ListApplicationsQueryParams = zod.object({
   offset: zod.coerce.number().default(listApplicationsQueryOffsetDefault),
 });
 
+export const listApplicationsResponseApplicationsItemDetailsMax = 12000;
+
 export const ListApplicationsResponse = zod.object({
   applications: zod.array(
     zod.object({
@@ -90,6 +99,10 @@ export const ListApplicationsResponse = zod.object({
       message: zod.string().nullish(),
       status: zod.string(),
       callbackRequested: zod.boolean(),
+      details: zod
+        .string()
+        .max(listApplicationsResponseApplicationsItemDetailsMax)
+        .describe("JSON-encoded service-specific application details"),
       createdAt: zod.coerce.date(),
     }),
   ),
@@ -138,6 +151,8 @@ export const AdminLoginResponse = zod.object({
 /**
  * @summary Get dashboard statistics
  */
+export const getDashboardStatsResponseRecentApplicationsItemDetailsMax = 12000;
+
 export const GetDashboardStatsResponse = zod.object({
   totalApplications: zod.number(),
   recentApplications: zod.array(
@@ -150,6 +165,10 @@ export const GetDashboardStatsResponse = zod.object({
       message: zod.string().nullish(),
       status: zod.string(),
       callbackRequested: zod.boolean(),
+      details: zod
+        .string()
+        .max(getDashboardStatsResponseRecentApplicationsItemDetailsMax)
+        .describe("JSON-encoded service-specific application details"),
       createdAt: zod.coerce.date(),
     }),
   ),
@@ -160,6 +179,43 @@ export const GetDashboardStatsResponse = zod.object({
     }),
   ),
   visitorCount: zod.number(),
+  totalLeads: zod.number().optional(),
+});
+
+/**
+ * @summary List service prices (admin only)
+ */
+export const listServicePricesResponsePricesItemPriceMin = 0;
+
+export const ListServicePricesResponse = zod.object({
+  prices: zod.array(
+    zod.object({
+      service: zod.string(),
+      price: zod.number().min(listServicePricesResponsePricesItemPriceMin),
+      updatedAt: zod.coerce.date(),
+    }),
+  ),
+});
+
+/**
+ * @summary Set a service price (admin only)
+ */
+export const SetServicePriceParams = zod.object({
+  service: zod.coerce.string(),
+});
+
+export const setServicePriceBodyPriceMin = 0;
+
+export const SetServicePriceBody = zod.object({
+  price: zod.number().min(setServicePriceBodyPriceMin),
+});
+
+export const setServicePriceResponsePriceMin = 0;
+
+export const SetServicePriceResponse = zod.object({
+  service: zod.string(),
+  price: zod.number().min(setServicePriceResponsePriceMin),
+  updatedAt: zod.coerce.date(),
 });
 
 /**

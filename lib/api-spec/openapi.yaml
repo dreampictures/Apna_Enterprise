@@ -190,6 +190,72 @@ paths:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
 
+  /admin/pricing:
+    get:
+      operationId: listServicePrices
+      tags: [admin]
+      summary: List service prices (admin only)
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Service prices
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ServicePriceList"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /admin/pricing/{service}:
+    put:
+      operationId: setServicePrice
+      tags: [admin]
+      summary: Set a service price (admin only)
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: service
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                price:
+                  type: integer
+                  minimum: 0
+              required:
+                - price
+      responses:
+        "200":
+          description: Price saved
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ServicePrice"
+        "400":
+          description: Invalid price
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
   /visitors/track:
     post:
       operationId: trackVisitor
@@ -286,6 +352,10 @@ components:
           maxLength: 1000
         callbackRequested:
           type: boolean
+        details:
+          type: string
+          maxLength: 12000
+          description: JSON-encoded service-specific application details
       required:
         - name
         - phone
@@ -311,6 +381,10 @@ components:
           type: string
         callbackRequested:
           type: boolean
+        details:
+          type: string
+          maxLength: 12000
+          description: JSON-encoded service-specific application details
         createdAt:
           type: string
           format: date-time
@@ -322,6 +396,7 @@ components:
         - service
         - status
         - callbackRequested
+        - details
         - createdAt
 
     ApplicationListResponse:
@@ -395,11 +470,39 @@ components:
             $ref: "#/components/schemas/ServiceCount"
         visitorCount:
           type: integer
+        totalLeads:
+          type: integer
       required:
         - totalApplications
         - recentApplications
         - applicationsByService
         - visitorCount
+
+    ServicePrice:
+      type: object
+      properties:
+        service:
+          type: string
+        price:
+          type: integer
+          minimum: 0
+        updatedAt:
+          type: string
+          format: date-time
+      required:
+        - service
+        - price
+        - updatedAt
+
+    ServicePriceList:
+      type: object
+      properties:
+        prices:
+          type: array
+          items:
+            $ref: "#/components/schemas/ServicePrice"
+      required:
+        - prices
 
     ServiceCount:
       type: object

@@ -28,7 +28,7 @@ router.post("/applications", async (req, res) => {
     return;
   }
 
-  const { name, phone, service, message, callbackRequested } = parsed.data;
+  const { name, phone, service, message, callbackRequested, details } = parsed.data;
 
   // Generate unique tracking number (retry on collision)
   let trackingNumber = generateTrackingNumber();
@@ -43,6 +43,7 @@ router.post("/applications", async (req, res) => {
           phone,
           service,
           message: message ?? null,
+           serviceDetails: details ?? "{}",
           callbackRequested: callbackRequested ?? false,
         })
         .returning();
@@ -54,6 +55,7 @@ router.post("/applications", async (req, res) => {
         phone: app.phone,
         service: app.service,
         message: app.message,
+         details: app.serviceDetails,
         createdAt: app.createdAt.toISOString(),
       });
       return;
@@ -87,6 +89,7 @@ router.get("/applications/track/:trackingNumber", async (req, res) => {
         service: applicationsTable.service,
         status: applicationsTable.status,
         callbackRequested: applicationsTable.callbackRequested,
+         serviceDetails: applicationsTable.serviceDetails,
         createdAt: applicationsTable.createdAt,
       })
       .from(applicationsTable)
@@ -103,6 +106,7 @@ router.get("/applications/track/:trackingNumber", async (req, res) => {
       service: app.service,
       status: app.status,
       callbackRequested: app.callbackRequested,
+       details: app.serviceDetails,
       createdAt: app.createdAt.toISOString(),
     });
   } catch (err) {
@@ -144,6 +148,7 @@ router.get("/applications", requireAuth, async (req, res) => {
         message: a.message,
         status: a.status,
         callbackRequested: a.callbackRequested,
+         details: a.serviceDetails,
         createdAt: a.createdAt.toISOString(),
       })),
       total,
@@ -189,7 +194,7 @@ router.get("/applications/export", requireAuth, async (req, res) => {
     }
     const applications = await query;
 
-    const headers = ["ID", "Tracking No", "Name", "Phone", "Service", "Status", "Callback Requested", "Message", "Date"];
+    const headers = ["ID", "Tracking No", "Name", "Phone", "Service", "Status", "Callback Requested", "Message", "Service Details", "Date"];
     const rows = applications.map((a) => [
       a.id,
       `"${a.trackingNumber}"`,
@@ -199,6 +204,7 @@ router.get("/applications/export", requireAuth, async (req, res) => {
       `"${a.status}"`,
       a.callbackRequested ? "Yes" : "No",
       `"${(a.message ?? "").replace(/"/g, '""')}"`,
+       `"${(a.serviceDetails ?? "{}").replace(/"/g, '""')}"`,
       a.createdAt.toISOString(),
     ]);
 

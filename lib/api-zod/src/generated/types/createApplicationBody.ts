@@ -22,4 +22,9 @@ export interface CreateApplicationBody {
   /** @maxLength 1000 */
   message?: string;
   callbackRequested?: boolean;
+  /**
+   * JSON-encoded service-specific application details
+   * @maxLength 12000
+   */
+  details?: string;
 }

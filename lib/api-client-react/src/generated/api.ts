@@ -27,6 +27,9 @@ import type {
   ExportApplicationsCsvParams,
   HealthStatus,
   ListApplicationsParams,
+  ServicePrice,
+  ServicePriceList,
+  SetServicePriceBody,
   TrackApplicationResponse,
   VisitorCount,
 } from "./api.schemas";
@@ -650,6 +653,168 @@ export function useGetDashboardStats<
 
   return { ...query, queryKey: queryOptions.queryKey };
 }
+
+/**
+ * @summary List service prices (admin only)
+ */
+export const getListServicePricesUrl = () => {
+  return `/api/admin/pricing`;
+};
+
+export const listServicePrices = async (
+  options?: RequestInit,
+): Promise<ServicePriceList> => {
+  return customFetch<ServicePriceList>(getListServicePricesUrl(), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getListServicePricesQueryKey = () => {
+  return [`/api/admin/pricing`] as const;
+};
+
+export const getListServicePricesQueryOptions = <
+  TData = Awaited<ReturnType<typeof listServicePrices>>,
+  TError = ErrorType<ErrorResponse>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof listServicePrices>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getListServicePricesQueryKey();
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof listServicePrices>>
+  > = ({ signal }) => listServicePrices({ signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof listServicePrices>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type ListServicePricesQueryResult = NonNullable<
+  Awaited<ReturnType<typeof listServicePrices>>
+>;
+export type ListServicePricesQueryError = ErrorType<ErrorResponse>;
+
+/**
+ * @summary List service prices (admin only)
+ */
+
+export function useListServicePrices<
+  TData = Awaited<ReturnType<typeof listServicePrices>>,
+  TError = ErrorType<ErrorResponse>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof listServicePrices>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getListServicePricesQueryOptions(options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary Set a service price (admin only)
+ */
+export const getSetServicePriceUrl = (service: string) => {
+  return `/api/admin/pricing/${service}`;
+};
+
+export const setServicePrice = async (
+  service: string,
+  setServicePriceBody: SetServicePriceBody,
+  options?: RequestInit,
+): Promise<ServicePrice> => {
+  return customFetch<ServicePrice>(getSetServicePriceUrl(service), {
+    ...options,
+    method: "PUT",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(setServicePriceBody),
+  });
+};
+
+export const getSetServicePriceMutationOptions = <
+  TError = ErrorType<ErrorResponse>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof setServicePrice>>,
+    TError,
+    { service: string; data: BodyType<SetServicePriceBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof setServicePrice>>,
+  TError,
+  { service: string; data: BodyType<SetServicePriceBody> },
+  TContext
+> => {
+  const mutationKey = ["setServicePrice"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof setServicePrice>>,
+    { service: string; data: BodyType<SetServicePriceBody> }
+  > = (props) => {
+    const { service, data } = props ?? {};
+
+    return setServicePrice(service, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type SetServicePriceMutationResult = NonNullable<
+  Awaited<ReturnType<typeof setServicePrice>>
+>;
+export type SetServicePriceMutationBody = BodyType<SetServicePriceBody>;
+export type SetServicePriceMutationError = ErrorType<ErrorResponse>;
+
+/**
+ * @summary Set a service price (admin only)
+ */
+export const useSetServicePrice = <
+  TError = ErrorType<ErrorResponse>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof setServicePrice>>,
+    TError,
+    { service: string; data: BodyType<SetServicePriceBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof setServicePrice>>,
+  TError,
+  { service: string; data: BodyType<SetServicePriceBody> },
+  TContext
+> => {
+  return useMutation(getSetServicePriceMutationOptions(options));
+};
 
 /**
  * @summary Increment visitor count

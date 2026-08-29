@@ -25,11 +25,19 @@ export async function ensureSchema() {
       ALTER TABLE applications ADD COLUMN IF NOT EXISTS callback_requested BOOLEAN NOT NULL DEFAULT false;
       ALTER TABLE applications ADD COLUMN IF NOT EXISTS document_url TEXT;
       ALTER TABLE applications ADD COLUMN IF NOT EXISTS document_key TEXT;
+       ALTER TABLE applications ADD COLUMN IF NOT EXISTS service_details TEXT NOT NULL DEFAULT '{}';
       ALTER TABLE applications ADD COLUMN IF NOT EXISTS tracking_number TEXT;
       UPDATE applications SET tracking_number = 'AE' || TO_CHAR(created_at, 'YYMMDD') || LPAD(id::TEXT, 4, '0') WHERE tracking_number IS NULL;
       CREATE UNIQUE INDEX IF NOT EXISTS applications_tracking_number_unique_idx
         ON applications (tracking_number);
       ALTER TABLE applications ALTER COLUMN tracking_number SET NOT NULL;
+
+       CREATE TABLE IF NOT EXISTS service_prices (
+         id SERIAL PRIMARY KEY,
+         service TEXT NOT NULL UNIQUE,
+         price INTEGER NOT NULL DEFAULT 0,
+         updated_at TIMESTAMP DEFAULT NOW() NOT NULL
+       );
 
       CREATE TABLE IF NOT EXISTS visitors (
         id SERIAL PRIMARY KEY,

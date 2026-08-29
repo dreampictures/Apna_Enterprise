@@ -15,5 +15,10 @@ export interface Application {
   message?: string | null;
   status: string;
   callbackRequested: boolean;
+  /**
+   * JSON-encoded service-specific application details
+   * @maxLength 12000
+   */
+  details: string;
   createdAt: Date;
 }

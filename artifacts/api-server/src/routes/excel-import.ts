@@ -188,7 +188,7 @@ router.post("/admin/excel-import/create", requireAuth, async (req, res) => {
    Append rows to existing post's table
 ──────────────────────────────────────────── */
 router.post("/admin/excel-import/append/:id", requireAuth, async (req, res) => {
-  const id = parseInt(req.params.id);
+  const id = parseInt(String(req.params.id), 10);
   if (isNaN(id)) { res.status(400).json({ error: "Invalid id" }); return; }
 
   const { columns, rows, fileName, fileHash, sectionTitle } = req.body;
@@ -235,7 +235,7 @@ router.post("/admin/excel-import/append/:id", requireAuth, async (req, res) => {
    Replace table in existing post
 ──────────────────────────────────────────── */
 router.post("/admin/excel-import/replace/:id", requireAuth, async (req, res) => {
-  const id = parseInt(req.params.id);
+  const id = parseInt(String(req.params.id), 10);
   if (isNaN(id)) { res.status(400).json({ error: "Invalid id" }); return; }
 
   const { columns, rows, fileName, fileHash, sectionTitle } = req.body;

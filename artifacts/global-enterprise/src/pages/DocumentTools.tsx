@@ -119,6 +119,10 @@ function download(blob: Blob, name: string) {
   window.setTimeout(() => URL.revokeObjectURL(url), 500);
 }
 
+function pdfBlob(bytes: Uint8Array) {
+  return new Blob([bytes as unknown as BlobPart], { type: "application/pdf" });
+}
+
 function useFilePreview(file: File) {
   const [url, setUrl] = useState("");
   useEffect(() => {
@@ -280,7 +284,7 @@ function ImagesToPdf() {
       const page = pdf.addPage([image.width * scale, image.height * scale]);
       page.drawImage(image, { x: 0, y: 0, width: image.width * scale, height: image.height * scale });
     }
-    download(new Blob([await pdf.save()], { type: "application/pdf" }), "images-to-pdf.pdf");
+    download(pdfBlob(await pdf.save()), "images-to-pdf.pdf");
     setWorking(false);
   };
   return <ToolCard><SectionTitle icon={ImagePlus} title={c.imagesPdfTitle} detail={c.imagesPdfDetail} />
@@ -323,7 +327,7 @@ function PdfEditor() {
     } catch (error) { setMessage(error instanceof Error ? error.message : "PDF could not be opened."); }
     setWorking(false);
   };
-  const addImages = (files: File[]) => setPages((current) => [...current, ...files.filter(isImage).map((file) => ({ id: idFor(file), source: "image", file, pageIndex: 0, preview: URL.createObjectURL(file), name: file.name }))]);
+  const addImages = (files: File[]) => setPages((current) => [...current, ...files.filter(isImage).map((file) => ({ id: idFor(file), source: "image" as const, file, pageIndex: 0, preview: URL.createObjectURL(file), name: file.name }))]);
   const move = (index: number, target: number) => setPages((current) => { if (target < 0 || target >= current.length) return current; const next = [...current]; [next[index], next[target]] = [next[target], next[index]]; return next; });
   const createPdf = async () => {
     setWorking(true); setMessage("");
@@ -342,7 +346,7 @@ function PdfEditor() {
           outputPage.drawImage(image, { x: 0, y: 0, width: image.width * scale, height: image.height * scale });
         }
       }
-      download(new Blob([await out.save()], { type: "application/pdf" }), "edited-merged-document.pdf");
+      download(pdfBlob(await out.save()), "edited-merged-document.pdf");
     } catch (error) { setMessage(error instanceof Error ? error.message : "PDF could not be created."); }
     setWorking(false);
   };
@@ -379,7 +383,7 @@ function PdfCompression() {
         const outputPage = out.addPage([viewport.width, viewport.height]);
         outputPage.drawImage(image, { x: 0, y: 0, width: viewport.width, height: viewport.height });
       }
-      const blob = new Blob([await out.save()], { type: "application/pdf" });
+      const blob = pdfBlob(await out.save());
       download(blob, `${file.name.replace(/\.pdf$/i, "")}-compressed.pdf`);
       await source.destroy();
     }

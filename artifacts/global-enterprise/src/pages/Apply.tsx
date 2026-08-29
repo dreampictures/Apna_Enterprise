@@ -12,6 +12,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { FaCheckCircle, FaEnvelope, FaFileAlt, FaPhone, FaCopy, FaCheck, FaSearch } from "react-icons/fa";
 import { SERVICE_CATEGORIES, ALL_SERVICE_IDS } from "@/lib/services";
+import { getServiceFormConfig, type ServiceField } from "@/lib/service-application-fields";
 import { useT } from "@/i18n";
 
 const GOLD = "#D4A017";
@@ -21,6 +22,7 @@ type FormValues = {
   name: string;
   phone: string;
   service: CreateApplicationBody["service"];
+  details: Record<string, unknown>;
   message?: string;
   callbackRequested?: boolean;
 };
@@ -45,8 +47,30 @@ export default function Apply() {
       name: z.string().min(2, t.apply_val_name).max(100),
       phone: z.string().min(10, t.apply_val_phone).max(15),
       service: z.enum(ALL_SERVICE_IDS, { required_error: t.apply_val_service }),
+      details: z.record(z.unknown()).default({}),
       message: z.string().max(1000).optional(),
       callbackRequested: z.boolean().optional(),
+    }).superRefine((values, ctx) => {
+      const config = getServiceFormConfig(values.service);
+      for (const field of config.fields) {
+        const value = values.details?.[field.id];
+        const empty = Array.isArray(value) ? value.length === 0 : value === undefined || value === null || String(value).trim() === "";
+        if (field.required && empty) {
+          ctx.addIssue({
+            code: z.ZodIssueCode.custom,
+            path: ["details", field.id],
+            message: `${field.label} is required`,
+          });
+        }
+      }
+
+      if (values.service === "Air Ticket Booking" && values.details?.tripType === "round-trip" && !values.details?.returnDate) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ["details", "returnDate"],
+          message: "Return date is required for a round trip",
+        });
+      }
     }),
     [t]
   );
@@ -57,6 +81,7 @@ export default function Apply() {
       name: "",
       phone: "",
       service: isValidService(preSelectedService) ? preSelectedService : undefined,
+      details: {},
       message: "",
       callbackRequested: false,
     },
@@ -75,6 +100,7 @@ export default function Apply() {
           name: values.name,
           phone: values.phone,
           service: values.service,
+           details: JSON.stringify(values.details ?? {}),
           message: values.message || undefined,
           callbackRequested: values.callbackRequested,
         },
@@ -204,7 +230,7 @@ export default function Apply() {
       </section>
 
       <section className="flex-1 py-16" style={{ background: "#f8fafd" }}>
-        <div className="container mx-auto px-4 max-w-xl">
+         <div className="container mx-auto px-4 max-w-2xl">
           <div className="bg-white rounded-2xl" style={{ border: "1px solid #e8edf5", boxShadow: "0 8px 40px rgba(7,27,74,0.08)" }}>
             {/* Form Header */}
             <div
@@ -270,7 +296,13 @@ export default function Apply() {
                     render={({ field }) => (
                       <FormItem>
                         <FormLabel className="text-sm font-semibold text-slate-700">{t.apply_service}</FormLabel>
-                        <Select onValueChange={field.onChange} value={field.value}>
+                        <Select
+                          onValueChange={(value) => {
+                            field.onChange(value);
+                            form.setValue("details", {}, { shouldValidate: true });
+                          }}
+                          value={field.value ?? ""}
+                        >
                           <FormControl>
                             <SelectTrigger className="h-11 rounded-xl" style={{ color: "#071B4A", background: "rgba(7,27,74,0.03)", borderColor: "#d1d9e8" }}>
                               <SelectValue placeholder={t.apply_service_placeholder} />
@@ -295,6 +327,14 @@ export default function Apply() {
                       </FormItem>
                     )}
                   />
+
+                  {/* Service-specific details */}
+                  {form.watch("service") && (
+                    <ServiceDetailsFields
+                      service={form.watch("service")}
+                      form={form}
+                    />
+                  )}
 
                   <FormField
                     control={form.control}
@@ -386,6 +426,137 @@ export default function Apply() {
           </div>
         </div>
       </section>
+    </div>
+  );
+}
+
+function ServiceDetailsFields({
+  service,
+  form,
+}: {
+  service: FormValues["service"];
+  form: ReturnType<typeof useForm<FormValues>>;
+}) {
+  const config = getServiceFormConfig(service);
+  const details = form.watch("details") ?? {};
+  const detailErrors = form.formState.errors.details as Record<string, { message?: string }> | undefined;
+
+  return (
+    <div className="rounded-2xl border border-amber-200 bg-amber-50/60 p-5 space-y-5">
+      <div>
+        <p className="text-sm font-bold text-slate-800">Details for this service</p>
+        <p className="text-xs text-slate-600 mt-1 leading-relaxed">{config.intro}</p>
+      </div>
+
+      {config.documents && (
+        <div className="rounded-xl bg-white border border-amber-200 p-4">
+          <p className="text-xs font-bold uppercase tracking-wider text-amber-800">Keep these documents ready</p>
+          <ul className="mt-2 grid gap-1.5 sm:grid-cols-2">
+            {config.documents.map((document) => (
+              <li key={document} className="text-xs text-slate-600 flex items-start gap-2">
+                <span className="text-amber-600 mt-0.5">•</span>
+                {document}
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        {config.fields.map((field) => {
+          const error = detailErrors?.[field.id]?.message;
+          return (
+            <div key={field.id} className={field.kind === "textarea" || field.kind === "documents" ? "sm:col-span-2" : ""}>
+              {field.kind === "documents" ? (
+                <DocumentChecklist
+                  field={field}
+                  selected={Array.isArray(details[field.id]) ? details[field.id] as string[] : []}
+                  onChange={(next) => form.setValue(`details.${field.id}` as any, next, { shouldDirty: true, shouldValidate: true })}
+                />
+              ) : (
+                <>
+                  <label className="text-sm font-semibold text-slate-700 block mb-1.5">
+                    {field.label}
+                    {field.required && <span className="text-red-500 ml-1">*</span>}
+                  </label>
+                  {field.kind === "select" ? (
+                    <Select
+                      value={String(details[field.id] ?? "")}
+                      onValueChange={(value) => form.setValue(`details.${field.id}` as any, value, { shouldDirty: true, shouldValidate: true })}
+                    >
+                      <SelectTrigger className="h-11 rounded-xl bg-white border-slate-300">
+                        <SelectValue placeholder={field.placeholder ?? `Select ${field.label.toLowerCase()}`} />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {field.options?.map((option) => (
+                          <SelectItem key={option.value} value={option.value}>{option.label}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  ) : field.kind === "textarea" ? (
+                    <Textarea
+                      rows={3}
+                      placeholder={field.placeholder}
+                      className="resize-none rounded-xl bg-white border-slate-300"
+                      {...form.register(`details.${field.id}` as any)}
+                    />
+                  ) : (
+                    <Input
+                      type={field.kind === "date" ? "date" : field.kind === "number" ? "number" : "text"}
+                      placeholder={field.placeholder}
+                      min={field.kind === "number" ? 1 : undefined}
+                      className="h-11 rounded-xl bg-white border-slate-300"
+                      {...form.register(`details.${field.id}` as any)}
+                    />
+                  )}
+                  {field.help && <p className="text-[11px] text-slate-500 mt-1">{field.help}</p>}
+                </>
+              )}
+              {error && <p className="text-xs text-red-600 mt-1">{error}</p>}
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+function DocumentChecklist({
+  field,
+  selected,
+  onChange,
+}: {
+  field: ServiceField;
+  selected: string[];
+  onChange: (values: string[]) => void;
+}) {
+  return (
+    <div>
+      <p className="text-sm font-semibold text-slate-700 mb-2">
+        {field.label}
+        {field.required && <span className="text-red-500 ml-1">*</span>}
+      </p>
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+        {field.options?.map((option) => {
+          const checked = selected.includes(option.value);
+          return (
+            <label
+              key={option.value}
+              className={`flex items-center gap-2.5 rounded-xl border px-3 py-2.5 cursor-pointer text-xs transition-colors ${
+                checked ? "border-amber-400 bg-white text-slate-800" : "border-slate-200 bg-white/70 text-slate-600"
+              }`}
+            >
+              <input
+                type="checkbox"
+                checked={checked}
+                onChange={() => onChange(checked ? selected.filter((value) => value !== option.value) : [...selected, option.value])}
+                className="accent-amber-600 h-4 w-4"
+              />
+              {option.label}
+            </label>
+          );
+        })}
+      </div>
     </div>
   );
 }

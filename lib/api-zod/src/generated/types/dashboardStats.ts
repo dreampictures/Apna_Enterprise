@@ -13,4 +13,5 @@ export interface DashboardStats {
   recentApplications: Application[];
   applicationsByService: ServiceCount[];
   visitorCount: number;
+  totalLeads?: number;
 }

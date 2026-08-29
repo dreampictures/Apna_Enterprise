@@ -19,6 +19,7 @@ export const applicationsTable = pgTable("applications", {
   phone: text("phone").notNull(),
   service: text("service").notNull(),
   message: text("message"),
+  serviceDetails: text("service_details").default("{}").notNull(),
   status: text("status").default("pending").notNull(),
   callbackRequested: boolean("callback_requested").default(false).notNull(),
   documentUrl: text("document_url"),
@@ -29,6 +30,15 @@ export const applicationsTable = pgTable("applications", {
 export const insertApplicationSchema = createInsertSchema(applicationsTable).omit({ id: true, createdAt: true });
 export type InsertApplication = z.infer<typeof insertApplicationSchema>;
 export type Application = typeof applicationsTable.$inferSelect;
+
+export const servicePricesTable = pgTable("service_prices", {
+  id: serial("id").primaryKey(),
+  service: text("service").notNull().unique(),
+  price: integer("price").notNull().default(0),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+export type ServicePrice = typeof servicePricesTable.$inferSelect;
 
 export const visitorsTable = pgTable("visitors", {
   id: serial("id").primaryKey(),

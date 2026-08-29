@@ -1,4 +1,4 @@
-import { useEffect, useState, useMemo, useRef, useCallback } from "react";
+import { Fragment, useEffect, useState, useMemo, useRef, useCallback } from "react";
 import Seo from "@/components/Seo";
 import { useLocation } from "wouter";
 import {
@@ -18,7 +18,7 @@ import {
   FaSignOutAlt, FaFileDownload, FaUsers, FaClipboardList,
   FaFilter, FaBuilding, FaEye, FaTag, FaWhatsapp,
   FaMobileAlt, FaDesktop, FaChartBar, FaPhoneAlt, FaBullhorn,
-  FaCheck, FaHourglassHalf, FaBook,
+  FaCheck, FaHourglassHalf, FaBook, FaMoneyBillWave, FaFileAlt,
 } from "react-icons/fa";
 import { SERVICE_CATEGORIES, SERVICE_TO_CATEGORY, ALL_SERVICE_IDS } from "@/lib/services";
 import AdminAnnouncements from "./AdminAnnouncements";
@@ -63,7 +63,23 @@ function usePageSummary(token: string | null) {
   });
 }
 
-type Tab = "applications" | "leads" | "analytics" | "updates";
+type ServicePrice = { service: string; price: number; updatedAt: string };
+
+function useServicePricing(token: string | null) {
+  return useQuery<{ prices: ServicePrice[] }>({
+    queryKey: ["service-pricing"],
+    enabled: !!token,
+    queryFn: async () => {
+      const res = await fetch("/api/admin/pricing", {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (!res.ok) throw new Error("Failed to load service pricing");
+      return res.json();
+    },
+  });
+}
+
+type Tab = "applications" | "leads" | "analytics" | "pricing" | "updates";
 
 export default function AdminDashboard() {
   const [, setLocation] = useLocation();
@@ -128,6 +144,24 @@ export default function AdminDashboard() {
 
   const { data: leadsData, isLoading: leadsLoading } = useLeads(token);
   const { data: pageData, isLoading: pageLoading } = usePageSummary(token);
+  const { data: pricingData, isLoading: pricingLoading } = useServicePricing(token);
+  const [priceDrafts, setPriceDrafts] = useState<Record<string, string>>({});
+  const [pricingError, setPricingError] = useState("");
+  const [expandedApplication, setExpandedApplication] = useState<number | null>(null);
+
+  useEffect(() => {
+    if (!pricingData?.prices) return;
+    setPriceDrafts((current) => {
+      const next = { ...current };
+      for (const item of pricingData.prices) next[item.service] = String(item.price);
+      return next;
+    });
+  }, [pricingData]);
+
+  const pricingByService = useMemo(
+    () => Object.fromEntries((pricingData?.prices ?? []).map((item) => [item.service, item.price])) as Record<string, number>,
+    [pricingData]
+  );
 
   const displayedApplications = useMemo(() => {
     if (!applicationsData?.applications) return [];
@@ -185,6 +219,30 @@ export default function AdminDashboard() {
       a.download = `applications${serviceFilter ? `-${serviceFilter}` : ""}.csv`;
       a.click();
       URL.revokeObjectURL(url);
+    }
+  }
+
+  async function saveServicePrice(service: string) {
+    const rawPrice = priceDrafts[service]?.trim() ?? "";
+    if (!/^\d+$/.test(rawPrice)) {
+      setPricingError(`Enter a valid price for ${service}.`);
+      return;
+    }
+
+    setPricingError("");
+    try {
+      const res = await fetch(`/api/admin/pricing/${encodeURIComponent(service)}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ price: Number(rawPrice) }),
+      });
+      if (!res.ok) {
+        const body = await res.json().catch(() => null);
+        throw new Error(body?.error ?? "Could not save price");
+      }
+      await queryClient.invalidateQueries({ queryKey: ["service-pricing"] });
+    } catch (error) {
+      setPricingError(error instanceof Error ? error.message : "Could not save price");
     }
   }
 
@@ -314,6 +372,7 @@ export default function AdminDashboard() {
               {tab === "applications" && <FaClipboardList className="inline mr-2 text-xs" />}
               {tab === "leads" && <FaPhoneAlt className="inline mr-2 text-xs" />}
               {tab === "analytics" && <FaChartBar className="inline mr-2 text-xs" />}
+              {tab === "pricing" && <FaMoneyBillWave className="inline mr-2 text-xs" />}
               {tab === "updates" && <FaBullhorn className="inline mr-2 text-xs" />}
               {tab.charAt(0).toUpperCase() + tab.slice(1)}
             </button>
@@ -444,20 +503,22 @@ export default function AdminDashboard() {
                         <th className="text-left py-3 px-4 font-semibold text-slate-600 uppercase tracking-wider text-xs hidden sm:table-cell">Tracking #</th>
                         <th className="text-left py-3 px-4 font-semibold text-slate-600 uppercase tracking-wider text-xs">Phone</th>
                         <th className="text-left py-3 px-4 font-semibold text-slate-600 uppercase tracking-wider text-xs hidden lg:table-cell">Service</th>
-                        <th className="text-left py-3 px-4 font-semibold text-slate-600 uppercase tracking-wider text-xs hidden xl:table-cell">Message</th>
+                         <th className="text-left py-3 px-4 font-semibold text-slate-600 uppercase tracking-wider text-xs hidden xl:table-cell">Message</th>
+                         <th className="text-left py-3 px-4 font-semibold text-slate-600 uppercase tracking-wider text-xs">Details</th>
                         <th className="text-left py-3 px-4 font-semibold text-slate-600 uppercase tracking-wider text-xs hidden md:table-cell">Callback</th>
                         <th className="text-left py-3 px-4 font-semibold text-slate-600 uppercase tracking-wider text-xs hidden lg:table-cell">Date</th>
                         <th className="text-left py-3 px-4 font-semibold text-slate-600 uppercase tracking-wider text-xs">Status</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-50">
-                      {displayedApplications.map((app) => {
+                       {displayedApplications.map((app) => {
                         const catName = SERVICE_TO_CATEGORY[app.service] ?? "Other";
                         const st = (appStatuses[app.id] ?? (app as any).status ?? "pending") as typeof ALL_APP_STATUSES[number];
                         const stStyle = STATUS_STYLE[st] ?? STATUS_STYLE.pending;
                         const callbackReq = (app as any).callbackRequested;
-                        return (
-                          <tr key={app.id} className="hover:bg-slate-50 transition-colors">
+                         return (
+                           <Fragment key={app.id}>
+                           <tr key={app.id} className="hover:bg-slate-50 transition-colors">
                             <td className="py-3 px-4">
                               <div className="font-medium text-slate-900 text-sm">{app.name}</div>
                               <div className="text-xs text-slate-400 lg:hidden">{catName}</div>
@@ -475,6 +536,16 @@ export default function AdminDashboard() {
                             </td>
                             <td className="py-3 px-4 text-slate-500 hidden xl:table-cell max-w-xs truncate text-sm">
                               {app.message ?? <span className="text-slate-300 italic">—</span>}
+                            </td>
+                            <td className="py-3 px-4">
+                              <button
+                                type="button"
+                                onClick={() => setExpandedApplication(expandedApplication === app.id ? null : app.id)}
+                                className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 px-2.5 py-1.5 text-xs font-semibold text-primary hover:bg-primary/5"
+                              >
+                                <FaFileAlt className="text-xs" />
+                                {expandedApplication === app.id ? "Hide" : "View"}
+                              </button>
                             </td>
                             <td className="py-3 px-4 hidden md:table-cell">
                               {callbackReq ? (
@@ -505,6 +576,19 @@ export default function AdminDashboard() {
                               </select>
                             </td>
                           </tr>
+                           {expandedApplication === app.id && (
+                             <tr key={`${app.id}-details`} className="bg-amber-50/60">
+                               <td colSpan={9} className="px-4 py-4">
+                                 <div className="rounded-xl border border-amber-200 bg-white p-4">
+                                   <p className="text-xs font-bold uppercase tracking-wider text-amber-800 mb-3">
+                                     {app.service} — client details
+                                   </p>
+                                   <ApplicationDetails raw={(app as any).details} price={pricingByService[app.service]} />
+                                 </div>
+                               </td>
+                             </tr>
+                           )}
+                           </Fragment>
                         );
                       })}
                     </tbody>
@@ -678,6 +762,66 @@ export default function AdminDashboard() {
           </div>
         )}
 
+        {/* ── Pricing Tab ── */}
+        {activeTab === "pricing" && (
+          <div className="bg-white rounded-2xl shadow-md border border-slate-100 overflow-hidden">
+            <div className="p-6 border-b border-slate-100">
+              <div className="flex items-start gap-3">
+                <div className="w-11 h-11 rounded-xl bg-amber-100 text-amber-700 flex items-center justify-center flex-shrink-0">
+                  <FaMoneyBillWave />
+                </div>
+                <div>
+                  <h2 className="text-lg font-bold text-slate-900">Service Pricing</h2>
+                  <p className="text-sm text-slate-500 mt-1">
+                    Set your internal price for each service. Prices are not shown to clients; use them while reviewing an application and calling back.
+                  </p>
+                </div>
+              </div>
+              {pricingError && (
+                <p className="mt-4 rounded-lg bg-red-50 border border-red-200 px-3 py-2 text-sm text-red-700">{pricingError}</p>
+              )}
+            </div>
+
+            {pricingLoading ? (
+              <div className="p-6 space-y-3">
+                {[...Array(6)].map((_, i) => <Skeleton key={i} className="h-14 w-full rounded-lg" />)}
+              </div>
+            ) : (
+              <div className="p-6 space-y-8">
+                {SERVICE_CATEGORIES.map((category) => (
+                  <section key={category.id}>
+                    <h3 className="text-sm font-bold uppercase tracking-wider text-slate-500 mb-3">{category.name}</h3>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                      {category.services.map((service) => (
+                        <div key={service.id} className="flex items-center gap-3 rounded-xl border border-slate-200 p-3">
+                          <span className="text-sm font-medium text-slate-800 flex-1 min-w-0">{service.name}</span>
+                          <div className="flex items-center gap-2">
+                            <span className="text-slate-400 text-sm">₹</span>
+                            <input
+                              type="number"
+                              min="0"
+                              step="1"
+                              inputMode="numeric"
+                              value={priceDrafts[service.id] ?? ""}
+                              onChange={(event) => setPriceDrafts((current) => ({ ...current, [service.id]: event.target.value }))}
+                              placeholder="Not set"
+                              className="w-24 h-9 rounded-lg border border-slate-300 px-2 text-sm text-right focus:outline-none focus:ring-2 focus:ring-amber-300"
+                              aria-label={`Price for ${service.name}`}
+                            />
+                            <Button size="sm" onClick={() => saveServicePrice(service.id)} className="h-9 bg-primary hover:bg-primary/90">
+                              Save
+                            </Button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </section>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+
         {/* ── Updates Tab ── */}
         {activeTab === "updates" && (
           <AdminAnnouncements token={token} />
@@ -707,6 +851,54 @@ function StatCard({
       </div>
     </div>
   );
+}
+
+function ApplicationDetails({ raw, price }: { raw?: string; price?: number }) {
+  let details: Record<string, unknown> = {};
+  try {
+    const parsed = raw ? JSON.parse(raw) : {};
+    if (parsed && typeof parsed === "object" && !Array.isArray(parsed)) {
+      details = parsed as Record<string, unknown>;
+    }
+  } catch {
+    return <p className="text-sm text-slate-500">The submitted details could not be read.</p>;
+  }
+
+  const entries = Object.entries(details).filter(([, value]) => value !== undefined && value !== "");
+  if (!entries.length) {
+    return <p className="text-sm text-slate-500">No service-specific details were submitted.</p>;
+  }
+
+  return (
+    <>
+      <div className="mb-4 rounded-lg bg-amber-50 border border-amber-200 px-3 py-2.5 flex items-center justify-between">
+        <span className="text-xs font-bold uppercase tracking-wider text-amber-800">Internal price for callback</span>
+        <span className="text-lg font-extrabold text-amber-900">{price === undefined ? "Not set" : `₹${price.toLocaleString("en-IN")}`}</span>
+      </div>
+      <dl className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-3">
+      {entries.map(([key, value]) => (
+        <div key={key}>
+          <dt className="text-[11px] font-bold uppercase tracking-wider text-slate-400">{humanizeDetailKey(key)}</dt>
+          <dd className="text-sm text-slate-800 mt-0.5 whitespace-pre-wrap break-words">{formatDetailValue(value)}</dd>
+        </div>
+      ))}
+      </dl>
+    </>
+  );
+}
+
+function humanizeDetailKey(key: string) {
+  return key
+    .replace(/([A-Z])/g, " $1")
+    .replace(/_/g, " ")
+    .replace(/^./, (value) => value.toUpperCase());
+}
+
+function formatDetailValue(value: unknown) {
+  if (Array.isArray(value)) return value.join(", ");
+  if (typeof value === "boolean") return value ? "Yes" : "No";
+  if (value === null || value === undefined || value === "") return "—";
+  return String(value);
 }
 
 const PAGE_LABELS: Record<string, string> = {

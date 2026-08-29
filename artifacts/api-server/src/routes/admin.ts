@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { db, usersTable, applicationsTable, visitorsTable, leadsTable } from "@workspace/db";
+import { db, usersTable, applicationsTable, visitorsTable, leadsTable, servicePricesTable } from "@workspace/db";
 import { eq, desc, count, sql } from "drizzle-orm";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
@@ -82,6 +82,7 @@ router.get("/admin/dashboard", requireAuth, async (req, res) => {
         message: a.message,
         status: a.status,
         callbackRequested: a.callbackRequested,
+        details: a.serviceDetails,
         createdAt: a.createdAt.toISOString(),
       })),
       applicationsByService: byService.map((s) => ({
@@ -94,6 +95,62 @@ router.get("/admin/dashboard", requireAuth, async (req, res) => {
   } catch (err) {
     req.log.error({ err }, "Failed to get dashboard stats");
     res.status(500).json({ error: "Failed to get dashboard stats" });
+  }
+});
+
+// GET /admin/pricing - Read service prices (admin only)
+router.get("/admin/pricing", requireAuth, async (_req, res) => {
+  try {
+    const prices = await db
+      .select({
+        service: servicePricesTable.service,
+        price: servicePricesTable.price,
+        updatedAt: servicePricesTable.updatedAt,
+      })
+      .from(servicePricesTable)
+      .orderBy(servicePricesTable.service);
+
+    res.json({
+      prices: prices.map((item) => ({
+        service: item.service,
+        price: item.price,
+        updatedAt: item.updatedAt.toISOString(),
+      })),
+    });
+  } catch (err) {
+    _req.log.error({ err }, "Failed to get service pricing");
+    res.status(500).json({ error: "Failed to get service pricing" });
+  }
+});
+
+// PUT /admin/pricing/:service - Set a service price (admin only)
+router.put("/admin/pricing/:service", requireAuth, async (req, res) => {
+  const service = decodeURIComponent(String(req.params.service ?? "")).trim();
+  const price = Number(req.body?.price);
+
+  if (!service || !Number.isInteger(price) || price < 0 || price > 100000000) {
+    res.status(400).json({ error: "Service and a valid non-negative price are required" });
+    return;
+  }
+
+  try {
+    const [saved] = await db
+      .insert(servicePricesTable)
+      .values({ service, price })
+      .onConflictDoUpdate({
+        target: servicePricesTable.service,
+        set: { price, updatedAt: new Date() },
+      })
+      .returning();
+
+    res.json({
+      service: saved.service,
+      price: saved.price,
+      updatedAt: saved.updatedAt.toISOString(),
+    });
+  } catch (err) {
+    req.log.error({ err }, "Failed to save service price");
+    res.status(500).json({ error: "Failed to save service price" });
   }
 });
 
