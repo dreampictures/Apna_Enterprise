@@ -56,7 +56,12 @@ export default function Apply() {
     z.object({
       name: z.string().min(2, t.apply_val_name).max(100),
       phone: z.string().min(10, t.apply_val_phone).max(15),
-      email: z.string().email(t.apply_val_email),
+      email: z
+        .string()
+        .trim()
+        .email(t.apply_val_email)
+        .optional()
+        .or(z.literal("")),
       service: z.enum(ALL_SERVICE_IDS, { required_error: t.apply_val_service }),
       details: z.record(z.unknown()).default({}),
       message: z.string().max(1000).optional(),
@@ -111,7 +116,7 @@ export default function Apply() {
         data: {
           name: values.name,
           phone: values.phone,
-          email: values.email,
+          email: values.email || undefined,
           service: values.service,
            details: JSON.stringify(values.details ?? {}),
           message: values.message || undefined,
