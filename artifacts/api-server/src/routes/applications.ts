@@ -29,9 +29,24 @@ function payuPaymentUrl(): string {
 
 function publicAppUrl(req: any): string {
   if (process.env.PUBLIC_APP_URL) return process.env.PUBLIC_APP_URL.replace(/\/$/, "");
-  const forwardedProto = String(req.headers["x-forwarded-proto"] ?? "").split(",")[0];
-  const protocol = forwardedProto || req.protocol || "https";
-  return `${protocol}://${req.get("host")}`;
+
+  const forwardedProto = String(req.headers["x-forwarded-proto"] ?? "").split(",")[0].trim();
+  const forwardedHost = String(req.headers["x-forwarded-host"] ?? "").split(",")[0].trim();
+  let host = forwardedHost || String(req.get("host") ?? "").trim();
+
+  // The development frontend proxies /api to localhost. PayU cannot call a
+  // localhost callback, so use Replit's public dev domain when the request
+  // host is only an internal/local address.
+  const isLocalHost = /^(localhost|127(?:\.\d{1,3}){3}|0\.0\.0\.0|\[?::1\]?)(:\d+)?$/i.test(host);
+  if (isLocalHost) {
+    host =
+      process.env.REPLIT_DEV_DOMAIN ||
+      String(process.env.REPLIT_DOMAINS ?? "").split(",")[0].trim() ||
+      host;
+  }
+
+  const protocol = forwardedProto || (isLocalHost ? "https" : req.protocol || "https");
+  return `${protocol}://${host}`;
 }
 
 function payuHash(values: string[]): string {
