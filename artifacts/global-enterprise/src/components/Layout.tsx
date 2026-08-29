@@ -8,7 +8,7 @@ import { useT } from "@/i18n";
 
 const GOLD = "#D4A017";
 const GOLD_LIGHT = "#F2C14E";
-const APP_VERSION = "1.0.0";
+const APP_VERSION = "1.0.2";
 
 export default function Layout({ children }: { children: React.ReactNode }) {
   const [location] = useLocation();
