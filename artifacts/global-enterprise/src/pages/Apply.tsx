@@ -33,10 +33,20 @@ type PaymentInfo = {
   action: string;
   fields: Record<string, string>;
   amount: number;
+  baseAmount: number;
+  gatewayFee: number;
+  gatewayFeeGst: number;
 };
 
 const isValidService = (s: string | null): s is FormValues["service"] =>
   !!s && (ALL_SERVICE_IDS as readonly string[]).includes(s);
+
+function formatCurrency(amount: number): string {
+  return `₹${amount.toLocaleString("en-IN", {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  })}`;
+}
 
 export default function Apply() {
   const search = useSearch();
@@ -168,9 +178,21 @@ export default function Apply() {
               <div className="flex justify-between text-sm text-slate-600 mb-2">
                 <span>{t.apply_payment_service}</span><strong className="text-slate-900">{submittedService}</strong>
               </div>
-              <div className="flex justify-between items-center pt-2 border-t border-amber-200">
+              <div className="flex justify-between text-sm text-slate-600 pt-3">
+                <span>{t.apply_payment_base_amount}</span>
+                <span>{formatCurrency(paymentInfo.baseAmount)}</span>
+              </div>
+              <div className="flex justify-between text-sm text-slate-600 pt-2">
+                <span>{t.apply_payment_gateway_fee}</span>
+                <span>{formatCurrency(paymentInfo.gatewayFee)}</span>
+              </div>
+              <div className="flex justify-between text-sm text-slate-600 pt-2 pb-3">
+                <span>{t.apply_payment_gateway_gst}</span>
+                <span>{formatCurrency(paymentInfo.gatewayFeeGst)}</span>
+              </div>
+              <div className="flex justify-between items-center pt-3 border-t border-amber-200">
                 <span className="font-semibold text-slate-700">{t.apply_payment_amount}</span>
-                <strong className="text-xl" style={{ color: GOLD }}>₹{paymentInfo.amount.toLocaleString("en-IN")}</strong>
+                <strong className="text-xl" style={{ color: GOLD }}>{formatCurrency(paymentInfo.amount)}</strong>
               </div>
             </div>
             <form action={paymentInfo.action} method="POST" onSubmit={submitPayU}>

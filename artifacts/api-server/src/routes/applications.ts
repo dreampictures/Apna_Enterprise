@@ -53,6 +53,27 @@ function payuHash(values: string[]): string {
   return createHash("sha512").update(values.join("|")).digest("hex");
 }
 
+const PAYU_EMPTY_UDFS = ["", "", ""] as const;
+const PAYU_EMPTY_SPLIT_PAYMENT_FIELDS = ["", "", "", "", ""] as const;
+const PAYMENT_GATEWAY_FEE_RATE = 0.02;
+const PAYMENT_GATEWAY_GST_RATE = 0.18;
+
+function roundCurrency(amount: number): number {
+  return Math.round((amount + Number.EPSILON) * 100) / 100;
+}
+
+function calculatePaymentBreakdown(baseAmount: number) {
+  const gatewayFee = roundCurrency(baseAmount * PAYMENT_GATEWAY_FEE_RATE);
+  const gatewayFeeGst = roundCurrency(gatewayFee * PAYMENT_GATEWAY_GST_RATE);
+
+  return {
+    baseAmount,
+    gatewayFee,
+    gatewayFeeGst,
+    amount: roundCurrency(baseAmount + gatewayFee + gatewayFeeGst),
+  };
+}
+
 function createPayUHash({
   key,
   txnid,
@@ -73,12 +94,11 @@ function createPayUHash({
   applicationId: number;
 }) {
   // PayU's hosted checkout hash includes udf1-udf5 followed by the
-  // five optional split-payment fields. udf1/udf2 are echoed back to
-  // identify this application.
+  // five optional split-payment fields. udf1/udf2 identify this application.
   return payuHash([
     key, txnid, amount, productinfo, firstname, email,
-    trackingNumber, String(applicationId), "", "", "",
-    "", "", "", "", "", process.env.PAYU_MERCHANT_SALT!,
+    trackingNumber, String(applicationId), ...PAYU_EMPTY_UDFS,
+    ...PAYU_EMPTY_SPLIT_PAYMENT_FIELDS, process.env.PAYU_MERCHANT_SALT!,
   ]);
 }
 
@@ -102,7 +122,9 @@ router.post("/applications", async (req, res) => {
     .from(servicePricesTable)
     .where(eq(servicePricesTable.service, service))
     .limit(1);
-  const paymentAmount = configuredPrice?.price ?? 0;
+  const baseAmount = configuredPrice?.price ?? 0;
+  const paymentBreakdown = calculatePaymentBreakdown(baseAmount);
+  const paymentAmount = paymentBreakdown.amount;
 
   if (paymentAmount > 0 && (!process.env.PAYU_MERCHANT_KEY || !process.env.PAYU_MERCHANT_SALT)) {
     res.status(503).json({ error: "Payment gateway is not configured. Please contact the office." });
@@ -183,9 +205,12 @@ router.post("/applications", async (req, res) => {
           .update(applicationsTable)
           .set({ paymentTxnId: txnid })
           .where(eq(applicationsTable.id, app.id));
-        response.payment = { required: true, action, fields, amount: paymentAmount };
+        response.payment = { required: true, action, fields, ...paymentBreakdown };
       } else {
-        response.payment = { required: false, amount: 0 };
+        response.payment = {
+          required: false,
+          ...calculatePaymentBreakdown(0),
+        };
       }
 
       res.status(201).json(response);
@@ -220,7 +245,7 @@ async function handlePayUResponse(req: any, res: any, success: boolean) {
     const reverseHash = payuHash([
       process.env.PAYU_MERCHANT_SALT,
       status,
-      "", "", "", "", "", "", "", "", "",
+      ...PAYU_EMPTY_SPLIT_PAYMENT_FIELDS,
       String(payload.udf5 ?? ""),
       String(payload.udf4 ?? ""),
       String(payload.udf3 ?? ""),
