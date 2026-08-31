@@ -8,3 +8,9 @@ When deploying this workspace to Fly.io, prefer the classic remote builder with 
 **Why:** The application image can build successfully while the pooled builder's registry handshake fails; switching builders resolves the push without changing application configuration or runtime secrets.
 
 **How to apply:** Keep the existing `fly.toml` and Dockerfile unchanged, and use the builder flag only for the deploy command. Do not work around the error by modifying Fly app secrets.
+
+Use `flyctl` for Fly.io commands in this workspace; the installed `fly` binary may be the unrelated Concourse CLI and does not support Fly application flags.
+
+**Why:** Calling `fly` can fail before deployment with unknown `--app`/`-a` flags even though the correct Fly.io CLI is installed.
+
+**How to apply:** Run status, deploy, secrets, and logs through `flyctl`, with the existing Fly API token available to the command environment.

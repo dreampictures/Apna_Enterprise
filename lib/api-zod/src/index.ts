@@ -1,2 +1,23 @@
 export * from "./generated/api";
-export * from "./generated/types";
+export type {
+  AdminLoginBody as AdminLoginBodyType,
+  AdminLoginResponse as AdminLoginResponseType,
+  Application,
+  ApplicationCreateResponse,
+  ApplicationListResponse,
+  ApplicationPayment,
+  CreateApplicationBody as CreateApplicationBodyType,
+  CreateApplicationBodyService,
+  DashboardStats,
+  ErrorResponse,
+  ExportApplicationsCsvParams,
+  HealthStatus,
+  ListApplicationsParams,
+  PayUPaymentFields,
+  ServiceCount,
+  ServicePrice,
+  ServicePriceList,
+  SetServicePriceBody as SetServicePriceBodyType,
+  TrackApplicationResponse as TrackApplicationResponseType,
+  VisitorCount,
+} from "./generated/types";

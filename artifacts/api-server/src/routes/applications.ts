@@ -21,17 +21,57 @@ function generateTrackingNumber(): string {
   return `AE${yy}${mm}${dd}${rand}`;
 }
 
-const PAYU_PAYMENT_URL = "https://secure.payu.in/_payment";
+function payuPaymentUrl(): string {
+  return process.env.PAYU_ENV === "test"
+    ? "https://test.payu.in/_payment"
+    : "https://secure.payu.in/_payment";
+}
 
 function publicAppUrl(req: any): string {
   if (process.env.PUBLIC_APP_URL) return process.env.PUBLIC_APP_URL.replace(/\/$/, "");
-  const forwardedProto = String(req.headers["x-forwarded-proto"] ?? "").split(",")[0];
-  const protocol = forwardedProto || req.protocol || "https";
-  return `${protocol}://${req.get("host")}`;
+
+  const forwardedProto = String(req.headers["x-forwarded-proto"] ?? "").split(",")[0].trim();
+  const forwardedHost = String(req.headers["x-forwarded-host"] ?? "").split(",")[0].trim();
+  let host = forwardedHost || String(req.get("host") ?? "").trim();
+
+  // The development frontend proxies /api to localhost. PayU cannot call a
+  // localhost callback, so use Replit's public dev domain when the request
+  // host is only an internal/local address.
+  const isLocalHost = /^(localhost|127(?:\.\d{1,3}){3}|0\.0\.0\.0|\[?::1\]?)(:\d+)?$/i.test(host);
+  if (isLocalHost) {
+    host =
+      process.env.REPLIT_DEV_DOMAIN ||
+      String(process.env.REPLIT_DOMAINS ?? "").split(",")[0].trim() ||
+      host;
+  }
+
+  const protocol = forwardedProto || (isLocalHost ? "https" : req.protocol || "https");
+  return `${protocol}://${host}`;
 }
 
 function payuHash(values: string[]): string {
   return createHash("sha512").update(values.join("|")).digest("hex");
+}
+
+const PAYU_EMPTY_UDFS = ["", "", ""] as const;
+const PAYU_EMPTY_SPLIT_PAYMENT_FIELDS = ["", "", "", "", ""] as const;
+const PAYMENT_GATEWAY_FEE_RATE = 0.02;
+const PAYMENT_GATEWAY_GST_RATE = 0.18;
+
+function roundCurrency(amount: number): number {
+  return Math.round((amount + Number.EPSILON) * 100) / 100;
+}
+
+function calculatePaymentBreakdown(baseAmount: number) {
+  const gatewayFee = roundCurrency(baseAmount * PAYMENT_GATEWAY_FEE_RATE);
+  const gatewayFeeGst = roundCurrency(gatewayFee * PAYMENT_GATEWAY_GST_RATE);
+
+  return {
+    baseAmount,
+    gatewayFee,
+    gatewayFeeGst,
+    amount: roundCurrency(baseAmount + gatewayFee + gatewayFeeGst),
+  };
 }
 
 function createPayUHash({
@@ -42,6 +82,7 @@ function createPayUHash({
   firstname,
   email,
   trackingNumber,
+  applicationId,
 }: {
   key: string;
   txnid: string;
@@ -50,13 +91,14 @@ function createPayUHash({
   firstname: string;
   email: string;
   trackingNumber: string;
+  applicationId: number;
 }) {
-  // PayU's request hash contains udf1-udf5 followed by the five optional
-  // split-payment fields, all of which are blank for this checkout.
+  // PayU's hosted checkout hash includes udf1-udf5 followed by the
+  // five optional split-payment fields. udf1/udf2 identify this application.
   return payuHash([
     key, txnid, amount, productinfo, firstname, email,
-    trackingNumber, "", "", "", "",
-    "", "", "", "", "", process.env.PAYU_MERCHANT_SALT!,
+    trackingNumber, String(applicationId), ...PAYU_EMPTY_UDFS,
+    ...PAYU_EMPTY_SPLIT_PAYMENT_FIELDS, process.env.PAYU_MERCHANT_SALT!,
   ]);
 }
 
@@ -80,7 +122,9 @@ router.post("/applications", async (req, res) => {
     .from(servicePricesTable)
     .where(eq(servicePricesTable.service, service))
     .limit(1);
-  const paymentAmount = configuredPrice?.price ?? 0;
+  const baseAmount = configuredPrice?.price ?? 0;
+  const paymentBreakdown = calculatePaymentBreakdown(baseAmount);
+  const paymentAmount = paymentBreakdown.amount;
 
   if (paymentAmount > 0 && (!process.env.PAYU_MERCHANT_KEY || !process.env.PAYU_MERCHANT_SALT)) {
     res.status(503).json({ error: "Payment gateway is not configured. Please contact the office." });
@@ -129,7 +173,7 @@ router.post("/applications", async (req, res) => {
         const txnid = `AE${Date.now()}${app.id}`;
         const amount = paymentAmount.toFixed(2);
         const productinfo = `${service} application`;
-        const action = PAYU_PAYMENT_URL;
+        const action = payuPaymentUrl();
         const appUrl = publicAppUrl(req);
         const fields = {
           key,
@@ -146,15 +190,27 @@ router.post("/applications", async (req, res) => {
           udf5: "",
           surl: `${appUrl}/api/payments/payu/success`,
           furl: `${appUrl}/api/payments/payu/failure`,
-          hash: createPayUHash({ key, txnid, amount, productinfo, firstname: name, email: email!, trackingNumber: app.trackingNumber }),
+           hash: createPayUHash({
+             key,
+             txnid,
+             amount,
+             productinfo,
+             firstname: name,
+             email: email!,
+             trackingNumber: app.trackingNumber,
+             applicationId: app.id,
+           }),
         };
         await db
           .update(applicationsTable)
           .set({ paymentTxnId: txnid })
           .where(eq(applicationsTable.id, app.id));
-        response.payment = { required: true, action, fields, amount: paymentAmount };
+        response.payment = { required: true, action, fields, ...paymentBreakdown };
       } else {
-        response.payment = { required: false, amount: 0 };
+        response.payment = {
+          required: false,
+          ...calculatePaymentBreakdown(0),
+        };
       }
 
       res.status(201).json(response);
@@ -189,7 +245,7 @@ async function handlePayUResponse(req: any, res: any, success: boolean) {
     const reverseHash = payuHash([
       process.env.PAYU_MERCHANT_SALT,
       status,
-      "", "", "", "", "", "", "", "", "",
+      ...PAYU_EMPTY_SPLIT_PAYMENT_FIELDS,
       String(payload.udf5 ?? ""),
       String(payload.udf4 ?? ""),
       String(payload.udf3 ?? ""),

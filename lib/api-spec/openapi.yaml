@@ -392,7 +392,8 @@ components:
         paymentStatus:
           type: string
         paymentAmount:
-          type: integer
+          type: number
+          format: double
           nullable: true
         details:
           type: string
@@ -428,10 +429,23 @@ components:
         fields:
           $ref: "#/components/schemas/PayUPaymentFields"
         amount:
-          type: integer
+          type: number
+          format: double
+        baseAmount:
+          type: number
+          format: double
+        gatewayFee:
+          type: number
+          format: double
+        gatewayFeeGst:
+          type: number
+          format: double
       required:
         - required
         - amount
+        - baseAmount
+        - gatewayFee
+        - gatewayFeeGst
 
     ApplicationCreateResponse:
       allOf:

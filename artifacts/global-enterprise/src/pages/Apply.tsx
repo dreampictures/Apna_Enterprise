@@ -33,10 +33,20 @@ type PaymentInfo = {
   action: string;
   fields: Record<string, string>;
   amount: number;
+  baseAmount: number;
+  gatewayFee: number;
+  gatewayFeeGst: number;
 };
 
 const isValidService = (s: string | null): s is FormValues["service"] =>
   !!s && (ALL_SERVICE_IDS as readonly string[]).includes(s);
+
+function formatCurrency(amount: number): string {
+  return `₹${amount.toLocaleString("en-IN", {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  })}`;
+}
 
 export default function Apply() {
   const search = useSearch();
@@ -50,6 +60,7 @@ export default function Apply() {
   const [copied, setCopied] = useState(false);
   const [paymentInfo, setPaymentInfo] = useState<PaymentInfo | null>(null);
   const [paymentFailed, setPaymentFailed] = useState(params.get("payment") === "failed");
+  const [paymentSubmitting, setPaymentSubmitting] = useState(false);
   const createApplication = useCreateApplication();
 
   const formSchema = useMemo(() =>
@@ -145,6 +156,13 @@ export default function Apply() {
     });
   }
 
+  function submitPayU(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    if (paymentSubmitting) return;
+    setPaymentSubmitting(true);
+    event.currentTarget.submit();
+  }
+
   if (paymentInfo) {
     return (
       <div className="flex flex-col min-h-full">
@@ -165,17 +183,29 @@ export default function Apply() {
               <div className="flex justify-between text-sm text-slate-600 mb-2">
                 <span>{t.apply_payment_service}</span><strong className="text-slate-900">{submittedService}</strong>
               </div>
-              <div className="flex justify-between items-center pt-2 border-t border-amber-200">
+              <div className="flex justify-between text-sm text-slate-600 pt-3">
+                <span>{t.apply_payment_base_amount}</span>
+                <span>{formatCurrency(paymentInfo.baseAmount)}</span>
+              </div>
+              <div className="flex justify-between text-sm text-slate-600 pt-2">
+                <span>{t.apply_payment_gateway_fee}</span>
+                <span>{formatCurrency(paymentInfo.gatewayFee)}</span>
+              </div>
+              <div className="flex justify-between text-sm text-slate-600 pt-2 pb-3">
+                <span>{t.apply_payment_gateway_gst}</span>
+                <span>{formatCurrency(paymentInfo.gatewayFeeGst)}</span>
+              </div>
+              <div className="flex justify-between items-center pt-3 border-t border-amber-200">
                 <span className="font-semibold text-slate-700">{t.apply_payment_amount}</span>
-                <strong className="text-xl" style={{ color: GOLD }}>₹{paymentInfo.amount.toLocaleString("en-IN")}</strong>
+                <strong className="text-xl" style={{ color: GOLD }}>{formatCurrency(paymentInfo.amount)}</strong>
               </div>
             </div>
-            <form action={paymentInfo.action} method="POST">
+            <form action={paymentInfo.action} method="POST" onSubmit={submitPayU}>
               {Object.entries(paymentInfo.fields).map(([key, value]) => (
                 <input key={key} type="hidden" name={key} value={value} />
               ))}
-              <button type="submit" className="btn-gold w-full h-12 rounded-xl font-bold text-base inline-flex items-center justify-center gap-2">
-                <FaCreditCard /> {t.apply_pay_now}
+              <button type="submit" disabled={paymentSubmitting} className="btn-gold w-full h-12 rounded-xl font-bold text-base inline-flex items-center justify-center gap-2 disabled:opacity-60">
+                <FaCreditCard /> {paymentSubmitting ? "Opening secure payment…" : t.apply_pay_now}
               </button>
             </form>
             <p className="text-xs text-slate-500 mt-4">{t.apply_payment_secure}</p>

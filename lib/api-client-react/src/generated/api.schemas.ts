@@ -100,6 +100,9 @@ export interface ApplicationPayment {
   action?: string;
   fields?: PayUPaymentFields;
   amount: number;
+  baseAmount: number;
+  gatewayFee: number;
+  gatewayFeeGst: number;
 }
 
 export type ApplicationCreateResponse = Application & {

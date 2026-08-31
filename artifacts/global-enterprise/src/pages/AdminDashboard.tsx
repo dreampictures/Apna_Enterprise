@@ -359,7 +359,7 @@ export default function AdminDashboard() {
 
         {/* Tab Navigation */}
         <div className="flex gap-1 mb-6 bg-white rounded-xl p-1 shadow-sm border border-slate-100 w-fit flex-wrap">
-          {(["applications", "leads", "analytics", "updates"] as Tab[]).map((tab) => (
+          {(["applications", "leads", "analytics", "pricing", "updates"] as Tab[]).map((tab) => (
             <button
               key={tab}
               onClick={() => setActiveTab(tab)}

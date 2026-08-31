@@ -28,7 +28,10 @@ export async function ensureSchema() {
        ALTER TABLE applications ADD COLUMN IF NOT EXISTS email TEXT;
        ALTER TABLE applications ADD COLUMN IF NOT EXISTS payment_status TEXT NOT NULL DEFAULT 'not_required';
        ALTER TABLE applications ADD COLUMN IF NOT EXISTS payment_txn_id TEXT;
-       ALTER TABLE applications ADD COLUMN IF NOT EXISTS payment_amount INTEGER;
+       ALTER TABLE applications ADD COLUMN IF NOT EXISTS payment_amount NUMERIC(12, 2);
+       ALTER TABLE applications
+         ALTER COLUMN payment_amount TYPE NUMERIC(12, 2)
+         USING payment_amount::numeric;
        ALTER TABLE applications ADD COLUMN IF NOT EXISTS paid_at TIMESTAMP;
        CREATE UNIQUE INDEX IF NOT EXISTS applications_payment_txn_id_unique_idx
          ON applications (payment_txn_id) WHERE payment_txn_id IS NOT NULL;

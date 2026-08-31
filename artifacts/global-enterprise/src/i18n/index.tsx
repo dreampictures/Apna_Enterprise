@@ -104,6 +104,9 @@ export interface Translations {
   apply_payment_heading: string;
   apply_payment_desc: string;
   apply_payment_service: string;
+  apply_payment_base_amount: string;
+  apply_payment_gateway_fee: string;
+  apply_payment_gateway_gst: string;
   apply_payment_amount: string;
   apply_pay_now: string;
   apply_payment_secure: string;
@@ -296,8 +299,11 @@ const en: Translations = {
   apply_val_service: "Please select a service",
   apply_payment_title: "Secure Payment",
   apply_payment_heading: "Complete Your Payment",
-  apply_payment_desc: "Your application is saved. Continue to PayU to securely pay the service fee.",
+  apply_payment_desc: "Your application is saved. Continue to PayU to securely pay the service fee. The payment gateway fee and GST are shown below.",
   apply_payment_service: "Service",
+  apply_payment_base_amount: "Service price",
+  apply_payment_gateway_fee: "Payment gateway fee (2%)",
+  apply_payment_gateway_gst: "GST on gateway fee (18%)",
   apply_payment_amount: "Amount to pay",
   apply_pay_now: "Pay Securely with PayU",
   apply_payment_secure: "You will be redirected to PayU's secure payment page.",
@@ -459,6 +465,8 @@ const pa: Translations = {
   apply_name_placeholder: "ਆਪਣਾ ਪੂਰਾ ਨਾਮ ਦਾਖਲ ਕਰੋ",
   apply_phone: "ਫ਼ੋਨ ਨੰਬਰ",
   apply_phone_placeholder: "+91 98765 43210",
+  apply_email: "ਈਮੇਲ ਪਤਾ",
+  apply_email_placeholder: "ਆਪਣਾ ਈਮੇਲ ਪਤਾ ਦਾਖਲ ਕਰੋ",
   apply_service: "ਸੇਵਾ ਦੀ ਕਿਸਮ",
   apply_service_placeholder: "ਸੇਵਾ ਚੁਣੋ",
   apply_message: "ਸੁਨੇਹਾ (ਵਿਕਲਪਿਕ)",
@@ -479,7 +487,19 @@ const pa: Translations = {
   apply_tracking_note: "ਇਸ ਨੰਬਰ ਨਾਲ ਆਪਣੀ ਅਰਜ਼ੀ ਟ੍ਰੈਕ ਕਰ ਸਕਦੇ ਹੋ।",
   apply_val_name: "ਨਾਮ ਘੱਟੋ-ਘੱਟ 2 ਅੱਖਰਾਂ ਦਾ ਹੋਣਾ ਚਾਹੀਦਾ ਹੈ",
   apply_val_phone: "ਸਹੀ ਫ਼ੋਨ ਨੰਬਰ ਦਾਖਲ ਕਰੋ",
+  apply_val_email: "ਸਹੀ ਈਮੇਲ ਪਤਾ ਦਾਖਲ ਕਰੋ",
   apply_val_service: "ਕਿਰਪਾ ਕਰਕੇ ਸੇਵਾ ਚੁਣੋ",
+  apply_payment_title: "ਸੁਰੱਖਿਅਤ ਭੁਗਤਾਨ",
+  apply_payment_heading: "ਆਪਣਾ ਭੁਗਤਾਨ ਪੂਰਾ ਕਰੋ",
+  apply_payment_desc: "ਤੁਹਾਡੀ ਅਰਜ਼ੀ ਸੁਰੱਖਿਅਤ ਹੈ। ਸੇਵਾ ਫੀਸ ਦਾ ਭੁਗਤਾਨ ਕਰਨ ਲਈ PayU 'ਤੇ ਜਾਰੀ ਰੱਖੋ। ਹੇਠਾਂ ਗੇਟਵੇ ਫੀਸ ਅਤੇ GST ਸਪਸ਼ਟ ਦਿਖਾਏ ਗਏ ਹਨ।",
+  apply_payment_service: "ਸੇਵਾ",
+  apply_payment_base_amount: "ਸੇਵਾ ਦੀ ਕੀਮਤ",
+  apply_payment_gateway_fee: "ਭੁਗਤਾਨ ਗੇਟਵੇ ਫੀਸ (2%)",
+  apply_payment_gateway_gst: "ਗੇਟਵੇ ਫੀਸ ਉੱਤੇ GST (18%)",
+  apply_payment_amount: "ਭੁਗਤਾਨ ਰਕਮ",
+  apply_pay_now: "PayU ਨਾਲ ਸੁਰੱਖਿਅਤ ਭੁਗਤਾਨ ਕਰੋ",
+  apply_payment_secure: "ਤੁਹਾਨੂੰ PayU ਦੇ ਸੁਰੱਖਿਅਤ ਭੁਗਤਾਨ ਪੰਨੇ 'ਤੇ ਭੇਜਿਆ ਜਾਵੇਗਾ।",
+  apply_payment_failed: "ਭੁਗਤਾਨ ਪੂਰਾ ਨਹੀਂ ਹੋਇਆ। ਦੁਬਾਰਾ ਕੋਸ਼ਿਸ਼ ਕਰੋ ਜਾਂ ਸਾਡੇ ਦਫ਼ਤਰ ਨਾਲ ਸੰਪਰਕ ਕਰੋ।",
 
   track_title: "ਅਰਜ਼ੀ ਟ੍ਰੈਕ ਕਰੋ",
   track_subtitle: "ਆਪਣੀ ਅਰਜ਼ੀ ਦੀ ਸਥਿਤੀ ਜਾਣਨ ਲਈ ਟ੍ਰੈਕਿੰਗ ਨੰਬਰ ਦਾਖਲ ਕਰੋ।",

@@ -1,4 +1,4 @@
-import { pgTable, serial, text, timestamp, integer, boolean } from "drizzle-orm/pg-core";
+import { pgTable, serial, text, timestamp, integer, boolean, numeric } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod/v4";
 
@@ -25,7 +25,7 @@ export const applicationsTable = pgTable("applications", {
   callbackRequested: boolean("callback_requested").default(false).notNull(),
   paymentStatus: text("payment_status").default("not_required").notNull(),
   paymentTxnId: text("payment_txn_id").unique(),
-  paymentAmount: integer("payment_amount"),
+  paymentAmount: numeric("payment_amount", { precision: 12, scale: 2, mode: "number" }),
   paidAt: timestamp("paid_at"),
   documentUrl: text("document_url"),
   documentKey: text("document_key"),
