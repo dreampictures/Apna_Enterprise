@@ -1,0 +1,49 @@
+MID | Settlement Active | Integration Kit
+Inbox
+
+PayU <integration@payu.in>
+10:11 AM (2 hours ago)
+to me
+
+Dear Valued Merchant,
+
+Thank you for choosing PayU for your payment processing needs! We're excited to help you integrate our payment gateway.
+
+You can refer to our integration docs and download the compatible sample integration kits from the links given below:
+
+Demo link for payment flows: PayU Integration Lab
+
+Integration docs & kits:
+
+PayU Hosted Checkout (Non-Seamless)
+E-Commerce Plugins
+S2S Cards Integration
+S2S UPI Checkout
+Payment Links
+Webhook / Callback API
+Low Code Web SDKs
+Test Payment Details (cards, UPI, wallets)
+VS Code & IntelliJ extensions
+Test Credentials:
+Accessing Test Merchant Key & Salt: Test Credentials
+
+In case of any issue, please help us with the error screenshot / test website link / problem description, confirmation on the platform/technology/plugin along with version used in your website and mail to integration@payu.in.
+
+We would be happy to assist you!!
+
+Thanks and Regards,
+Integration Team | PayU India
+
+Security-Implementation: (Specific to PayU India Integration)
+The hash (or checksum) must be computed again after you receive a response from PayU and compare it with request and postback parameters. This will protect you from any tampering by the user and help in ensuring a safe and secure transaction experience.
+
+Reversed Hash Logic: Reverse Hash Logic
+
+You must secure your integration with PayU by implementing Verify webservice and Webhook/callback as a secondary confirmation of transaction response. The detailed integration process of Verify web service and webhook can be found further in this document:
+
+Verify Payment - Verify Payment API
+
+Web-hook - Webhook API
+
+Please note that PayU will not be responsible for any security breaches (including any data breaches) that may occur due to non-implementation of the aforesaid security features at your end or any loss or damage arising therefrom, you or any third party.
+
