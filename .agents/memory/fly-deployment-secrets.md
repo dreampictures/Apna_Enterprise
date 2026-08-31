@@ -12,7 +12,11 @@ Before deploying this application to Fly.io, verify that the Fly app has these s
 - `R2_BUCKET_NAME`
 - `R2_PUBLIC_URL`
 - `R2_SECRET_ACCESS_KEY`
+- `PAYU_ENV`
+- `PAYU_MERCHANT_KEY`
+- `PAYU_MERCHANT_SALT`
+- `PUBLIC_APP_URL`
 
-**Why:** The user confirmed these are set in the Fly.io app and wants them remembered for future deployments.
+**Why:** The application needs these values for storage, authentication, public callbacks, and hosted PayU checkout to work in production.
 
-**How to apply:** Check configuration by secret name only before a Fly deployment; never retrieve, print, or store the secret values.
+**How to apply:** Check configuration by secret name only before a Fly deployment; never retrieve, print, or store secret values. For Fly CLI operations, pass a secure `FLY_API_TOKEN` through the process environment rather than using interactive login.
