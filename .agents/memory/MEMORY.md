@@ -3,3 +3,4 @@
 - [Fly deployment builder](fly-deployment-builder.md) — use Fly’s classic remote builder when the pooled Depot path rejects registry pushes with 401.
 - [Fly deployment secrets](fly-deployment-secrets.md) — verify the documented database, JWT, and R2 secret names are configured before deploying.
 - [PayU hosted checkout](payu-checkout.md) — hash all sent UDF fields in order and guard against repeated checkout submissions.
+- [`.replit` validation](dot-replit-validation.md) — resolve merged config through the platform validator before staging workflow changes.
