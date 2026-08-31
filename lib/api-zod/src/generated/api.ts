@@ -105,6 +105,7 @@ export const ListApplicationsResponse = zod.object({
       callbackRequested: zod.boolean(),
       paymentStatus: zod.string().optional(),
       paymentAmount: zod.number().nullish(),
+      paidAt: zod.coerce.date().nullish(),
       details: zod
         .string()
         .max(listApplicationsResponseApplicationsItemDetailsMax)
@@ -113,6 +114,29 @@ export const ListApplicationsResponse = zod.object({
     }),
   ),
   total: zod.number(),
+});
+
+/**
+ * @summary Get a paid application receipt
+ */
+export const getApplicationReceiptPathTrackingNumberMax = 20;
+
+export const GetApplicationReceiptParams = zod.object({
+  trackingNumber: zod.coerce
+    .string()
+    .max(getApplicationReceiptPathTrackingNumberMax),
+});
+
+export const GetApplicationReceiptResponse = zod.object({
+  trackingNumber: zod.string(),
+  name: zod.string(),
+  phone: zod.string(),
+  email: zod.string().email().nullish(),
+  service: zod.string(),
+  paymentAmount: zod.number(),
+  paymentTxnId: zod.string(),
+  paidAt: zod.coerce.date(),
+  createdAt: zod.coerce.date(),
 });
 
 /**
@@ -131,7 +155,21 @@ export const TrackApplicationResponse = zod.object({
   service: zod.string(),
   status: zod.string(),
   callbackRequested: zod.boolean(),
+  paymentStatus: zod.string().optional(),
+  paymentAmount: zod.number().nullish(),
   createdAt: zod.coerce.date(),
+});
+
+/**
+ * @summary Delete an application (admin only)
+ */
+export const DeleteApplicationParams = zod.object({
+  id: zod.coerce.number(),
+});
+
+export const DeleteApplicationResponse = zod.object({
+  success: zod.boolean(),
+  id: zod.number(),
 });
 
 /**
@@ -174,6 +212,7 @@ export const GetDashboardStatsResponse = zod.object({
       callbackRequested: zod.boolean(),
       paymentStatus: zod.string().optional(),
       paymentAmount: zod.number().nullish(),
+      paidAt: zod.coerce.date().nullish(),
       details: zod
         .string()
         .max(getDashboardStatsResponseRecentApplicationsItemDetailsMax)

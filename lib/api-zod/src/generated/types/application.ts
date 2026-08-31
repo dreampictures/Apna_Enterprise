@@ -18,6 +18,7 @@ export interface Application {
   callbackRequested: boolean;
   paymentStatus?: string;
   paymentAmount?: number | null;
+  paidAt?: Date | null;
   /**
    * JSON-encoded service-specific application details
    * @maxLength 12000

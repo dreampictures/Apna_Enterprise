@@ -83,11 +83,24 @@ export interface Application {
   callbackRequested: boolean;
   paymentStatus?: string;
   paymentAmount?: number | null;
+  paidAt?: string | null;
   /**
    * JSON-encoded service-specific application details
    * @maxLength 12000
    */
   details: string;
+  createdAt: string;
+}
+
+export interface ApplicationReceipt {
+  trackingNumber: string;
+  name: string;
+  phone: string;
+  email?: string | null;
+  service: string;
+  paymentAmount: number;
+  paymentTxnId: string;
+  paidAt: string;
   createdAt: string;
 }
 
@@ -119,6 +132,8 @@ export interface TrackApplicationResponse {
   service: string;
   status: string;
   callbackRequested: boolean;
+  paymentStatus?: string;
+  paymentAmount?: number | null;
   createdAt: string;
 }
 
@@ -167,6 +182,11 @@ export type ListApplicationsParams = {
   service?: string;
   limit?: number;
   offset?: number;
+};
+
+export type DeleteApplication200 = {
+  success: boolean;
+  id: number;
 };
 
 export type ExportApplicationsCsvParams = {

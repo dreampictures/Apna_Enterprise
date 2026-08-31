@@ -92,6 +92,38 @@ paths:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
 
+  /applications/receipt/{trackingNumber}:
+    get:
+      operationId: getApplicationReceipt
+      tags: [applications]
+      summary: Get a paid application receipt
+      parameters:
+        - name: trackingNumber
+          in: path
+          required: true
+          schema:
+            type: string
+            maxLength: 20
+      responses:
+        "200":
+          description: Paid application receipt
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApplicationReceipt"
+        "404":
+          description: Application not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "409":
+          description: Payment receipt is not available
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
   /applications/track/{trackingNumber}:
     get:
       operationId: trackApplication
@@ -111,6 +143,45 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/TrackApplicationResponse"
+        "404":
+          description: Application not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /applications/{id}:
+    delete:
+      operationId: deleteApplication
+      tags: [applications]
+      summary: Delete an application (admin only)
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Application deleted
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  id:
+                    type: integer
+                required: [success, id]
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
         "404":
           description: Application not found
           content:
@@ -395,6 +466,10 @@ components:
           type: number
           format: double
           nullable: true
+        paidAt:
+          type: string
+          format: date-time
+          nullable: true
         details:
           type: string
           maxLength: 12000
@@ -411,6 +486,42 @@ components:
         - status
         - callbackRequested
         - details
+        - createdAt
+
+    ApplicationReceipt:
+      type: object
+      properties:
+        trackingNumber:
+          type: string
+        name:
+          type: string
+        phone:
+          type: string
+        email:
+          type: string
+          format: email
+          nullable: true
+        service:
+          type: string
+        paymentAmount:
+          type: number
+          format: double
+        paymentTxnId:
+          type: string
+        paidAt:
+          type: string
+          format: date-time
+        createdAt:
+          type: string
+          format: date-time
+      required:
+        - trackingNumber
+        - name
+        - phone
+        - service
+        - paymentAmount
+        - paymentTxnId
+        - paidAt
         - createdAt
 
     PayUPaymentFields:
@@ -479,6 +590,12 @@ components:
           type: string
         callbackRequested:
           type: boolean
+        paymentStatus:
+          type: string
+        paymentAmount:
+          type: number
+          format: double
+          nullable: true
         createdAt:
           type: string
           format: date-time

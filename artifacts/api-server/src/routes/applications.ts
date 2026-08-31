@@ -342,6 +342,48 @@ router.get("/applications/track/:trackingNumber", async (req, res) => {
   }
 });
 
+// GET /applications/receipt/:trackingNumber - Public paid receipt details
+router.get("/applications/receipt/:trackingNumber", async (req, res) => {
+  const trackingNumber = String(req.params.trackingNumber ?? "").trim().toUpperCase();
+  if (!trackingNumber || trackingNumber.length > 20) {
+    res.status(400).json({ error: "Invalid tracking number" });
+    return;
+  }
+
+  try {
+    const [app] = await db
+      .select()
+      .from(applicationsTable)
+      .where(eq(applicationsTable.trackingNumber, trackingNumber))
+      .limit(1);
+
+    if (!app) {
+      res.status(404).json({ error: "Application not found" });
+      return;
+    }
+
+    if (app.paymentStatus !== "paid" || !app.paidAt) {
+      res.status(409).json({ error: "Payment receipt is not available yet." });
+      return;
+    }
+
+    res.json({
+      trackingNumber: app.trackingNumber,
+      name: app.name,
+      phone: app.phone,
+      email: app.email,
+      service: app.service,
+      paymentAmount: app.paymentAmount ?? 0,
+      paymentTxnId: app.paymentTxnId ?? "",
+      paidAt: app.paidAt.toISOString(),
+      createdAt: app.createdAt.toISOString(),
+    });
+  } catch (err) {
+    req.log.error({ err }, "Failed to get payment receipt");
+    res.status(500).json({ error: "Failed to fetch payment receipt" });
+  }
+});
+
 // GET /applications - List all applications (admin only)
 router.get("/applications", requireAuth, async (req, res) => {
   const parsed = ListApplicationsQueryParams.safeParse(req.query);
@@ -375,6 +417,9 @@ router.get("/applications", requireAuth, async (req, res) => {
         message: a.message,
         status: a.status,
         callbackRequested: a.callbackRequested,
+        paymentStatus: a.paymentStatus,
+        paymentAmount: a.paymentAmount,
+        paidAt: a.paidAt?.toISOString() ?? null,
          details: a.serviceDetails,
         createdAt: a.createdAt.toISOString(),
       })),
@@ -409,6 +454,32 @@ router.patch("/applications/:id/status", requireAuth, async (req, res) => {
   }
 });
 
+// DELETE /applications/:id - Delete an old application (admin only)
+router.delete("/applications/:id", requireAuth, async (req, res) => {
+  const id = parseInt(String(req.params.id), 10);
+  if (isNaN(id)) {
+    res.status(400).json({ error: "Invalid application ID" });
+    return;
+  }
+
+  try {
+    const deleted = await db
+      .delete(applicationsTable)
+      .where(eq(applicationsTable.id, id))
+      .returning({ id: applicationsTable.id });
+
+    if (!deleted.length) {
+      res.status(404).json({ error: "Application not found" });
+      return;
+    }
+
+    res.json({ success: true, id });
+  } catch (err) {
+    req.log.error({ err }, "Failed to delete application");
+    res.status(500).json({ error: "Failed to delete application" });
+  }
+});
+
 // GET /applications/export - Export CSV (admin only)
 router.get("/applications/export", requireAuth, async (req, res) => {
   const parsed = ExportApplicationsCsvQueryParams.safeParse(req.query);
@@ -421,7 +492,7 @@ router.get("/applications/export", requireAuth, async (req, res) => {
     }
     const applications = await query;
 
-    const headers = ["ID", "Tracking No", "Name", "Phone", "Service", "Status", "Callback Requested", "Message", "Service Details", "Date"];
+    const headers = ["ID", "Tracking No", "Name", "Phone", "Service", "Status", "Payment Status", "Payment Amount", "Paid At", "Callback Requested", "Message", "Service Details", "Date"];
     const rows = applications.map((a) => [
       a.id,
       `"${a.trackingNumber}"`,
@@ -429,6 +500,9 @@ router.get("/applications/export", requireAuth, async (req, res) => {
       `"${a.phone}"`,
       `"${a.service}"`,
       `"${a.status}"`,
+      `"${a.paymentStatus}"`,
+      a.paymentAmount ?? "",
+      a.paidAt?.toISOString() ?? "",
       a.callbackRequested ? "Yes" : "No",
       `"${(a.message ?? "").replace(/"/g, '""')}"`,
        `"${(a.serviceDetails ?? "{}").replace(/"/g, '""')}"`,

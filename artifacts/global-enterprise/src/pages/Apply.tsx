@@ -10,7 +10,8 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { FaCheckCircle, FaEnvelope, FaFileAlt, FaPhone, FaCopy, FaCheck, FaSearch, FaCreditCard } from "react-icons/fa";
+import { PDFDocument, StandardFonts, rgb } from "pdf-lib";
+import { FaCheckCircle, FaEnvelope, FaFileAlt, FaPhone, FaCopy, FaCheck, FaSearch, FaCreditCard, FaDownload } from "react-icons/fa";
 import { SERVICE_CATEGORIES, ALL_SERVICE_IDS } from "@/lib/services";
 import { getServiceFormConfig, type ServiceField } from "@/lib/service-application-fields";
 import { useT } from "@/i18n";
@@ -38,6 +39,18 @@ type PaymentInfo = {
   gatewayFeeGst: number;
 };
 
+type ReceiptData = {
+  trackingNumber: string;
+  name: string;
+  phone: string;
+  email?: string | null;
+  service: string;
+  paymentAmount: number;
+  paymentTxnId: string;
+  paidAt: string;
+  createdAt: string;
+};
+
 const isValidService = (s: string | null): s is FormValues["service"] =>
   !!s && (ALL_SERVICE_IDS as readonly string[]).includes(s);
 
@@ -61,7 +74,11 @@ export default function Apply() {
   const [paymentInfo, setPaymentInfo] = useState<PaymentInfo | null>(null);
   const [paymentFailed, setPaymentFailed] = useState(params.get("payment") === "failed");
   const [paymentSubmitting, setPaymentSubmitting] = useState(false);
+  const [receipt, setReceipt] = useState<ReceiptData | null>(null);
+  const [receiptLoading, setReceiptLoading] = useState(false);
+  const [receiptDownloading, setReceiptDownloading] = useState(false);
   const createApplication = useCreateApplication();
+  const paymentSucceeded = params.get("payment") === "success";
 
   const formSchema = useMemo(() =>
     z.object({
@@ -121,6 +138,38 @@ export default function Apply() {
     }
   }, [preSelectedService, form]);
 
+  useEffect(() => {
+    if (!paymentSucceeded || !trackingNumber) {
+      setReceipt(null);
+      setReceiptLoading(false);
+      return;
+    }
+
+    let cancelled = false;
+    setReceiptLoading(true);
+    fetch(`/api/applications/receipt/${encodeURIComponent(trackingNumber)}`)
+      .then(async (response) => {
+        if (!response.ok) throw new Error("Receipt is not ready");
+        return response.json() as Promise<ReceiptData>;
+      })
+      .then((data) => {
+        if (!cancelled) {
+          setReceipt(data);
+          setSubmittedService(data.service);
+        }
+      })
+      .catch(() => {
+        if (!cancelled) setReceipt(null);
+      })
+      .finally(() => {
+        if (!cancelled) setReceiptLoading(false);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [paymentSucceeded, trackingNumber]);
+
   async function onSubmit(values: FormValues) {
     createApplication.mutate(
       {
@@ -161,6 +210,60 @@ export default function Apply() {
     if (paymentSubmitting) return;
     setPaymentSubmitting(true);
     event.currentTarget.submit();
+  }
+
+  async function downloadReceipt() {
+    if (!receipt) return;
+    setReceiptDownloading(true);
+    try {
+      const pdf = await PDFDocument.create();
+      const page = pdf.addPage([595, 842]);
+      const regular = await pdf.embedFont(StandardFonts.Helvetica);
+      const bold = await pdf.embedFont(StandardFonts.HelveticaBold);
+      const navy = rgb(7 / 255, 27 / 255, 74 / 255);
+      const gold = rgb(212 / 255, 160 / 255, 23 / 255);
+      const slate = rgb(71 / 255, 85 / 255, 105 / 255);
+      let y = 770;
+
+      page.drawText("APNA ENTERPRISE", { x: 52, y, size: 22, font: bold, color: navy });
+      y -= 28;
+      page.drawText("Payment Receipt", { x: 52, y, size: 13, font: regular, color: gold });
+      page.drawLine({ start: { x: 52, y: y - 18 }, end: { x: 543, y: y - 18 }, thickness: 1.5, color: gold });
+      y -= 68;
+
+      const drawRow = (label: string, value: string) => {
+        page.drawText(label, { x: 52, y, size: 10, font: regular, color: slate });
+        page.drawText(value, { x: 220, y, size: 10, font: bold, color: navy });
+        y -= 30;
+      };
+
+      drawRow("Customer Name", receipt.name);
+      drawRow("Phone", receipt.phone);
+      if (receipt.email) drawRow("Email", receipt.email);
+      drawRow("Service", receipt.service);
+      drawRow("Tracking Number", receipt.trackingNumber);
+      drawRow("Payment Reference", receipt.paymentTxnId);
+      drawRow("Paid On", new Date(receipt.paidAt).toLocaleString("en-IN"));
+      y -= 8;
+      page.drawLine({ start: { x: 52, y }, end: { x: 543, y }, thickness: 1, color: rgb(226 / 255, 232 / 255, 240 / 255) });
+      y -= 34;
+      page.drawText("Amount Paid", { x: 52, y, size: 13, font: bold, color: navy });
+      page.drawText(`INR ${receipt.paymentAmount.toFixed(2)}`, { x: 410, y, size: 15, font: bold, color: gold });
+      y -= 58;
+      page.drawText("Thank you for choosing Apna Enterprise.", { x: 52, y, size: 10, font: regular, color: slate });
+      page.drawText("This is a computer-generated receipt.", { x: 52, y: y - 18, size: 9, font: regular, color: slate });
+
+      const bytes = await pdf.save();
+      const blob = new Blob([bytes as unknown as BlobPart], { type: "application/pdf" });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = `apna-enterprise-receipt-${receipt.trackingNumber}.pdf`;
+      link.click();
+      URL.revokeObjectURL(url);
+    } finally {
+      setReceiptDownloading(false);
+    }
   }
 
   if (paymentInfo) {
@@ -237,6 +340,39 @@ export default function Apply() {
             <p className="text-slate-600 mb-6 leading-relaxed">
               {t.apply_success_desc(submittedService)}
             </p>
+
+            {paymentSucceeded && (
+              <div className="rounded-xl border border-green-200 bg-green-50 p-4 mb-6 text-left">
+                <div className="flex items-center gap-2 text-green-700 font-bold">
+                  <FaCheckCircle />
+                  <span>{t.apply_payment_success}</span>
+                </div>
+                {receiptLoading ? (
+                  <p className="text-xs text-green-700/80 mt-2">{t.apply_receipt_loading}</p>
+                ) : receipt ? (
+                  <div className="mt-3">
+                    <div className="flex justify-between text-sm text-slate-700">
+                      <span>{t.apply_receipt_amount}</span>
+                      <strong>{formatCurrency(receipt.paymentAmount)}</strong>
+                    </div>
+                    <p className="text-xs text-slate-500 mt-1 break-all">
+                      {t.apply_receipt_reference}: {receipt.paymentTxnId}
+                    </p>
+                    <Button
+                      type="button"
+                      onClick={downloadReceipt}
+                      disabled={receiptDownloading}
+                      className="btn-gold w-full h-11 rounded-xl mt-4 gap-2"
+                    >
+                      <FaDownload />
+                      {receiptDownloading ? t.apply_receipt_downloading : t.apply_receipt_download}
+                    </Button>
+                  </div>
+                ) : (
+                  <p className="text-xs text-green-700/80 mt-2">{t.apply_receipt_unavailable}</p>
+                )}
+              </div>
+            )}
 
             {/* Tracking Number Box */}
             {trackingNumber && (

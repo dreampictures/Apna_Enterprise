@@ -6,12 +6,14 @@
  * OpenAPI spec version: 0.1.0
  */
 
-export interface TrackApplicationResponse {
+export interface ApplicationReceipt {
   trackingNumber: string;
+  name: string;
+  phone: string;
+  email?: string | null;
   service: string;
-  status: string;
-  callbackRequested: boolean;
-  paymentStatus?: string;
-  paymentAmount?: number | null;
+  paymentAmount: number;
+  paymentTxnId: string;
+  paidAt: Date;
   createdAt: Date;
 }

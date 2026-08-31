@@ -111,6 +111,15 @@ export interface Translations {
   apply_pay_now: string;
   apply_payment_secure: string;
   apply_payment_failed: string;
+  apply_payment_success: string;
+  apply_receipt_title: string;
+  apply_receipt_download: string;
+  apply_receipt_downloading: string;
+  apply_receipt_loading: string;
+  apply_receipt_unavailable: string;
+  apply_receipt_amount: string;
+  apply_receipt_reference: string;
+  apply_receipt_paid_on: string;
 
   // Track
   track_title: string;
@@ -308,6 +317,15 @@ const en: Translations = {
   apply_pay_now: "Pay Securely with PayU",
   apply_payment_secure: "You will be redirected to PayU's secure payment page.",
   apply_payment_failed: "Payment was not completed. You can try again or contact our office.",
+  apply_payment_success: "Payment successful",
+  apply_receipt_title: "Payment Receipt",
+  apply_receipt_download: "Download Receipt",
+  apply_receipt_downloading: "Preparing Receipt...",
+  apply_receipt_loading: "Loading your receipt...",
+  apply_receipt_unavailable: "Your receipt is being prepared. Please refresh this page in a moment.",
+  apply_receipt_amount: "Amount Paid",
+  apply_receipt_reference: "Payment Reference",
+  apply_receipt_paid_on: "Paid On",
 
   track_title: "Track Your Application",
   track_subtitle: "Enter your tracking number to check the status of your application.",
@@ -500,6 +518,15 @@ const pa: Translations = {
   apply_pay_now: "PayU ਨਾਲ ਸੁਰੱਖਿਅਤ ਭੁਗਤਾਨ ਕਰੋ",
   apply_payment_secure: "ਤੁਹਾਨੂੰ PayU ਦੇ ਸੁਰੱਖਿਅਤ ਭੁਗਤਾਨ ਪੰਨੇ 'ਤੇ ਭੇਜਿਆ ਜਾਵੇਗਾ।",
   apply_payment_failed: "ਭੁਗਤਾਨ ਪੂਰਾ ਨਹੀਂ ਹੋਇਆ। ਦੁਬਾਰਾ ਕੋਸ਼ਿਸ਼ ਕਰੋ ਜਾਂ ਸਾਡੇ ਦਫ਼ਤਰ ਨਾਲ ਸੰਪਰਕ ਕਰੋ।",
+  apply_payment_success: "ਭੁਗਤਾਨ ਸਫਲ ਰਿਹਾ",
+  apply_receipt_title: "ਭੁਗਤਾਨ ਦੀ ਰਸੀਦ",
+  apply_receipt_download: "ਰਸੀਦ ਡਾਊਨਲੋਡ ਕਰੋ",
+  apply_receipt_downloading: "ਰਸੀਦ ਤਿਆਰ ਹੋ ਰਹੀ ਹੈ...",
+  apply_receipt_loading: "ਤੁਹਾਡੀ ਰਸੀਦ ਲੋਡ ਹੋ ਰਹੀ ਹੈ...",
+  apply_receipt_unavailable: "ਤੁਹਾਡੀ ਰਸੀਦ ਤਿਆਰ ਕੀਤੀ ਜਾ ਰਹੀ ਹੈ। ਕੁਝ ਸਮੇਂ ਬਾਅਦ ਪੇਜ ਰਿਫ੍ਰੈਸ਼ ਕਰੋ।",
+  apply_receipt_amount: "ਭੁਗਤਾਨ ਕੀਤੀ ਰਕਮ",
+  apply_receipt_reference: "ਭੁਗਤਾਨ ਹਵਾਲਾ",
+  apply_receipt_paid_on: "ਭੁਗਤਾਨ ਦੀ ਮਿਤੀ",
 
   track_title: "ਅਰਜ਼ੀ ਟ੍ਰੈਕ ਕਰੋ",
   track_subtitle: "ਆਪਣੀ ਅਰਜ਼ੀ ਦੀ ਸਥਿਤੀ ਜਾਣਨ ਲਈ ਟ੍ਰੈਕਿੰਗ ਨੰਬਰ ਦਾਖਲ ਕਰੋ।",

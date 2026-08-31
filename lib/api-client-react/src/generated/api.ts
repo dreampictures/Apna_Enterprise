@@ -21,8 +21,10 @@ import type {
   AdminLoginResponse,
   ApplicationCreateResponse,
   ApplicationListResponse,
+  ApplicationReceipt,
   CreateApplicationBody,
   DashboardStats,
+  DeleteApplication200,
   ErrorResponse,
   ExportApplicationsCsvParams,
   HealthStatus,
@@ -302,6 +304,101 @@ export function useListApplications<
 }
 
 /**
+ * @summary Get a paid application receipt
+ */
+export const getGetApplicationReceiptUrl = (trackingNumber: string) => {
+  return `/api/applications/receipt/${trackingNumber}`;
+};
+
+export const getApplicationReceipt = async (
+  trackingNumber: string,
+  options?: RequestInit,
+): Promise<ApplicationReceipt> => {
+  return customFetch<ApplicationReceipt>(
+    getGetApplicationReceiptUrl(trackingNumber),
+    {
+      ...options,
+      method: "GET",
+    },
+  );
+};
+
+export const getGetApplicationReceiptQueryKey = (trackingNumber: string) => {
+  return [`/api/applications/receipt/${trackingNumber}`] as const;
+};
+
+export const getGetApplicationReceiptQueryOptions = <
+  TData = Awaited<ReturnType<typeof getApplicationReceipt>>,
+  TError = ErrorType<ErrorResponse>,
+>(
+  trackingNumber: string,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getApplicationReceipt>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getGetApplicationReceiptQueryKey(trackingNumber);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof getApplicationReceipt>>
+  > = ({ signal }) =>
+    getApplicationReceipt(trackingNumber, { signal, ...requestOptions });
+
+  return {
+    queryKey,
+    queryFn,
+    enabled: !!trackingNumber,
+    ...queryOptions,
+  } as UseQueryOptions<
+    Awaited<ReturnType<typeof getApplicationReceipt>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type GetApplicationReceiptQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getApplicationReceipt>>
+>;
+export type GetApplicationReceiptQueryError = ErrorType<ErrorResponse>;
+
+/**
+ * @summary Get a paid application receipt
+ */
+
+export function useGetApplicationReceipt<
+  TData = Awaited<ReturnType<typeof getApplicationReceipt>>,
+  TError = ErrorType<ErrorResponse>,
+>(
+  trackingNumber: string,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getApplicationReceipt>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getGetApplicationReceiptQueryOptions(
+    trackingNumber,
+    options,
+  );
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
  * @summary Track an application by its reference number
  */
 export const getTrackApplicationUrl = (trackingNumber: string) => {
@@ -392,6 +489,90 @@ export function useTrackApplication<
 
   return { ...query, queryKey: queryOptions.queryKey };
 }
+
+/**
+ * @summary Delete an application (admin only)
+ */
+export const getDeleteApplicationUrl = (id: number) => {
+  return `/api/applications/${id}`;
+};
+
+export const deleteApplication = async (
+  id: number,
+  options?: RequestInit,
+): Promise<DeleteApplication200> => {
+  return customFetch<DeleteApplication200>(getDeleteApplicationUrl(id), {
+    ...options,
+    method: "DELETE",
+  });
+};
+
+export const getDeleteApplicationMutationOptions = <
+  TError = ErrorType<ErrorResponse>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof deleteApplication>>,
+    TError,
+    { id: number },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof deleteApplication>>,
+  TError,
+  { id: number },
+  TContext
+> => {
+  const mutationKey = ["deleteApplication"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof deleteApplication>>,
+    { id: number }
+  > = (props) => {
+    const { id } = props ?? {};
+
+    return deleteApplication(id, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type DeleteApplicationMutationResult = NonNullable<
+  Awaited<ReturnType<typeof deleteApplication>>
+>;
+
+export type DeleteApplicationMutationError = ErrorType<ErrorResponse>;
+
+/**
+ * @summary Delete an application (admin only)
+ */
+export const useDeleteApplication = <
+  TError = ErrorType<ErrorResponse>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof deleteApplication>>,
+    TError,
+    { id: number },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof deleteApplication>>,
+  TError,
+  { id: number },
+  TContext
+> => {
+  return useMutation(getDeleteApplicationMutationOptions(options));
+};
 
 /**
  * @summary Export applications as CSV (admin only)
