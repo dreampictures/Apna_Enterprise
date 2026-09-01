@@ -510,7 +510,7 @@ export default function AdminDashboard() {
                 )}
               </div>
 
-              <div className="overflow-x-auto">
+              <div>
                 {appsLoading ? (
                   <div className="p-6 space-y-3">
                     {[...Array(5)].map((_, i) => (
@@ -528,138 +528,255 @@ export default function AdminDashboard() {
                     </p>
                   </div>
                 ) : (
-                  <table className="w-full text-sm">
-                    <thead>
-                      <tr className="bg-slate-50 border-b border-slate-100">
-                        <th className="text-left py-3 px-4 font-semibold text-slate-600 uppercase tracking-wider text-xs">Name</th>
-                        <th className="text-left py-3 px-4 font-semibold text-slate-600 uppercase tracking-wider text-xs hidden sm:table-cell">Tracking #</th>
-                        <th className="text-left py-3 px-4 font-semibold text-slate-600 uppercase tracking-wider text-xs">Phone</th>
-                        <th className="text-left py-3 px-4 font-semibold text-slate-600 uppercase tracking-wider text-xs hidden lg:table-cell">Service</th>
-                         <th className="text-left py-3 px-4 font-semibold text-slate-600 uppercase tracking-wider text-xs hidden xl:table-cell">Message</th>
-                         <th className="text-left py-3 px-4 font-semibold text-slate-600 uppercase tracking-wider text-xs">Details</th>
-                        <th className="text-left py-3 px-4 font-semibold text-slate-600 uppercase tracking-wider text-xs hidden md:table-cell">Callback</th>
-                        <th className="text-left py-3 px-4 font-semibold text-slate-600 uppercase tracking-wider text-xs hidden lg:table-cell">Date</th>
-                         <th className="text-left py-3 px-4 font-semibold text-slate-600 uppercase tracking-wider text-xs">Payment</th>
-                         <th className="text-left py-3 px-4 font-semibold text-slate-600 uppercase tracking-wider text-xs">Status</th>
-                         <th className="text-left py-3 px-4 font-semibold text-slate-600 uppercase tracking-wider text-xs">Action</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-slate-50">
+                   <>
+                     {/* Cards keep every application field visible on tablets and phones. */}
+                     <div className="xl:hidden space-y-3 p-4">
                        {displayedApplications.map((app) => {
-                        const catName = SERVICE_TO_CATEGORY[app.service] ?? "Other";
-                        const st = (appStatuses[app.id] ?? (app as any).status ?? "pending") as typeof ALL_APP_STATUSES[number];
-                        const stStyle = STATUS_STYLE[st] ?? STATUS_STYLE.pending;
-                        const callbackReq = (app as any).callbackRequested;
+                         const catName = SERVICE_TO_CATEGORY[app.service] ?? "Other";
+                         const st = (appStatuses[app.id] ?? (app as any).status ?? "pending") as typeof ALL_APP_STATUSES[number];
+                         const stStyle = STATUS_STYLE[st] ?? STATUS_STYLE.pending;
+                         const callbackReq = (app as any).callbackRequested;
                          const paymentStatus = String((app as any).paymentStatus ?? "not_required");
                          const paymentPaid = paymentStatus === "paid";
                          const paymentAmount = Number((app as any).paymentAmount ?? 0);
                          return (
-                           <Fragment key={app.id}>
-                           <tr key={app.id} className="hover:bg-slate-50 transition-colors">
-                            <td className="py-3 px-4">
-                              <div className="font-medium text-slate-900 text-sm">{app.name}</div>
-                              <div className="text-xs text-slate-400 lg:hidden">{catName}</div>
-                            </td>
-                            <td className="py-3 px-4 hidden sm:table-cell">
-                              <span className="font-mono text-xs text-slate-600 bg-slate-100 px-2 py-0.5 rounded tracking-wider">
-                                {(app as any).trackingNumber ?? "—"}
-                              </span>
-                            </td>
-                            <td className="py-3 px-4 text-slate-700 text-sm whitespace-nowrap">{app.phone}</td>
-                            <td className="py-3 px-4 hidden lg:table-cell">
-                              <span className="bg-primary/10 text-primary text-xs font-semibold px-2 py-1 rounded-full whitespace-nowrap">
-                                {app.service}
-                              </span>
-                            </td>
-                            <td className="py-3 px-4 text-slate-500 hidden xl:table-cell max-w-xs truncate text-sm">
-                              {app.message ?? <span className="text-slate-300 italic">—</span>}
-                            </td>
-                            <td className="py-3 px-4">
-                              <button
-                                type="button"
-                                onClick={() => setExpandedApplication(expandedApplication === app.id ? null : app.id)}
-                                className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 px-2.5 py-1.5 text-xs font-semibold text-primary hover:bg-primary/5"
-                              >
-                                <FaFileAlt className="text-xs" />
-                                {expandedApplication === app.id ? "Hide" : "View"}
-                              </button>
-                            </td>
-                            <td className="py-3 px-4 hidden md:table-cell">
-                              {callbackReq ? (
-                                <span className="inline-flex items-center gap-1 text-xs font-semibold px-2 py-1 rounded-full bg-amber-50 text-amber-700 border border-amber-200">
-                                  <FaPhoneAlt className="text-xs" /> Yes
-                                </span>
-                              ) : (
-                                <span className="text-xs text-slate-300 italic">—</span>
-                              )}
-                            </td>
-                            <td className="py-3 px-4 text-slate-500 hidden lg:table-cell whitespace-nowrap text-sm">
-                              {new Date(app.createdAt).toLocaleDateString("en-IN", {
-                                day: "numeric", month: "short", year: "numeric",
-                              })}
-                            </td>
-                            <td className="py-3 px-4 whitespace-nowrap">
-                              {paymentPaid ? (
-                                <span className="inline-flex flex-col gap-0.5 rounded-lg bg-green-50 border border-green-200 px-2 py-1 text-xs font-semibold text-green-700">
-                                  <span className="inline-flex items-center gap-1"><FaCheck className="text-[10px]" /> Paid</span>
-                                  <span className="font-normal text-green-700/80">₹{paymentAmount.toFixed(2)}</span>
-                                </span>
-                              ) : (
-                                <span className={`inline-flex rounded-full px-2 py-1 text-xs font-semibold ${
-                                  paymentStatus === "failed"
-                                    ? "bg-red-50 text-red-700 border border-red-200"
-                                    : paymentStatus === "initiated"
-                                      ? "bg-amber-50 text-amber-700 border border-amber-200"
-                                      : "bg-slate-100 text-slate-500 border border-slate-200"
-                                }`}>
-                                  {paymentStatus === "failed" ? "Failed" : paymentStatus === "initiated" ? "Pending" : "Not required"}
-                                </span>
-                              )}
-                            </td>
-                            <td className="py-3 px-4 whitespace-nowrap">
-                              <select
-                                value={st}
-                                onChange={(e) => updateStatus(app.id, e.target.value as typeof ALL_APP_STATUSES[number])}
-                                className="text-xs font-bold px-2 py-1.5 rounded-full border-2 cursor-pointer transition-all duration-150 hover:opacity-80 focus:outline-none"
-                                style={{ background: stStyle.bg, color: stStyle.color, borderColor: stStyle.border }}
-                              >
-                                {ALL_APP_STATUSES.map((s) => (
-                                  <option key={s} value={s} style={{ background: "white", color: "#1e293b" }}>
-                                    {STATUS_STYLE[s].label}
-                                  </option>
-                                ))}
-                              </select>
-                            </td>
-                            <td className="py-3 px-4">
-                              <button
-                                type="button"
-                                onClick={() => deleteApplication(app.id, app.name)}
-                                disabled={deletingApplicationId === app.id}
-                                className="inline-flex items-center gap-1.5 rounded-lg border border-red-200 px-2.5 py-1.5 text-xs font-semibold text-red-600 hover:bg-red-50 disabled:cursor-wait disabled:opacity-50"
-                                title="Delete application"
-                              >
-                                <FaTrash className="text-xs" />
-                                {deletingApplicationId === app.id ? "Deleting…" : "Delete"}
-                              </button>
-                            </td>
-                          </tr>
-                           {expandedApplication === app.id && (
-                             <tr key={`${app.id}-details`} className="bg-amber-50/60">
-                               <td colSpan={11} className="px-4 py-4">
-                                 <div className="rounded-xl border border-amber-200 bg-white p-4">
-                                   <p className="text-xs font-bold uppercase tracking-wider text-amber-800 mb-3">
-                                     {app.service} — client details
-                                   </p>
-                                   <ApplicationDetails raw={(app as any).details} price={pricingByService[app.service]} />
-                                 </div>
-                               </td>
-                             </tr>
-                           )}
-                           </Fragment>
-                        );
-                      })}
-                    </tbody>
-                  </table>
+                           <article key={app.id} className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+                             <div className="flex items-start justify-between gap-3">
+                               <div className="min-w-0">
+                                 <h3 className="font-bold text-slate-900 break-words">{app.name}</h3>
+                                 <p className="mt-1 text-xs font-medium text-primary">{app.service}</p>
+                                 <p className="mt-1 text-xs text-slate-400">{catName}</p>
+                               </div>
+                               {paymentPaid ? (
+                                 <span className="inline-flex shrink-0 flex-col gap-0.5 rounded-lg bg-green-50 border border-green-200 px-2 py-1 text-xs font-semibold text-green-700">
+                                   <span className="inline-flex items-center gap-1"><FaCheck className="text-[10px]" /> Paid</span>
+                                   <span className="font-normal text-green-700/80">₹{paymentAmount.toFixed(2)}</span>
+                                 </span>
+                               ) : (
+                                 <span className={`inline-flex shrink-0 rounded-full px-2 py-1 text-xs font-semibold ${
+                                   paymentStatus === "failed"
+                                     ? "bg-red-50 text-red-700 border border-red-200"
+                                     : paymentStatus === "initiated"
+                                       ? "bg-amber-50 text-amber-700 border border-amber-200"
+                                       : "bg-slate-100 text-slate-500 border border-slate-200"
+                                 }`}>
+                                   {paymentStatus === "failed" ? "Failed" : paymentStatus === "initiated" ? "Pending" : "Not required"}
+                                 </span>
+                               )}
+                             </div>
+
+                             <dl className="mt-4 grid grid-cols-1 gap-3 border-y border-slate-100 py-3 sm:grid-cols-2">
+                               <div>
+                                 <dt className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Tracking #</dt>
+                                 <dd className="mt-1 break-all font-mono text-xs text-slate-700">{(app as any).trackingNumber ?? "—"}</dd>
+                               </div>
+                               <div>
+                                 <dt className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Phone</dt>
+                                 <dd className="mt-1 text-sm text-slate-700">{app.phone}</dd>
+                               </div>
+                               <div>
+                                 <dt className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Date</dt>
+                                 <dd className="mt-1 text-sm text-slate-700">
+                                   {new Date(app.createdAt).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" })}
+                                 </dd>
+                               </div>
+                               <div>
+                                 <dt className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Callback</dt>
+                                 <dd className="mt-1">
+                                   {callbackReq ? (
+                                     <span className="inline-flex items-center gap-1 text-xs font-semibold text-amber-700"><FaPhoneAlt className="text-[10px]" /> Yes</span>
+                                   ) : (
+                                     <span className="text-sm text-slate-300">—</span>
+                                   )}
+                                 </dd>
+                               </div>
+                             </dl>
+
+                             <div className="mt-3">
+                               <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Message</p>
+                               <p className="mt-1 break-words text-sm text-slate-600">{app.message ?? <span className="text-slate-300 italic">—</span>}</p>
+                             </div>
+
+                             <div className="mt-4 flex flex-col gap-2 sm:flex-row sm:items-center">
+                               <button
+                                 type="button"
+                                 onClick={() => setExpandedApplication(expandedApplication === app.id ? null : app.id)}
+                                 className="inline-flex items-center justify-center gap-1.5 rounded-lg border border-slate-200 px-3 py-2 text-xs font-semibold text-primary hover:bg-primary/5"
+                               >
+                                 <FaFileAlt className="text-xs" />
+                                 {expandedApplication === app.id ? "Hide details" : "View details"}
+                               </button>
+                               <select
+                                 value={st}
+                                 onChange={(e) => updateStatus(app.id, e.target.value as typeof ALL_APP_STATUSES[number])}
+                                 className="min-w-0 flex-1 rounded-lg border-2 px-3 py-2 text-xs font-bold focus:outline-none"
+                                 style={{ background: stStyle.bg, color: stStyle.color, borderColor: stStyle.border }}
+                               >
+                                 {ALL_APP_STATUSES.map((s) => (
+                                   <option key={s} value={s} style={{ background: "white", color: "#1e293b" }}>
+                                     {STATUS_STYLE[s].label}
+                                   </option>
+                                 ))}
+                               </select>
+                               <button
+                                 type="button"
+                                 onClick={() => deleteApplication(app.id, app.name)}
+                                 disabled={deletingApplicationId === app.id}
+                                 className="inline-flex items-center justify-center gap-1.5 rounded-lg border border-red-200 px-3 py-2 text-xs font-semibold text-red-600 hover:bg-red-50 disabled:cursor-wait disabled:opacity-50"
+                               >
+                                 <FaTrash className="text-xs" />
+                                 {deletingApplicationId === app.id ? "Deleting…" : "Delete"}
+                               </button>
+                             </div>
+
+                             {expandedApplication === app.id && (
+                               <div className="mt-4 rounded-xl border border-amber-200 bg-amber-50/60 p-4">
+                                 <p className="mb-3 text-xs font-bold uppercase tracking-wider text-amber-800">
+                                   {app.service} — client details
+                                 </p>
+                                 <ApplicationDetails raw={(app as any).details} price={pricingByService[app.service]} />
+                               </div>
+                             )}
+                           </article>
+                         );
+                       })}
+                     </div>
+
+                     <div className="hidden overflow-x-auto xl:block">
+                       <table className="w-full text-sm">
+                         <thead>
+                           <tr className="bg-slate-50 border-b border-slate-100">
+                             <th className="text-left py-3 px-4 font-semibold text-slate-600 uppercase tracking-wider text-xs">Name</th>
+                             <th className="text-left py-3 px-4 font-semibold text-slate-600 uppercase tracking-wider text-xs hidden sm:table-cell">Tracking #</th>
+                             <th className="text-left py-3 px-4 font-semibold text-slate-600 uppercase tracking-wider text-xs">Phone</th>
+                             <th className="text-left py-3 px-4 font-semibold text-slate-600 uppercase tracking-wider text-xs hidden lg:table-cell">Service</th>
+                             <th className="text-left py-3 px-4 font-semibold text-slate-600 uppercase tracking-wider text-xs hidden xl:table-cell">Message</th>
+                             <th className="text-left py-3 px-4 font-semibold text-slate-600 uppercase tracking-wider text-xs">Details</th>
+                             <th className="text-left py-3 px-4 font-semibold text-slate-600 uppercase tracking-wider text-xs hidden md:table-cell">Callback</th>
+                             <th className="text-left py-3 px-4 font-semibold text-slate-600 uppercase tracking-wider text-xs hidden lg:table-cell">Date</th>
+                             <th className="text-left py-3 px-4 font-semibold text-slate-600 uppercase tracking-wider text-xs">Payment</th>
+                             <th className="text-left py-3 px-4 font-semibold text-slate-600 uppercase tracking-wider text-xs">Status</th>
+                             <th className="text-left py-3 px-4 font-semibold text-slate-600 uppercase tracking-wider text-xs">Action</th>
+                           </tr>
+                         </thead>
+                         <tbody className="divide-y divide-slate-50">
+                           {displayedApplications.map((app) => {
+                             const catName = SERVICE_TO_CATEGORY[app.service] ?? "Other";
+                             const st = (appStatuses[app.id] ?? (app as any).status ?? "pending") as typeof ALL_APP_STATUSES[number];
+                             const stStyle = STATUS_STYLE[st] ?? STATUS_STYLE.pending;
+                             const callbackReq = (app as any).callbackRequested;
+                             const paymentStatus = String((app as any).paymentStatus ?? "not_required");
+                             const paymentPaid = paymentStatus === "paid";
+                             const paymentAmount = Number((app as any).paymentAmount ?? 0);
+                             return (
+                               <Fragment key={app.id}>
+                                 <tr key={app.id} className="hover:bg-slate-50 transition-colors">
+                                   <td className="py-3 px-4">
+                                     <div className="font-medium text-slate-900 text-sm">{app.name}</div>
+                                     <div className="text-xs text-slate-400 lg:hidden">{catName}</div>
+                                   </td>
+                                   <td className="py-3 px-4 hidden sm:table-cell">
+                                     <span className="font-mono text-xs text-slate-600 bg-slate-100 px-2 py-0.5 rounded tracking-wider">
+                                       {(app as any).trackingNumber ?? "—"}
+                                     </span>
+                                   </td>
+                                   <td className="py-3 px-4 text-slate-700 text-sm whitespace-nowrap">{app.phone}</td>
+                                   <td className="py-3 px-4 hidden lg:table-cell">
+                                     <span className="bg-primary/10 text-primary text-xs font-semibold px-2 py-1 rounded-full whitespace-nowrap">
+                                       {app.service}
+                                     </span>
+                                   </td>
+                                   <td className="py-3 px-4 text-slate-500 hidden xl:table-cell max-w-xs truncate text-sm">
+                                     {app.message ?? <span className="text-slate-300 italic">—</span>}
+                                   </td>
+                                   <td className="py-3 px-4">
+                                     <button
+                                       type="button"
+                                       onClick={() => setExpandedApplication(expandedApplication === app.id ? null : app.id)}
+                                       className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 px-2.5 py-1.5 text-xs font-semibold text-primary hover:bg-primary/5"
+                                     >
+                                       <FaFileAlt className="text-xs" />
+                                       {expandedApplication === app.id ? "Hide" : "View"}
+                                     </button>
+                                   </td>
+                                   <td className="py-3 px-4 hidden md:table-cell">
+                                     {callbackReq ? (
+                                       <span className="inline-flex items-center gap-1 text-xs font-semibold px-2 py-1 rounded-full bg-amber-50 text-amber-700 border border-amber-200">
+                                         <FaPhoneAlt className="text-xs" /> Yes
+                                       </span>
+                                     ) : (
+                                       <span className="text-xs text-slate-300 italic">—</span>
+                                     )}
+                                   </td>
+                                   <td className="py-3 px-4 text-slate-500 hidden lg:table-cell whitespace-nowrap text-sm">
+                                     {new Date(app.createdAt).toLocaleDateString("en-IN", {
+                                       day: "numeric", month: "short", year: "numeric",
+                                     })}
+                                   </td>
+                                   <td className="py-3 px-4 whitespace-nowrap">
+                                     {paymentPaid ? (
+                                       <span className="inline-flex flex-col gap-0.5 rounded-lg bg-green-50 border border-green-200 px-2 py-1 text-xs font-semibold text-green-700">
+                                         <span className="inline-flex items-center gap-1"><FaCheck className="text-[10px]" /> Paid</span>
+                                         <span className="font-normal text-green-700/80">₹{paymentAmount.toFixed(2)}</span>
+                                       </span>
+                                     ) : (
+                                       <span className={`inline-flex rounded-full px-2 py-1 text-xs font-semibold ${
+                                         paymentStatus === "failed"
+                                           ? "bg-red-50 text-red-700 border border-red-200"
+                                           : paymentStatus === "initiated"
+                                             ? "bg-amber-50 text-amber-700 border border-amber-200"
+                                             : "bg-slate-100 text-slate-500 border border-slate-200"
+                                       }`}>
+                                         {paymentStatus === "failed" ? "Failed" : paymentStatus === "initiated" ? "Pending" : "Not required"}
+                                       </span>
+                                     )}
+                                   </td>
+                                   <td className="py-3 px-4 whitespace-nowrap">
+                                     <select
+                                       value={st}
+                                       onChange={(e) => updateStatus(app.id, e.target.value as typeof ALL_APP_STATUSES[number])}
+                                       className="text-xs font-bold px-2 py-1.5 rounded-full border-2 cursor-pointer transition-all duration-150 hover:opacity-80 focus:outline-none"
+                                       style={{ background: stStyle.bg, color: stStyle.color, borderColor: stStyle.border }}
+                                     >
+                                       {ALL_APP_STATUSES.map((s) => (
+                                         <option key={s} value={s} style={{ background: "white", color: "#1e293b" }}>
+                                           {STATUS_STYLE[s].label}
+                                         </option>
+                                       ))}
+                                     </select>
+                                   </td>
+                                   <td className="py-3 px-4">
+                                     <button
+                                       type="button"
+                                       onClick={() => deleteApplication(app.id, app.name)}
+                                       disabled={deletingApplicationId === app.id}
+                                       className="inline-flex items-center gap-1.5 rounded-lg border border-red-200 px-2.5 py-1.5 text-xs font-semibold text-red-600 hover:bg-red-50 disabled:cursor-wait disabled:opacity-50"
+                                       title="Delete application"
+                                     >
+                                       <FaTrash className="text-xs" />
+                                       {deletingApplicationId === app.id ? "Deleting…" : "Delete"}
+                                     </button>
+                                   </td>
+                                 </tr>
+                                 {expandedApplication === app.id && (
+                                   <tr key={`${app.id}-details`} className="bg-amber-50/60">
+                                     <td colSpan={11} className="px-4 py-4">
+                                       <div className="rounded-xl border border-amber-200 bg-white p-4">
+                                         <p className="text-xs font-bold uppercase tracking-wider text-amber-800 mb-3">
+                                           {app.service} — client details
+                                         </p>
+                                         <ApplicationDetails raw={(app as any).details} price={pricingByService[app.service]} />
+                                       </div>
+                                     </td>
+                                   </tr>
+                                 )}
+                               </Fragment>
+                             );
+                           })}
+                         </tbody>
+                       </table>
+                     </div>
+                   </>
                 )}
               </div>
 
