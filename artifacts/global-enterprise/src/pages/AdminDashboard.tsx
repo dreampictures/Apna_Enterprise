@@ -18,7 +18,7 @@ import {
   FaSignOutAlt, FaFileDownload, FaUsers, FaClipboardList,
   FaFilter, FaBuilding, FaEye, FaTag, FaWhatsapp,
   FaMobileAlt, FaDesktop, FaChartBar, FaPhoneAlt, FaBullhorn,
-  FaCheck, FaHourglassHalf, FaBook, FaMoneyBillWave, FaFileAlt, FaTrash,
+  FaCheck, FaHourglassHalf, FaBook, FaMoneyBillWave, FaFileAlt,
 } from "react-icons/fa";
 import { SERVICE_CATEGORIES, SERVICE_TO_CATEGORY, ALL_SERVICE_IDS } from "@/lib/services";
 import AdminAnnouncements from "./AdminAnnouncements";
@@ -80,11 +80,30 @@ function useServicePricing(token: string | null) {
 }
 
 type Tab = "applications" | "leads" | "analytics" | "pricing" | "updates";
+type ApplicationFolder = "all" | "pending" | "review" | "in_progress" | "completed" | "rejected";
+
+const APPLICATION_FOLDERS: Array<{ id: ApplicationFolder; label: string }> = [
+  { id: "pending", label: "Pending" },
+  { id: "review", label: "Under Review" },
+  { id: "in_progress", label: "In Progress" },
+  { id: "completed", label: "Completed" },
+  { id: "rejected", label: "Rejected" },
+  { id: "all", label: "All Applications" },
+];
+
+function applicationFolderForStatus(status: string): ApplicationFolder {
+  if (status === "review") return "review";
+  if (status === "applying" || status === "applied") return "in_progress";
+  if (status === "completed") return "completed";
+  if (status === "rejected") return "rejected";
+  return "pending";
+}
 
 export default function AdminDashboard() {
   const [, setLocation] = useLocation();
   const [serviceFilter, setServiceFilter] = useState<string>("");
   const [categoryFilter, setCategoryFilter] = useState<string>("");
+  const [applicationFolder, setApplicationFolder] = useState<ApplicationFolder>("pending");
   const [activeTab, setActiveTab] = useState<Tab>("applications");
   const queryClient = useQueryClient();
 
@@ -132,7 +151,9 @@ export default function AdminDashboard() {
     query: { queryKey: getGetDashboardStatsQueryKey() },
   });
 
-  const listParams = serviceFilter ? { service: serviceFilter } : {};
+  const listParams = serviceFilter
+    ? { service: serviceFilter, limit: 500, offset: 0 }
+    : { limit: 500, offset: 0 };
   const { data: applicationsData, isLoading: appsLoading } = useListApplications(listParams, {
     query: { queryKey: getListApplicationsQueryKey(listParams) },
   });
@@ -148,8 +169,6 @@ export default function AdminDashboard() {
   const [priceDrafts, setPriceDrafts] = useState<Record<string, string>>({});
   const [pricingError, setPricingError] = useState("");
   const [expandedApplication, setExpandedApplication] = useState<number | null>(null);
-  const [deletingApplicationId, setDeletingApplicationId] = useState<number | null>(null);
-  const [deleteError, setDeleteError] = useState("");
 
   useEffect(() => {
     if (!pricingData?.prices) return;
@@ -165,7 +184,22 @@ export default function AdminDashboard() {
     [pricingData]
   );
 
-  const displayedApplications = useMemo(() => {
+   type AppStatus = "pending" | "review" | "applying" | "applied" | "rejected" | "completed";
+   const ALL_APP_STATUSES: AppStatus[] = ["pending", "review", "applying", "applied", "rejected", "completed"];
+
+   const [appStatuses, setAppStatuses] = useState<Record<number, AppStatus>>({});
+   useEffect(() => {
+     if (!applicationsData?.applications) return;
+     setAppStatuses((prev) => {
+       const next = { ...prev };
+       for (const a of applicationsData.applications) {
+         if (!(a.id in next)) next[a.id] = ((a as any).status ?? "pending") as AppStatus;
+       }
+       return next;
+     });
+   }, [applicationsData]);
+
+   const applicationsMatchingFilters = useMemo(() => {
     if (!applicationsData?.applications) return [];
     if (!categoryFilter) return applicationsData.applications;
     return applicationsData.applications.filter(
@@ -173,8 +207,29 @@ export default function AdminDashboard() {
     );
   }, [applicationsData, categoryFilter]);
 
-  type AppStatus = "pending" | "review" | "applying" | "applied" | "rejected" | "completed";
-  const ALL_APP_STATUSES: AppStatus[] = ["pending", "review", "applying", "applied", "rejected", "completed"];
+  const folderCounts = useMemo(() => {
+    const counts: Record<ApplicationFolder, number> = {
+      all: applicationsMatchingFilters.length,
+      pending: 0,
+      review: 0,
+      in_progress: 0,
+      completed: 0,
+      rejected: 0,
+    };
+    for (const app of applicationsMatchingFilters) {
+      const folder = applicationFolderForStatus(String(appStatuses[app.id] ?? (app as any).status ?? "pending"));
+      counts[folder] += 1;
+    }
+    return counts;
+  }, [applicationsMatchingFilters, appStatuses]);
+
+  const displayedApplications = useMemo(
+    () => applicationsMatchingFilters.filter((app) => {
+      if (applicationFolder === "all") return true;
+      return applicationFolderForStatus(String(appStatuses[app.id] ?? (app as any).status ?? "pending")) === applicationFolder;
+    }),
+    [applicationsMatchingFilters, applicationFolder, appStatuses]
+  );
 
   const STATUS_STYLE: Record<AppStatus, { bg: string; color: string; border: string; label: string }> = {
     pending:   { bg: "#fef3c7", color: "#92400e", border: "#fcd34d", label: "Pending" },
@@ -185,56 +240,24 @@ export default function AdminDashboard() {
     completed: { bg: "#dcfce7", color: "#14532d", border: "#86efac", label: "Completed ✓" },
   };
 
-  const [appStatuses, setAppStatuses] = useState<Record<number, AppStatus>>({});
-  useEffect(() => {
-    if (!applicationsData?.applications) return;
-    setAppStatuses((prev) => {
-      const next = { ...prev };
-      for (const a of applicationsData.applications) {
-        if (!(a.id in next)) next[a.id] = ((a as any).status ?? "pending") as AppStatus;
-      }
-      return next;
-    });
-  }, [applicationsData]);
-
   const updateStatus = useCallback(async (id: number, newStatus: AppStatus) => {
     const prev = appStatuses[id];
     setAppStatuses((s) => ({ ...s, [id]: newStatus }));
     try {
-      await fetch(`/api/applications/${id}/status`, {
+      const response = await fetch(`/api/applications/${id}/status`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
         body: JSON.stringify({ status: newStatus }),
       });
+      if (!response.ok) {
+        const body = await response.json().catch(() => null);
+        throw new Error(body?.error ?? "Could not update status");
+      }
+      await queryClient.invalidateQueries({ queryKey: getListApplicationsQueryKey(listParams) });
     } catch {
       setAppStatuses((s) => ({ ...s, [id]: prev }));
     }
-  }, [token, appStatuses]);
-
-  const deleteApplication = useCallback(async (id: number, name: string) => {
-    if (!window.confirm(`Delete the application from ${name}? This cannot be undone.`)) return;
-
-    setDeleteError("");
-    setDeletingApplicationId(id);
-    try {
-      const response = await fetch(`/api/applications/${id}`, {
-        method: "DELETE",
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      const body = await response.json().catch(() => null);
-      if (!response.ok) throw new Error(body?.error ?? "Could not delete application");
-
-      setExpandedApplication((current) => current === id ? null : current);
-      await Promise.all([
-        queryClient.invalidateQueries({ queryKey: getListApplicationsQueryKey(serviceFilter ? { service: serviceFilter } : {}) }),
-        queryClient.invalidateQueries({ queryKey: getGetDashboardStatsQueryKey() }),
-      ]);
-    } catch (error) {
-      setDeleteError(error instanceof Error ? error.message : "Could not delete application");
-    } finally {
-      setDeletingApplicationId(null);
-    }
-  }, [token, queryClient, serviceFilter]);
+  }, [token, appStatuses, queryClient, listParams]);
 
   async function handleExport() {
     const result = await fetchCsv();
@@ -428,7 +451,14 @@ export default function AdminDashboard() {
             <div className="bg-white rounded-2xl shadow-md border border-slate-100 overflow-hidden">
               <div className="p-6 border-b border-slate-100">
                 <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-                  <h2 className="text-lg font-bold text-slate-900">All Applications</h2>
+                    <div>
+                      <h2 className="text-lg font-bold text-slate-900">
+                        {APPLICATION_FOLDERS.find((folder) => folder.id === applicationFolder)?.label ?? "Applications"}
+                      </h2>
+                      <p className="mt-1 text-xs text-slate-500">
+                        Keep every submitted form here; move it between folders using its status.
+                      </p>
+                    </div>
                   <div className="flex items-center gap-3 flex-wrap">
                     <div className="flex items-center gap-2">
                       <FaTag className="text-slate-400 text-sm" />
@@ -481,12 +511,30 @@ export default function AdminDashboard() {
                     </Button>
                   </div>
                 </div>
-                 {deleteError && (
-                   <p className="mt-3 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
-                     {deleteError}
-                   </p>
-                 )}
-
+                <div className="mt-5 grid grid-cols-2 gap-2 sm:flex sm:flex-wrap">
+                  {APPLICATION_FOLDERS.map((folder) => {
+                    const selected = applicationFolder === folder.id;
+                    return (
+                      <button
+                        key={folder.id}
+                        type="button"
+                        onClick={() => setApplicationFolder(folder.id)}
+                        className={`inline-flex items-center justify-between gap-2 rounded-lg border px-3 py-2 text-left text-xs font-semibold transition-colors sm:justify-center ${
+                          selected
+                            ? "border-primary bg-primary text-white shadow-sm"
+                            : "border-slate-200 bg-white text-slate-600 hover:border-primary/30 hover:bg-primary/5"
+                        }`}
+                      >
+                        <span>{folder.label}</span>
+                        <span className={`rounded-full px-1.5 py-0.5 text-[10px] ${
+                          selected ? "bg-white/20 text-white" : "bg-slate-100 text-slate-500"
+                        }`}>
+                          {folderCounts[folder.id]}
+                        </span>
+                      </button>
+                    );
+                  })}
+                </div>
                 {(categoryFilter || serviceFilter) && (
                   <div className="mt-3 flex items-center gap-2 text-xs text-slate-500">
                     <span>Filtering by:</span>
@@ -530,7 +578,7 @@ export default function AdminDashboard() {
                 ) : (
                    <>
                      {/* Cards keep every application field visible on tablets and phones. */}
-                     <div className="xl:hidden space-y-3 p-4">
+                      <div className="space-y-3 p-4">
                        {displayedApplications.map((app) => {
                          const catName = SERVICE_TO_CATEGORY[app.service] ?? "Other";
                          const st = (appStatuses[app.id] ?? (app as any).status ?? "pending") as typeof ALL_APP_STATUSES[number];
@@ -574,6 +622,10 @@ export default function AdminDashboard() {
                                  <dt className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Phone</dt>
                                  <dd className="mt-1 text-sm text-slate-700">{app.phone}</dd>
                                </div>
+                              <div>
+                                <dt className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Email</dt>
+                                <dd className="mt-1 break-words text-sm text-slate-700">{(app as any).email ?? "—"}</dd>
+                              </div>
                                <div>
                                  <dt className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Date</dt>
                                  <dd className="mt-1 text-sm text-slate-700">
@@ -597,15 +649,14 @@ export default function AdminDashboard() {
                                <p className="mt-1 break-words text-sm text-slate-600">{app.message ?? <span className="text-slate-300 italic">—</span>}</p>
                              </div>
 
-                             <div className="mt-4 flex flex-col gap-2 sm:flex-row sm:items-center">
-                               <button
-                                 type="button"
-                                 onClick={() => setExpandedApplication(expandedApplication === app.id ? null : app.id)}
-                                 className="inline-flex items-center justify-center gap-1.5 rounded-lg border border-slate-200 px-3 py-2 text-xs font-semibold text-primary hover:bg-primary/5"
-                               >
-                                 <FaFileAlt className="text-xs" />
-                                 {expandedApplication === app.id ? "Hide details" : "View details"}
-                               </button>
+                              <div className="mt-4 rounded-xl border border-amber-200 bg-amber-50/60 p-4">
+                                <p className="mb-3 text-xs font-bold uppercase tracking-wider text-amber-800">
+                                  {app.service} — complete submitted form
+                                </p>
+                                <ApplicationDetails raw={(app as any).details} price={pricingByService[app.service]} />
+                              </div>
+
+                              <div className="mt-4 flex flex-col gap-2 sm:flex-row sm:items-center">
                                <select
                                  value={st}
                                  onChange={(e) => updateStatus(app.id, e.target.value as typeof ALL_APP_STATUSES[number])}
@@ -618,31 +669,13 @@ export default function AdminDashboard() {
                                    </option>
                                  ))}
                                </select>
-                               <button
-                                 type="button"
-                                 onClick={() => deleteApplication(app.id, app.name)}
-                                 disabled={deletingApplicationId === app.id}
-                                 className="inline-flex items-center justify-center gap-1.5 rounded-lg border border-red-200 px-3 py-2 text-xs font-semibold text-red-600 hover:bg-red-50 disabled:cursor-wait disabled:opacity-50"
-                               >
-                                 <FaTrash className="text-xs" />
-                                 {deletingApplicationId === app.id ? "Deleting…" : "Delete"}
-                               </button>
                              </div>
-
-                             {expandedApplication === app.id && (
-                               <div className="mt-4 rounded-xl border border-amber-200 bg-amber-50/60 p-4">
-                                 <p className="mb-3 text-xs font-bold uppercase tracking-wider text-amber-800">
-                                   {app.service} — client details
-                                 </p>
-                                 <ApplicationDetails raw={(app as any).details} price={pricingByService[app.service]} />
-                               </div>
-                             )}
                            </article>
                          );
                        })}
                      </div>
 
-                     <div className="hidden overflow-x-auto xl:block">
+                      <div className="hidden">
                        <table className="w-full text-sm">
                          <thead>
                            <tr className="bg-slate-50 border-b border-slate-100">
@@ -656,7 +689,6 @@ export default function AdminDashboard() {
                              <th className="text-left py-3 px-4 font-semibold text-slate-600 uppercase tracking-wider text-xs hidden lg:table-cell">Date</th>
                              <th className="text-left py-3 px-4 font-semibold text-slate-600 uppercase tracking-wider text-xs">Payment</th>
                              <th className="text-left py-3 px-4 font-semibold text-slate-600 uppercase tracking-wider text-xs">Status</th>
-                             <th className="text-left py-3 px-4 font-semibold text-slate-600 uppercase tracking-wider text-xs">Action</th>
                            </tr>
                          </thead>
                          <tbody className="divide-y divide-slate-50">
@@ -745,22 +777,10 @@ export default function AdminDashboard() {
                                        ))}
                                      </select>
                                    </td>
-                                   <td className="py-3 px-4">
-                                     <button
-                                       type="button"
-                                       onClick={() => deleteApplication(app.id, app.name)}
-                                       disabled={deletingApplicationId === app.id}
-                                       className="inline-flex items-center gap-1.5 rounded-lg border border-red-200 px-2.5 py-1.5 text-xs font-semibold text-red-600 hover:bg-red-50 disabled:cursor-wait disabled:opacity-50"
-                                       title="Delete application"
-                                     >
-                                       <FaTrash className="text-xs" />
-                                       {deletingApplicationId === app.id ? "Deleting…" : "Delete"}
-                                     </button>
-                                   </td>
                                  </tr>
                                  {expandedApplication === app.id && (
                                    <tr key={`${app.id}-details`} className="bg-amber-50/60">
-                                     <td colSpan={11} className="px-4 py-4">
+                                     <td colSpan={10} className="px-4 py-4">
                                        <div className="rounded-xl border border-amber-200 bg-white p-4">
                                          <p className="text-xs font-bold uppercase tracking-wider text-amber-800 mb-3">
                                            {app.service} — client details
@@ -782,8 +802,8 @@ export default function AdminDashboard() {
 
               {applicationsData && (
                 <div className="px-6 py-3 border-t border-slate-100 text-xs text-slate-500 bg-slate-50">
-                  Showing {displayedApplications.length} of {applicationsData.total} application
-                  {applicationsData.total !== 1 ? "s" : ""}
+                  Showing {displayedApplications.length} of {folderCounts.all} filtered application
+                  {folderCounts.all !== 1 ? "s" : ""} in this folder
                 </div>
               )}
             </div>

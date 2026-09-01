@@ -413,6 +413,7 @@ router.get("/applications", requireAuth, async (req, res) => {
         trackingNumber: a.trackingNumber,
         name: a.name,
         phone: a.phone,
+        email: a.email,
         service: a.service,
         message: a.message,
         status: a.status,
