@@ -27,6 +27,11 @@ export const SERVICE_CATEGORIES: ServiceCategory[] = [
         name: "Train Ticket Booking",
         description: "Hassle-free IRCTC train reservations across all classes. Tatkal bookings, PNR tracking and cancellation support.",
       },
+      {
+        id: "Bus Ticket Booking",
+        name: "Bus Ticket Booking",
+        description: "Bus ticket booking assistance for local, interstate, and long-distance journeys with route and fare guidance.",
+      },
     ],
   },
   {

@@ -70,6 +70,7 @@ export default function Apply() {
   const [submitted, setSubmitted] = useState(params.get("payment") === "success");
   const [submittedService, setSubmittedService] = useState("your application");
   const [trackingNumber, setTrackingNumber] = useState(params.get("tracking") ?? "");
+  const [pricingWaiting, setPricingWaiting] = useState(false);
   const [copied, setCopied] = useState(false);
   const [paymentInfo, setPaymentInfo] = useState<PaymentInfo | null>(null);
   const [paymentFailed, setPaymentFailed] = useState(params.get("payment") === "failed");
@@ -190,6 +191,7 @@ export default function Apply() {
           if (data?.payment?.required) {
             setPaymentInfo(data.payment);
           } else {
+             setPricingWaiting(data?.pricingStatus === "waiting_for_price");
             setSubmitted(true);
           }
           form.reset();
@@ -307,8 +309,8 @@ export default function Apply() {
               {Object.entries(paymentInfo.fields).map(([key, value]) => (
                 <input key={key} type="hidden" name={key} value={value} />
               ))}
-              <button type="submit" disabled={paymentSubmitting} className="btn-gold w-full h-12 rounded-xl font-bold text-base inline-flex items-center justify-center gap-2 disabled:opacity-60">
-                <FaCreditCard /> {paymentSubmitting ? "Opening secure payment…" : t.apply_pay_now}
+                 <button type="submit" disabled={paymentSubmitting} className="btn-gold w-full h-12 rounded-xl font-bold text-base inline-flex items-center justify-center gap-2 disabled:opacity-60">
+                 <FaCreditCard /> {paymentSubmitting ? t.payment_opening : t.apply_pay_now}
               </button>
             </form>
             <p className="text-xs text-slate-500 mt-4">{t.apply_payment_secure}</p>
@@ -338,8 +340,17 @@ export default function Apply() {
             </div>
             <h2 className="text-2xl font-extrabold text-slate-900 mb-3">{t.apply_thank_you}</h2>
             <p className="text-slate-600 mb-6 leading-relaxed">
-              {t.apply_success_desc(submittedService)}
+               {pricingWaiting ? t.apply_price_waiting_desc : t.apply_success_desc(submittedService)}
             </p>
+
+             <div className="rounded-xl border border-blue-100 bg-blue-50/60 p-4 mb-6 text-left">
+               <p className="text-xs font-bold uppercase tracking-wider text-blue-800 mb-3">{t.apply_success_next_steps}</p>
+               <ul className="space-y-2 text-sm text-slate-600">
+                 <li className="flex gap-2"><span className="font-bold text-blue-700">1.</span><span>{t.apply_success_step_track}</span></li>
+                 <li className="flex gap-2"><span className="font-bold text-blue-700">2.</span><span>{t.apply_success_step_price}</span></li>
+                 <li className="flex gap-2"><span className="font-bold text-blue-700">3.</span><span>{t.apply_success_step_pay}</span></li>
+               </ul>
+             </div>
 
             {paymentSucceeded && (
               <div className="rounded-xl border border-green-200 bg-green-50 p-4 mb-6 text-left">
@@ -691,6 +702,7 @@ function ServiceDetailsFields({
   service: FormValues["service"];
   form: ReturnType<typeof useForm<FormValues>>;
 }) {
+  const { lang } = useT();
   const config = getServiceFormConfig(service);
   const details = form.watch("details") ?? {};
   const detailErrors = form.formState.errors.details as Record<string, { message?: string }> | undefined;
@@ -699,7 +711,7 @@ function ServiceDetailsFields({
     <div className="rounded-2xl border border-amber-200 bg-amber-50/60 p-5 space-y-5">
       <div>
         <p className="text-sm font-bold text-slate-800">Details for this service</p>
-        <p className="text-xs text-slate-600 mt-1 leading-relaxed">{config.intro}</p>
+         <p className="text-xs text-slate-600 mt-1 leading-relaxed">{lang === "pa" ? (config.introPa ?? config.intro) : config.intro}</p>
       </div>
 
       {config.documents && (
@@ -730,7 +742,7 @@ function ServiceDetailsFields({
               ) : (
                 <>
                   <label className="text-sm font-semibold text-slate-700 block mb-1.5">
-                    {field.label}
+                    {lang === "pa" ? (field.paLabel ?? field.label) : field.label}
                     {field.required && <span className="text-red-500 ml-1">*</span>}
                   </label>
                   {field.kind === "select" ? (
@@ -739,7 +751,7 @@ function ServiceDetailsFields({
                       onValueChange={(value) => form.setValue(`details.${field.id}` as any, value, { shouldDirty: true, shouldValidate: true })}
                     >
                       <SelectTrigger className="h-11 rounded-xl bg-white border-slate-300">
-                        <SelectValue placeholder={field.placeholder ?? `Select ${field.label.toLowerCase()}`} />
+                        <SelectValue placeholder={lang === "pa" ? (field.paPlaceholder ?? field.paLabel ?? field.label) : (field.placeholder ?? `Select ${field.label.toLowerCase()}`)} />
                       </SelectTrigger>
                       <SelectContent>
                         {field.options?.map((option) => (
@@ -750,14 +762,14 @@ function ServiceDetailsFields({
                   ) : field.kind === "textarea" ? (
                     <Textarea
                       rows={3}
-                      placeholder={field.placeholder}
+                      placeholder={lang === "pa" ? (field.paPlaceholder ?? field.placeholder) : field.placeholder}
                       className="resize-none rounded-xl bg-white border-slate-300"
                       {...form.register(`details.${field.id}` as any)}
                     />
                   ) : (
                     <Input
                       type={field.kind === "date" ? "date" : field.kind === "number" ? "number" : "text"}
-                      placeholder={field.placeholder}
+                      placeholder={lang === "pa" ? (field.paPlaceholder ?? field.placeholder) : field.placeholder}
                       min={field.kind === "number" ? 1 : undefined}
                       className="h-11 rounded-xl bg-white border-slate-300"
                       {...form.register(`details.${field.id}` as any)}

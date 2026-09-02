@@ -18,9 +18,10 @@ import {
   FaSignOutAlt, FaFileDownload, FaUsers, FaClipboardList,
   FaFilter, FaBuilding, FaEye, FaTag, FaWhatsapp,
   FaMobileAlt, FaDesktop, FaChartBar, FaPhoneAlt, FaBullhorn,
-  FaCheck, FaHourglassHalf, FaBook, FaMoneyBillWave, FaFileAlt,
+  FaCheck, FaHourglassHalf, FaBook, FaMoneyBillWave, FaFileAlt, FaCreditCard,
 } from "react-icons/fa";
 import { SERVICE_CATEGORIES, SERVICE_TO_CATEGORY, ALL_SERVICE_IDS } from "@/lib/services";
+import { useT } from "@/i18n";
 import AdminAnnouncements from "./AdminAnnouncements";
 
 const CATEGORY_BADGE: Record<string, string> = {
@@ -79,7 +80,7 @@ function useServicePricing(token: string | null) {
   });
 }
 
-type Tab = "applications" | "leads" | "analytics" | "pricing" | "updates";
+type Tab = "applications" | "leads" | "analytics" | "pricing" | "payments" | "updates";
 type ApplicationFolder = "all" | "pending" | "review" | "in_progress" | "completed" | "rejected";
 
 const APPLICATION_FOLDERS: Array<{ id: ApplicationFolder; label: string }> = [
@@ -101,6 +102,7 @@ function applicationFolderForStatus(status: string): ApplicationFolder {
 
 export default function AdminDashboard() {
   const [, setLocation] = useLocation();
+  const { t } = useT();
   const [serviceFilter, setServiceFilter] = useState<string>("");
   const [categoryFilter, setCategoryFilter] = useState<string>("");
   const [applicationFolder, setApplicationFolder] = useState<ApplicationFolder>("pending");
@@ -169,6 +171,14 @@ export default function AdminDashboard() {
   const [priceDrafts, setPriceDrafts] = useState<Record<string, string>>({});
   const [pricingError, setPricingError] = useState("");
   const [expandedApplication, setExpandedApplication] = useState<number | null>(null);
+  const [applicationPriceDrafts, setApplicationPriceDrafts] = useState<Record<number, string>>({});
+  const [applicationNotesDrafts, setApplicationNotesDrafts] = useState<Record<number, string>>({});
+  const [applicationPricingSaving, setApplicationPricingSaving] = useState<number | null>(null);
+  const [applicationPricingError, setApplicationPricingError] = useState<Record<number, string>>({});
+  const [manualPayment, setManualPayment] = useState({ service: "", name: "", email: "", phone: "", amount: "", notes: "" });
+  const [manualPaymentSaving, setManualPaymentSaving] = useState(false);
+  const [manualPaymentError, setManualPaymentError] = useState("");
+  const [manualPaymentLink, setManualPaymentLink] = useState("");
 
   useEffect(() => {
     if (!pricingData?.prices) return;
@@ -296,6 +306,58 @@ export default function AdminDashboard() {
     }
   }
 
+  async function saveApplicationPrice(id: number) {
+    const rawPrice = applicationPriceDrafts[id]?.trim() ?? "";
+    const price = Number(rawPrice);
+    if (!rawPrice || !Number.isFinite(price) || price <= 0) {
+      setApplicationPricingError((current) => ({ ...current, [id]: "Enter a positive service price." }));
+      return;
+    }
+    setApplicationPricingSaving(id);
+    setApplicationPricingError((current) => ({ ...current, [id]: "" }));
+    try {
+      const response = await fetch(`/api/applications/${id}/price`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ price, internalNotes: applicationNotesDrafts[id]?.trim() || null }),
+      });
+      const body = await response.json().catch(() => null);
+      if (!response.ok) throw new Error(body?.error ?? "Could not save application price");
+      await queryClient.invalidateQueries({ queryKey: getListApplicationsQueryKey(listParams) });
+    } catch (error) {
+      setApplicationPricingError((current) => ({ ...current, [id]: error instanceof Error ? error.message : "Could not save application price" }));
+    } finally {
+      setApplicationPricingSaving(null);
+    }
+  }
+
+  async function createManualPaymentRequest(event: React.FormEvent) {
+    event.preventDefault();
+    const amount = Number(manualPayment.amount);
+    if (!manualPayment.service || !manualPayment.name || !manualPayment.email || !Number.isFinite(amount) || amount <= 0) {
+      setManualPaymentError("Service, client name, email, and a positive amount are required.");
+      return;
+    }
+    setManualPaymentSaving(true);
+    setManualPaymentError("");
+    setManualPaymentLink("");
+    try {
+      const response = await fetch("/api/payment-requests", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ ...manualPayment, amount }),
+      });
+      const body = await response.json().catch(() => null);
+      if (!response.ok) throw new Error(body?.error ?? "Could not create payment request");
+      setManualPaymentLink(body.paymentPageUrl);
+      setManualPayment((current) => ({ ...current, name: "", email: "", phone: "", amount: "", notes: "" }));
+    } catch (error) {
+      setManualPaymentError(error instanceof Error ? error.message : "Could not create payment request");
+    } finally {
+      setManualPaymentSaving(false);
+    }
+  }
+
   function handleLogout() {
     localStorage.removeItem("adminToken");
     localStorage.removeItem("adminUsername");
@@ -409,7 +471,7 @@ export default function AdminDashboard() {
 
         {/* Tab Navigation */}
         <div className="flex gap-1 mb-6 bg-white rounded-xl p-1 shadow-sm border border-slate-100 w-fit flex-wrap">
-          {(["applications", "leads", "analytics", "pricing", "updates"] as Tab[]).map((tab) => (
+           {(["applications", "leads", "analytics", "pricing", "payments", "updates"] as Tab[]).map((tab) => (
             <button
               key={tab}
               onClick={() => setActiveTab(tab)}
@@ -423,6 +485,7 @@ export default function AdminDashboard() {
               {tab === "leads" && <FaPhoneAlt className="inline mr-2 text-xs" />}
               {tab === "analytics" && <FaChartBar className="inline mr-2 text-xs" />}
               {tab === "pricing" && <FaMoneyBillWave className="inline mr-2 text-xs" />}
+              {tab === "payments" && <FaCreditCard className="inline mr-2 text-xs" />}
               {tab === "updates" && <FaBullhorn className="inline mr-2 text-xs" />}
               {tab.charAt(0).toUpperCase() + tab.slice(1)}
             </button>
@@ -655,6 +718,43 @@ export default function AdminDashboard() {
                                 </p>
                                 <ApplicationDetails raw={(app as any).details} price={pricingByService[app.service]} />
                               </div>
+
+                               {String((app as any).pricingType ?? "fixed") === "dynamic" && (
+                                 <div className="mt-4 rounded-xl border border-blue-200 bg-blue-50/60 p-4">
+                                   <div className="flex flex-wrap items-center justify-between gap-2">
+                                     <p className="text-xs font-bold uppercase tracking-wider text-blue-800">{t.track_price_label}</p>
+                                     <span className="text-xs font-semibold text-blue-700">
+                                       {(app as any).pricingStatus === "price_assigned" && (app as any).applicationPrice != null
+                                         ? `${t.admin_price_assigned}: ₹${Number((app as any).applicationPrice).toFixed(2)}`
+                                         : t.track_price_waiting}
+                                     </span>
+                                   </div>
+                                   <div className="mt-3 grid gap-2 sm:grid-cols-[1fr_1.5fr_auto]">
+                                     <input
+                                       type="number"
+                                       min="1"
+                                       step="0.01"
+                                       value={applicationPriceDrafts[app.id] ?? ((app as any).applicationPrice != null ? String((app as any).applicationPrice) : "")}
+                                       onChange={(event) => setApplicationPriceDrafts((current) => ({ ...current, [app.id]: event.target.value }))}
+                                       placeholder={t.admin_price_amount}
+                                       className="h-10 rounded-lg border border-blue-200 bg-white px-3 text-sm"
+                                       aria-label={`Application price for ${app.name}`}
+                                     />
+                                     <input
+                                       value={applicationNotesDrafts[app.id] ?? ""}
+                                       onChange={(event) => setApplicationNotesDrafts((current) => ({ ...current, [app.id]: event.target.value }))}
+                                       placeholder={t.admin_internal_note}
+                                       maxLength={5000}
+                                       className="h-10 rounded-lg border border-blue-200 bg-white px-3 text-sm"
+                                     />
+                                     <Button type="button" onClick={() => saveApplicationPrice(app.id)} disabled={applicationPricingSaving === app.id} className="h-10 bg-primary">
+                                       {applicationPricingSaving === app.id ? t.admin_saving : t.admin_assign_price}
+                                     </Button>
+                                   </div>
+                                   {applicationPricingError[app.id] && <p className="mt-2 text-xs text-red-600">{applicationPricingError[app.id]}</p>}
+                                   <p className="mt-2 text-[11px] text-blue-700/80">{t.pay_gateway_note}</p>
+                                 </div>
+                               )}
 
                               <div className="mt-4 flex flex-col gap-2 sm:flex-row sm:items-center">
                                <select
@@ -1023,6 +1123,55 @@ export default function AdminDashboard() {
                 ))}
               </div>
             )}
+          </div>
+        )}
+
+        {/* ── Manual Payments Tab ── */}
+        {activeTab === "payments" && (
+          <div className="mx-auto max-w-2xl rounded-2xl border border-slate-100 bg-white shadow-md">
+            <div className="border-b border-slate-100 p-6">
+              <div className="flex items-start gap-3">
+                <div className="flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-xl bg-green-100 text-green-700"><FaCreditCard /></div>
+                <div>
+                  <h2 className="text-lg font-bold text-slate-900">{t.admin_payment_links}</h2>
+                  <p className="mt-1 text-sm text-slate-500">{t.admin_payment_links_desc}</p>
+                </div>
+              </div>
+            </div>
+            <form onSubmit={createManualPaymentRequest} className="grid gap-4 p-6 sm:grid-cols-2">
+              <label className="text-sm font-semibold text-slate-700 sm:col-span-2">{t.pay_service}
+                <select value={manualPayment.service} onChange={(event) => setManualPayment((current) => ({ ...current, service: event.target.value }))} className="mt-1 h-10 w-full rounded-lg border border-slate-300 bg-white px-3">
+                  <option value="">{t.admin_select_service}</option>
+                  {ALL_SERVICE_IDS.map((service) => <option key={service} value={service}>{service}</option>)}
+                </select>
+              </label>
+              <label className="text-sm font-semibold text-slate-700">{t.admin_client_name}
+                <input required value={manualPayment.name} onChange={(event) => setManualPayment((current) => ({ ...current, name: event.target.value }))} className="mt-1 h-10 w-full rounded-lg border border-slate-300 px-3" />
+              </label>
+              <label className="text-sm font-semibold text-slate-700">{t.admin_client_email}
+                <input required type="email" value={manualPayment.email} onChange={(event) => setManualPayment((current) => ({ ...current, email: event.target.value }))} className="mt-1 h-10 w-full rounded-lg border border-slate-300 px-3" />
+              </label>
+              <label className="text-sm font-semibold text-slate-700">{t.admin_phone_optional}
+                <input value={manualPayment.phone} onChange={(event) => setManualPayment((current) => ({ ...current, phone: event.target.value }))} className="mt-1 h-10 w-full rounded-lg border border-slate-300 px-3" />
+              </label>
+              <label className="text-sm font-semibold text-slate-700">{t.admin_service_amount}
+                <input required type="number" min="1" step="0.01" value={manualPayment.amount} onChange={(event) => setManualPayment((current) => ({ ...current, amount: event.target.value }))} className="mt-1 h-10 w-full rounded-lg border border-slate-300 px-3" />
+              </label>
+              <label className="text-sm font-semibold text-slate-700 sm:col-span-2">{t.admin_internal_note}
+                <textarea value={manualPayment.notes} onChange={(event) => setManualPayment((current) => ({ ...current, notes: event.target.value }))} maxLength={5000} rows={3} className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2" />
+              </label>
+              {manualPaymentError && <p className="text-sm text-red-600 sm:col-span-2">{manualPaymentError}</p>}
+              {manualPaymentLink && (
+                <div className="rounded-xl border border-green-200 bg-green-50 p-4 text-sm text-green-800 sm:col-span-2">
+                  <p className="font-bold">{t.admin_link_ready}</p>
+                  <div className="mt-2 flex gap-2">
+                    <input readOnly value={manualPaymentLink} className="min-w-0 flex-1 rounded-lg border border-green-200 bg-white px-3 py-2 text-xs" />
+                    <Button type="button" variant="outline" onClick={() => navigator.clipboard.writeText(manualPaymentLink)}>{t.admin_copy}</Button>
+                  </div>
+                </div>
+              )}
+              <Button type="submit" disabled={manualPaymentSaving} className="btn-gold h-11 sm:col-span-2">{manualPaymentSaving ? t.admin_saving : t.admin_create_link}</Button>
+            </form>
           </div>
         )}
 

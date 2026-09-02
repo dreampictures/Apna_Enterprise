@@ -18,6 +18,9 @@ export interface Application {
   callbackRequested: boolean;
   paymentStatus?: string;
   paymentAmount?: number | null;
+  pricingType?: string;
+  pricingStatus?: string;
+  applicationPrice?: number | null;
   paidAt?: Date | null;
   /**
    * JSON-encoded service-specific application details

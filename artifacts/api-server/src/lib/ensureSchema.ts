@@ -33,6 +33,11 @@ export async function ensureSchema() {
          ALTER COLUMN payment_amount TYPE NUMERIC(12, 2)
          USING payment_amount::numeric;
        ALTER TABLE applications ADD COLUMN IF NOT EXISTS paid_at TIMESTAMP;
+       ALTER TABLE applications ADD COLUMN IF NOT EXISTS pricing_type TEXT NOT NULL DEFAULT 'fixed';
+       ALTER TABLE applications ADD COLUMN IF NOT EXISTS application_price NUMERIC(12, 2);
+       ALTER TABLE applications ADD COLUMN IF NOT EXISTS price_assigned_at TIMESTAMP;
+       ALTER TABLE applications ADD COLUMN IF NOT EXISTS price_assigned_by TEXT;
+       ALTER TABLE applications ADD COLUMN IF NOT EXISTS internal_notes TEXT;
        CREATE UNIQUE INDEX IF NOT EXISTS applications_payment_txn_id_unique_idx
          ON applications (payment_txn_id) WHERE payment_txn_id IS NOT NULL;
        ALTER TABLE applications ADD COLUMN IF NOT EXISTS service_details TEXT NOT NULL DEFAULT '{}';
@@ -178,6 +183,22 @@ export async function ensureSchema() {
         announcement_id INTEGER,
         imported_at TIMESTAMP DEFAULT NOW() NOT NULL
       );
+
+       CREATE TABLE IF NOT EXISTS payment_requests (
+         id SERIAL PRIMARY KEY,
+         token TEXT NOT NULL UNIQUE,
+         service TEXT NOT NULL,
+         name TEXT NOT NULL,
+         phone TEXT,
+         email TEXT,
+         amount NUMERIC(12, 2) NOT NULL,
+         payment_status TEXT NOT NULL DEFAULT 'not_started',
+         payment_txn_id TEXT UNIQUE,
+         paid_at TIMESTAMP,
+         notes TEXT,
+         created_by TEXT NOT NULL,
+         created_at TIMESTAMP DEFAULT NOW() NOT NULL
+       );
 
       ALTER TABLE announcements ADD COLUMN IF NOT EXISTS pdf_url TEXT;
       ALTER TABLE announcements ADD COLUMN IF NOT EXISTS pdf_key TEXT;

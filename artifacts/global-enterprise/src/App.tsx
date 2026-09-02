@@ -20,6 +20,7 @@ import AdminDashboard from "./pages/AdminDashboard";
 import KhaataBook from "./pages/KhaataBook";
 import Cameti from "./pages/Cameti";
 import DocumentTools from "./pages/DocumentTools";
+import Pay from "./pages/Pay";
 import Layout from "./components/Layout";
 import LeadPopup from "./components/LeadPopup";
 
@@ -117,6 +118,7 @@ function Router() {
         <Route path="/updates/:slug" component={UpdateDetail} />
         <Route path="/apply" component={Apply} />
         <Route path="/track" component={Track} />
+        <Route path="/pay/:token" component={Pay} />
         <Route path="/pdf-compressor" component={DocumentTools} />
         <Route path="/contact" component={Contact} />
         <Route path="/admin/login" component={AdminLogin} />

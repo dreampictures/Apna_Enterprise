@@ -19,6 +19,7 @@ export type CreateApplicationBodyService =
 export const CreateApplicationBodyService = {
   Air_Ticket_Booking: "Air Ticket Booking",
   Train_Ticket_Booking: "Train Ticket Booking",
+  Bus_Ticket_Booking: "Bus Ticket Booking",
   International_Parcel_Booking: "International Parcel Booking",
   PAN_Card_Apply: "PAN Card Apply",
   Aadhaar_Card_Services: "Aadhaar Card Services",
@@ -83,6 +84,9 @@ export interface Application {
   callbackRequested: boolean;
   paymentStatus?: string;
   paymentAmount?: number | null;
+  pricingType?: string;
+  pricingStatus?: string;
+  applicationPrice?: number | null;
   paidAt?: string | null;
   /**
    * JSON-encoded service-specific application details
@@ -134,8 +138,66 @@ export interface TrackApplicationResponse {
   callbackRequested: boolean;
   paymentStatus?: string;
   paymentAmount?: number | null;
+  pricingType?: string;
+  pricingStatus?: string;
+  applicationPrice?: number | null;
   createdAt: string;
 }
+
+export interface SetApplicationPriceBody {
+  /**
+   * @minimum 0
+   * @maximum 100000000
+   */
+  price: number;
+  /** @maxLength 5000 */
+  internalNotes?: string | null;
+}
+
+export interface ApplicationPricingResponse {
+  id: number;
+  pricingType: string;
+  pricingStatus: string;
+  applicationPrice: number;
+  paymentAmount: number;
+  paymentStatus: string;
+  priceAssignedAt?: string | null;
+  priceAssignedBy?: string | null;
+}
+
+export interface CreatePaymentRequestBody {
+  /** @maxLength 200 */
+  service: string;
+  /**
+   * @minLength 1
+   * @maxLength 100
+   */
+  name: string;
+  /** @maxLength 20 */
+  phone?: string;
+  email?: string | null;
+  /**
+   * @minimum 1
+   * @maximum 100000000
+   */
+  amount: number;
+  /** @maxLength 5000 */
+  notes?: string | null;
+}
+
+export interface PaymentRequestPublic {
+  token: string;
+  service: string;
+  name: string;
+  amount: number;
+  paymentStatus: string;
+  paidAt?: string | null;
+  createdAt: string;
+}
+
+export type PaymentRequestCreateResponse = PaymentRequestPublic & {
+  paymentPageUrl: string;
+};
 
 export interface AdminLoginBody {
   username: string;

@@ -8,15 +8,19 @@ export interface ServiceFieldOption {
 export interface ServiceField {
   id: string;
   label: string;
+  paLabel?: string;
   kind: ServiceFieldKind;
   required?: boolean;
   placeholder?: string;
+  paPlaceholder?: string;
   help?: string;
+  paHelp?: string;
   options?: ServiceFieldOption[];
 }
 
 export interface ServiceFormConfig {
   intro: string;
+  introPa?: string;
   fields: ServiceField[];
   documents?: string[];
 }
@@ -45,6 +49,17 @@ export const SERVICE_FORM_CONFIG: Record<string, ServiceFormConfig> = {
       { id: "journeyDate", label: "Journey date", kind: "date", required: true },
       { id: "passengers", label: "Passengers", kind: "number", required: true, placeholder: "Number of passengers" },
       { id: "travelClass", label: "Preferred class", kind: "select", required: true, options: [{ value: "sleeper", label: "Sleeper" }, { value: "3ac", label: "3 AC" }, { value: "2ac", label: "2 AC" }, { value: "1ac", label: "1 AC" }, { value: "chair-car", label: "Chair car" }] },
+    ],
+  },
+  "Bus Ticket Booking": {
+    intro: "Share your bus journey details. We will check availability and contact you with the final fare.",
+    introPa: "ਆਪਣੀ ਬੱਸ ਯਾਤਰਾ ਦੀ ਜਾਣਕਾਰੀ ਦਿਓ। ਅਸੀਂ ਉਪਲਬਧਤਾ ਜਾਂਚ ਕੇ ਅੰਤਿਮ ਕਿਰਾਏ ਲਈ ਸੰਪਰਕ ਕਰਾਂਗੇ।",
+    fields: [
+      { id: "from", label: "From", paLabel: "ਕਿੱਥੋਂ", kind: "text", required: true, placeholder: "Boarding city or stop", paPlaceholder: "ਚੜ੍ਹਨ ਵਾਲਾ ਸ਼ਹਿਰ ਜਾਂ ਸਟਾਪ" },
+      { id: "to", label: "To", paLabel: "ਕਿੱਥੇ", kind: "text", required: true, placeholder: "Destination city or stop", paPlaceholder: "ਮੰਜ਼ਿਲ ਸ਼ਹਿਰ ਜਾਂ ਸਟਾਪ" },
+      { id: "journeyDate", label: "Journey date", paLabel: "ਯਾਤਰਾ ਦੀ ਤਾਰੀਖ", kind: "date", required: true },
+      { id: "passengers", label: "Passengers", paLabel: "ਯਾਤਰੀ", kind: "number", required: true, placeholder: "Number of passengers", paPlaceholder: "ਯਾਤਰੀਆਂ ਦੀ ਗਿਣਤੀ" },
+      { id: "busType", label: "Preferred bus type", paLabel: "ਪਸੰਦੀਦਾ ਬੱਸ ਕਿਸਮ", kind: "select", required: true, options: [{ value: "any", label: "Any available bus" }, { value: "ordinary", label: "Ordinary" }, { value: "ac", label: "AC" }, { value: "volvo", label: "Volvo / premium" }] },
     ],
   },
   "International Parcel Booking": {

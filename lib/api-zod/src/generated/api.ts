@@ -42,6 +42,7 @@ export const CreateApplicationBody = zod.object({
   service: zod.enum([
     "Air Ticket Booking",
     "Train Ticket Booking",
+    "Bus Ticket Booking",
     "International Parcel Booking",
     "PAN Card Apply",
     "Aadhaar Card Services",
@@ -105,6 +106,9 @@ export const ListApplicationsResponse = zod.object({
       callbackRequested: zod.boolean(),
       paymentStatus: zod.string().optional(),
       paymentAmount: zod.number().nullish(),
+      pricingType: zod.string().optional(),
+      pricingStatus: zod.string().optional(),
+      applicationPrice: zod.number().nullish(),
       paidAt: zod.coerce.date().nullish(),
       details: zod
         .string()
@@ -157,7 +161,65 @@ export const TrackApplicationResponse = zod.object({
   callbackRequested: zod.boolean(),
   paymentStatus: zod.string().optional(),
   paymentAmount: zod.number().nullish(),
+  pricingType: zod.string().optional(),
+  pricingStatus: zod.string().optional(),
+  applicationPrice: zod.number().nullish(),
   createdAt: zod.coerce.date(),
+});
+
+/**
+ * @summary Initiate payment for an application using its stored amount
+ */
+export const initiateApplicationPaymentPathTrackingNumberMax = 20;
+
+export const InitiateApplicationPaymentParams = zod.object({
+  trackingNumber: zod.coerce
+    .string()
+    .max(initiateApplicationPaymentPathTrackingNumberMax),
+});
+
+export const InitiateApplicationPaymentResponse = zod.object({
+  required: zod.boolean(),
+  action: zod.string().url().optional(),
+  fields: zod.record(zod.string(), zod.string()).optional(),
+  amount: zod.number(),
+  baseAmount: zod.number(),
+  gatewayFee: zod.number(),
+  gatewayFeeGst: zod.number(),
+});
+
+/**
+ * @summary Assign an application-specific service price (admin only)
+ */
+export const SetApplicationPriceParams = zod.object({
+  id: zod.coerce.number(),
+});
+
+export const setApplicationPriceBodyPriceMin = 0;
+export const setApplicationPriceBodyPriceMax = 100000000;
+
+export const setApplicationPriceBodyInternalNotesMax = 5000;
+
+export const SetApplicationPriceBody = zod.object({
+  price: zod
+    .number()
+    .min(setApplicationPriceBodyPriceMin)
+    .max(setApplicationPriceBodyPriceMax),
+  internalNotes: zod
+    .string()
+    .max(setApplicationPriceBodyInternalNotesMax)
+    .nullish(),
+});
+
+export const SetApplicationPriceResponse = zod.object({
+  id: zod.number(),
+  pricingType: zod.string(),
+  pricingStatus: zod.string(),
+  applicationPrice: zod.number(),
+  paymentAmount: zod.number(),
+  paymentStatus: zod.string(),
+  priceAssignedAt: zod.coerce.date().nullish(),
+  priceAssignedBy: zod.string().nullish(),
 });
 
 /**
@@ -177,6 +239,74 @@ export const DeleteApplicationResponse = zod.object({
  */
 export const ExportApplicationsCsvQueryParams = zod.object({
   service: zod.coerce.string().optional(),
+});
+
+/**
+ * @summary Create a secure manual payment request (admin only)
+ */
+export const createPaymentRequestBodyServiceMax = 200;
+
+export const createPaymentRequestBodyNameMax = 100;
+
+export const createPaymentRequestBodyPhoneMax = 20;
+
+export const createPaymentRequestBodyAmountMax = 100000000;
+
+export const createPaymentRequestBodyNotesMax = 5000;
+
+export const CreatePaymentRequestBody = zod.object({
+  service: zod.string().max(createPaymentRequestBodyServiceMax),
+  name: zod.string().min(1).max(createPaymentRequestBodyNameMax),
+  phone: zod.string().max(createPaymentRequestBodyPhoneMax).optional(),
+  email: zod.string().email().nullish(),
+  amount: zod.number().min(1).max(createPaymentRequestBodyAmountMax),
+  notes: zod.string().max(createPaymentRequestBodyNotesMax).nullish(),
+});
+
+/**
+ * @summary Get a public manual payment request
+ */
+export const getPaymentRequestPathTokenMin = 32;
+export const getPaymentRequestPathTokenMax = 64;
+
+export const GetPaymentRequestParams = zod.object({
+  token: zod.coerce
+    .string()
+    .min(getPaymentRequestPathTokenMin)
+    .max(getPaymentRequestPathTokenMax),
+});
+
+export const GetPaymentRequestResponse = zod.object({
+  token: zod.string(),
+  service: zod.string(),
+  name: zod.string(),
+  amount: zod.number(),
+  paymentStatus: zod.string(),
+  paidAt: zod.coerce.date().nullish(),
+  createdAt: zod.coerce.date(),
+});
+
+/**
+ * @summary Initiate a manual payment request through PayU
+ */
+export const initiatePaymentRequestPaymentPathTokenMin = 32;
+export const initiatePaymentRequestPaymentPathTokenMax = 64;
+
+export const InitiatePaymentRequestPaymentParams = zod.object({
+  token: zod.coerce
+    .string()
+    .min(initiatePaymentRequestPaymentPathTokenMin)
+    .max(initiatePaymentRequestPaymentPathTokenMax),
+});
+
+export const InitiatePaymentRequestPaymentResponse = zod.object({
+  required: zod.boolean(),
+  action: zod.string().url().optional(),
+  fields: zod.record(zod.string(), zod.string()).optional(),
+  amount: zod.number(),
+  baseAmount: zod.number(),
+  gatewayFee: zod.number(),
+  gatewayFeeGst: zod.number(),
 });
 
 /**
@@ -212,6 +342,9 @@ export const GetDashboardStatsResponse = zod.object({
       callbackRequested: zod.boolean(),
       paymentStatus: zod.string().optional(),
       paymentAmount: zod.number().nullish(),
+      pricingType: zod.string().optional(),
+      pricingStatus: zod.string().optional(),
+      applicationPrice: zod.number().nullish(),
       paidAt: zod.coerce.date().nullish(),
       details: zod
         .string()

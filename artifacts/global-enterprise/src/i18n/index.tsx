@@ -109,9 +109,16 @@ export interface Translations {
   apply_payment_gateway_gst: string;
   apply_payment_amount: string;
   apply_pay_now: string;
+  payment_opening: string;
   apply_payment_secure: string;
   apply_payment_failed: string;
   apply_payment_success: string;
+  apply_price_waiting_title: string;
+  apply_price_waiting_desc: string;
+  apply_success_next_steps: string;
+  apply_success_step_track: string;
+  apply_success_step_price: string;
+  apply_success_step_pay: string;
   apply_receipt_title: string;
   apply_receipt_download: string;
   apply_receipt_downloading: string;
@@ -139,6 +146,49 @@ export interface Translations {
   track_status_applied: string;
   track_status_rejected: string;
   track_status_completed: string;
+  track_price_label: string;
+  track_price_waiting: string;
+  track_price_assigned: string;
+  track_payment_label: string;
+  track_payment_not_started: string;
+  track_payment_initiated: string;
+  track_payment_paid: string;
+  track_payment_failed: string;
+  track_payment_desc: string;
+  track_pay_now: string;
+  track_payment_error: string;
+
+  // Manual payment
+  pay_title: string;
+  pay_subtitle: string;
+  pay_client: string;
+  pay_service: string;
+  pay_amount: string;
+  pay_online_total: string;
+  pay_gateway_note: string;
+  pay_button: string;
+  pay_paid: string;
+  pay_failed: string;
+  pay_not_found: string;
+  pay_error: string;
+  pay_secure_note: string;
+
+  // Admin pricing and payment links
+  admin_assign_price: string;
+  admin_price_assigned: string;
+  admin_price_amount: string;
+  admin_internal_note: string;
+  admin_saving: string;
+  admin_payment_links: string;
+  admin_payment_links_desc: string;
+  admin_client_name: string;
+  admin_client_email: string;
+  admin_phone_optional: string;
+  admin_service_amount: string;
+  admin_create_link: string;
+  admin_link_ready: string;
+  admin_copy: string;
+  admin_select_service: string;
 
   // Contact
   contact_reach_out: string;
@@ -315,9 +365,16 @@ const en: Translations = {
   apply_payment_gateway_gst: "GST on gateway fee (18%)",
   apply_payment_amount: "Amount to pay",
   apply_pay_now: "Pay Securely with PayU",
+  payment_opening: "Opening secure payment…",
   apply_payment_secure: "You will be redirected to PayU's secure payment page.",
   apply_payment_failed: "Payment was not completed. You can try again or contact our office.",
   apply_payment_success: "Payment successful",
+  apply_price_waiting_title: "Application received — price pending",
+  apply_price_waiting_desc: "Your application has been saved. Our team will review it and assign the final service price. Use your tracking number to check when payment is available.",
+  apply_success_next_steps: "Next steps",
+  apply_success_step_track: "Save your tracking number and use Track Application for updates.",
+  apply_success_step_price: "For travel and government job services, wait for the final price from our team.",
+  apply_success_step_pay: "Pay securely through PayU only after the amount is assigned.",
   apply_receipt_title: "Payment Receipt",
   apply_receipt_download: "Download Receipt",
   apply_receipt_downloading: "Preparing Receipt...",
@@ -344,6 +401,47 @@ const en: Translations = {
   track_status_applied: "Applied",
   track_status_rejected: "Rejected",
   track_status_completed: "Completed ✓",
+  track_price_label: "Service price",
+  track_price_waiting: "Waiting for final price",
+  track_price_assigned: "Price assigned",
+  track_payment_label: "Payment",
+  track_payment_not_started: "Payment available",
+  track_payment_initiated: "Payment initiated",
+  track_payment_paid: "Paid",
+  track_payment_failed: "Payment failed — try again",
+  track_payment_desc: "Online payment includes the service price plus the clearly shown gateway fee and GST.",
+  track_pay_now: "Pay Now",
+  track_payment_error: "Payment could not be started. Please try again or contact our office.",
+
+  pay_title: "Secure Payment Request",
+  pay_subtitle: "Review the request below and continue to PayU's secure hosted payment page.",
+  pay_client: "Client",
+  pay_service: "Service",
+  pay_amount: "Service amount",
+  pay_online_total: "Total payable online",
+  pay_gateway_note: "The total includes a 2% payment gateway fee and 18% GST on that fee.",
+  pay_button: "Continue to PayU",
+  pay_paid: "Payment received",
+  pay_failed: "Payment was not completed. You can try again.",
+  pay_not_found: "Payment request not found",
+  pay_error: "We could not load this payment request. Please contact the office.",
+  pay_secure_note: "You will leave this site and complete payment on PayU's secure page.",
+
+  admin_assign_price: "Assign price",
+  admin_price_assigned: "Assigned",
+  admin_price_amount: "Service amount",
+  admin_internal_note: "Internal note (not shown to client)",
+  admin_saving: "Saving…",
+  admin_payment_links: "Create a secure payment link",
+  admin_payment_links_desc: "Generate a one-time link for a walk-in or manually quoted service. The client pays on PayU; no QR confirmation is recorded.",
+  admin_client_name: "Client name",
+  admin_client_email: "Client email",
+  admin_phone_optional: "Phone (optional)",
+  admin_service_amount: "Service amount before online charges",
+  admin_create_link: "Create payment link",
+  admin_link_ready: "Payment link ready",
+  admin_copy: "Copy",
+  admin_select_service: "Select service",
 
   contact_reach_out: "Reach Out",
   contact_title: "Contact Us",
@@ -516,9 +614,16 @@ const pa: Translations = {
   apply_payment_gateway_gst: "ਗੇਟਵੇ ਫੀਸ ਉੱਤੇ GST (18%)",
   apply_payment_amount: "ਭੁਗਤਾਨ ਰਕਮ",
   apply_pay_now: "PayU ਨਾਲ ਸੁਰੱਖਿਅਤ ਭੁਗਤਾਨ ਕਰੋ",
+  payment_opening: "ਸੁਰੱਖਿਅਤ ਭੁਗਤਾਨ ਖੁੱਲ੍ਹ ਰਿਹਾ ਹੈ…",
   apply_payment_secure: "ਤੁਹਾਨੂੰ PayU ਦੇ ਸੁਰੱਖਿਅਤ ਭੁਗਤਾਨ ਪੰਨੇ 'ਤੇ ਭੇਜਿਆ ਜਾਵੇਗਾ।",
   apply_payment_failed: "ਭੁਗਤਾਨ ਪੂਰਾ ਨਹੀਂ ਹੋਇਆ। ਦੁਬਾਰਾ ਕੋਸ਼ਿਸ਼ ਕਰੋ ਜਾਂ ਸਾਡੇ ਦਫ਼ਤਰ ਨਾਲ ਸੰਪਰਕ ਕਰੋ।",
   apply_payment_success: "ਭੁਗਤਾਨ ਸਫਲ ਰਿਹਾ",
+  apply_price_waiting_title: "ਅਰਜ਼ੀ ਮਿਲ ਗਈ — ਕੀਮਤ ਬਾਕੀ ਹੈ",
+  apply_price_waiting_desc: "ਤੁਹਾਡੀ ਅਰਜ਼ੀ ਸੁਰੱਖਿਅਤ ਹੈ। ਸਾਡੀ ਟੀਮ ਸਮੀਖਿਆ ਕਰਕੇ ਅੰਤਿਮ ਸੇਵਾ ਕੀਮਤ ਤੈਅ ਕਰੇਗੀ। ਭੁਗਤਾਨ ਉਪਲਬਧ ਹੋਣ ਤੇ ਟ੍ਰੈਕਿੰਗ ਨੰਬਰ ਨਾਲ ਜਾਂਚ ਕਰੋ।",
+  apply_success_next_steps: "ਅਗਲੇ ਕਦਮ",
+  apply_success_step_track: "ਆਪਣਾ ਟ੍ਰੈਕਿੰਗ ਨੰਬਰ ਸੰਭਾਲੋ ਅਤੇ ਅਪਡੇਟਸ ਲਈ ਟ੍ਰੈਕ ਐਪਲੀਕੇਸ਼ਨ ਵਰਤੋ।",
+  apply_success_step_price: "ਯਾਤਰਾ ਅਤੇ ਸਰਕਾਰੀ ਨੌਕਰੀ ਸੇਵਾਵਾਂ ਲਈ ਟੀਮ ਵੱਲੋਂ ਅੰਤਿਮ ਕੀਮਤ ਦੀ ਉਡੀਕ ਕਰੋ।",
+  apply_success_step_pay: "ਕੀਮਤ ਮਿਲਣ ਤੋਂ ਬਾਅਦ ਹੀ PayU ਰਾਹੀਂ ਸੁਰੱਖਿਅਤ ਭੁਗਤਾਨ ਕਰੋ।",
   apply_receipt_title: "ਭੁਗਤਾਨ ਦੀ ਰਸੀਦ",
   apply_receipt_download: "ਰਸੀਦ ਡਾਊਨਲੋਡ ਕਰੋ",
   apply_receipt_downloading: "ਰਸੀਦ ਤਿਆਰ ਹੋ ਰਹੀ ਹੈ...",
@@ -545,6 +650,47 @@ const pa: Translations = {
   track_status_applied: "ਅਰਜ਼ੀ ਦਿੱਤੀ ਗਈ",
   track_status_rejected: "ਰੱਦ ਕੀਤੀ ਗਈ",
   track_status_completed: "ਮੁਕੰਮਲ ✓",
+  track_price_label: "ਸੇਵਾ ਦੀ ਕੀਮਤ",
+  track_price_waiting: "ਅੰਤਿਮ ਕੀਮਤ ਦੀ ਉਡੀਕ",
+  track_price_assigned: "ਕੀਮਤ ਤੈਅ ਹੋ ਗਈ",
+  track_payment_label: "ਭੁਗਤਾਨ",
+  track_payment_not_started: "ਭੁਗਤਾਨ ਉਪਲਬਧ",
+  track_payment_initiated: "ਭੁਗਤਾਨ ਸ਼ੁਰੂ ਹੋਇਆ",
+  track_payment_paid: "ਭੁਗਤਾਨ ਹੋ ਗਿਆ",
+  track_payment_failed: "ਭੁਗਤਾਨ ਅਸਫਲ — ਦੁਬਾਰਾ ਕੋਸ਼ਿਸ਼ ਕਰੋ",
+  track_payment_desc: "ਔਨਲਾਈਨ ਭੁਗਤਾਨ ਵਿੱਚ ਸੇਵਾ ਕੀਮਤ ਦੇ ਨਾਲ ਸਪਸ਼ਟ ਗੇਟਵੇ ਫੀਸ ਅਤੇ GST ਸ਼ਾਮਲ ਹਨ।",
+  track_pay_now: "ਹੁਣੇ ਭੁਗਤਾਨ ਕਰੋ",
+  track_payment_error: "ਭੁਗਤਾਨ ਸ਼ੁਰੂ ਨਹੀਂ ਹੋ ਸਕਿਆ। ਦੁਬਾਰਾ ਕੋਸ਼ਿਸ਼ ਕਰੋ ਜਾਂ ਦਫ਼ਤਰ ਨਾਲ ਸੰਪਰਕ ਕਰੋ।",
+
+  pay_title: "ਸੁਰੱਖਿਅਤ ਭੁਗਤਾਨ ਬੇਨਤੀ",
+  pay_subtitle: "ਹੇਠਾਂ ਦਿੱਤੀ ਬੇਨਤੀ ਦੀ ਜਾਂਚ ਕਰੋ ਅਤੇ PayU ਦੇ ਸੁਰੱਖਿਅਤ ਭੁਗਤਾਨ ਪੰਨੇ ਤੇ ਜਾਰੀ ਰੱਖੋ।",
+  pay_client: "ਗਾਹਕ",
+  pay_service: "ਸੇਵਾ",
+  pay_amount: "ਸੇਵਾ ਦੀ ਰਕਮ",
+  pay_online_total: "ਔਨਲਾਈਨ ਕੁੱਲ ਭੁਗਤਾਨ",
+  pay_gateway_note: "ਕੁੱਲ ਰਕਮ ਵਿੱਚ 2% ਗੇਟਵੇ ਫੀਸ ਅਤੇ ਉਸ ਫੀਸ ਉੱਤੇ 18% GST ਸ਼ਾਮਲ ਹੈ।",
+  pay_button: "PayU ਤੇ ਜਾਰੀ ਰੱਖੋ",
+  pay_paid: "ਭੁਗਤਾਨ ਪ੍ਰਾਪਤ ਹੋ ਗਿਆ",
+  pay_failed: "ਭੁਗਤਾਨ ਪੂਰਾ ਨਹੀਂ ਹੋਇਆ। ਦੁਬਾਰਾ ਕੋਸ਼ਿਸ਼ ਕਰੋ।",
+  pay_not_found: "ਭੁਗਤਾਨ ਬੇਨਤੀ ਨਹੀਂ ਮਿਲੀ",
+  pay_error: "ਇਹ ਭੁਗਤਾਨ ਬੇਨਤੀ ਲੋਡ ਨਹੀਂ ਹੋ ਸਕੀ। ਦਫ਼ਤਰ ਨਾਲ ਸੰਪਰਕ ਕਰੋ।",
+  pay_secure_note: "ਤੁਸੀਂ ਇਸ ਸਾਈਟ ਤੋਂ PayU ਦੇ ਸੁਰੱਖਿਅਤ ਪੰਨੇ ਤੇ ਜਾਵੋਗੇ।",
+
+  admin_assign_price: "ਕੀਮਤ ਤੈਅ ਕਰੋ",
+  admin_price_assigned: "ਤੈਅ ਕੀਤੀ",
+  admin_price_amount: "ਸੇਵਾ ਦੀ ਰਕਮ",
+  admin_internal_note: "ਅੰਦਰੂਨੀ ਨੋਟ (ਗਾਹਕ ਨੂੰ ਨਹੀਂ ਦਿਖੇਗਾ)",
+  admin_saving: "ਸੰਭਾਲਿਆ ਜਾ ਰਿਹਾ ਹੈ…",
+  admin_payment_links: "ਸੁਰੱਖਿਅਤ ਭੁਗਤਾਨ ਲਿੰਕ ਬਣਾਓ",
+  admin_payment_links_desc: "ਵਾਕ-ਇਨ ਜਾਂ ਹੱਥੋਂ ਤੈਅ ਕੀਤੀ ਸੇਵਾ ਲਈ ਇੱਕ ਵਾਰ ਵਰਤੋਂ ਵਾਲਾ ਲਿੰਕ ਬਣਾਓ। ਗਾਹਕ PayU ਤੇ ਭੁਗਤਾਨ ਕਰੇਗਾ; QR ਪੁਸ਼ਟੀ ਦਰਜ ਨਹੀਂ ਕੀਤੀ ਜਾਂਦੀ।",
+  admin_client_name: "ਗਾਹਕ ਦਾ ਨਾਮ",
+  admin_client_email: "ਗਾਹਕ ਦੀ ਈਮੇਲ",
+  admin_phone_optional: "ਫ਼ੋਨ (ਵਿਕਲਪਿਕ)",
+  admin_service_amount: "ਔਨਲਾਈਨ ਚਾਰਜ ਤੋਂ ਪਹਿਲਾਂ ਸੇਵਾ ਰਕਮ",
+  admin_create_link: "ਭੁਗਤਾਨ ਲਿੰਕ ਬਣਾਓ",
+  admin_link_ready: "ਭੁਗਤਾਨ ਲਿੰਕ ਤਿਆਰ ਹੈ",
+  admin_copy: "ਕਾਪੀ ਕਰੋ",
+  admin_select_service: "ਸੇਵਾ ਚੁਣੋ",
 
   contact_reach_out: "ਸੰਪਰਕ ਕਰੋ",
   contact_title: "ਸਾਡੇ ਨਾਲ ਜੁੜੋ",

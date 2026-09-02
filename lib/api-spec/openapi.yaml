@@ -16,6 +16,8 @@ tags:
     description: Admin authentication and dashboard
   - name: visitors
     description: Visitor tracking
+  - name: payments
+    description: Secure payment initiation and manual payment requests
 
 paths:
   /healthz:
@@ -150,6 +152,83 @@ paths:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
 
+  /applications/track/{trackingNumber}/payment:
+    post:
+      operationId: initiateApplicationPayment
+      tags: [payments]
+      summary: Initiate payment for an application using its stored amount
+      parameters:
+        - name: trackingNumber
+          in: path
+          required: true
+          schema:
+            type: string
+            maxLength: 20
+      responses:
+        "200":
+          description: PayU payment fields
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApplicationPayment"
+        "400":
+          description: Payment cannot be initiated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Application not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /applications/{id}/price:
+    patch:
+      operationId: setApplicationPrice
+      tags: [applications]
+      summary: Assign an application-specific service price (admin only)
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SetApplicationPriceBody"
+      responses:
+        "200":
+          description: Application price saved
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApplicationPricingResponse"
+        "400":
+          description: Invalid price
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Application not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
   /applications/{id}:
     delete:
       operationId: deleteApplication
@@ -210,6 +289,99 @@ paths:
                 type: string
         "401":
           description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /payment-requests:
+    post:
+      operationId: createPaymentRequest
+      tags: [payments]
+      summary: Create a secure manual payment request (admin only)
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreatePaymentRequestBody"
+      responses:
+        "201":
+          description: Manual payment request created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PaymentRequestCreateResponse"
+        "400":
+          description: Invalid payment request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /payment-requests/{token}:
+    get:
+      operationId: getPaymentRequest
+      tags: [payments]
+      summary: Get a public manual payment request
+      parameters:
+        - name: token
+          in: path
+          required: true
+          schema:
+            type: string
+            minLength: 32
+            maxLength: 64
+      responses:
+        "200":
+          description: Manual payment request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PaymentRequestPublic"
+        "404":
+          description: Payment request not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /payment-requests/{token}/payment:
+    post:
+      operationId: initiatePaymentRequestPayment
+      tags: [payments]
+      summary: Initiate a manual payment request through PayU
+      parameters:
+        - name: token
+          in: path
+          required: true
+          schema:
+            type: string
+            minLength: 32
+            maxLength: 64
+      responses:
+        "200":
+          description: PayU payment fields
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApplicationPayment"
+        "400":
+          description: Payment cannot be initiated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Payment request not found
           content:
             application/json:
               schema:
@@ -397,6 +569,7 @@ components:
           enum:
             - Air Ticket Booking
             - Train Ticket Booking
+            - Bus Ticket Booking
             - International Parcel Booking
             - PAN Card Apply
             - Aadhaar Card Services
@@ -463,6 +636,14 @@ components:
         paymentStatus:
           type: string
         paymentAmount:
+          type: number
+          format: double
+          nullable: true
+        pricingType:
+          type: string
+        pricingStatus:
+          type: string
+        applicationPrice:
           type: number
           format: double
           nullable: true
@@ -596,6 +777,14 @@ components:
           type: number
           format: double
           nullable: true
+        pricingType:
+          type: string
+        pricingStatus:
+          type: string
+        applicationPrice:
+          type: number
+          format: double
+          nullable: true
         createdAt:
           type: string
           format: date-time
@@ -605,6 +794,121 @@ components:
         - status
         - callbackRequested
         - createdAt
+
+    SetApplicationPriceBody:
+      type: object
+      properties:
+        price:
+          type: number
+          minimum: 0
+          maximum: 100000000
+        internalNotes:
+          type: string
+          maxLength: 5000
+          nullable: true
+      required:
+        - price
+
+    ApplicationPricingResponse:
+      type: object
+      properties:
+        id:
+          type: integer
+        pricingType:
+          type: string
+        pricingStatus:
+          type: string
+        applicationPrice:
+          type: number
+          format: double
+        paymentAmount:
+          type: number
+          format: double
+        paymentStatus:
+          type: string
+        priceAssignedAt:
+          type: string
+          format: date-time
+          nullable: true
+        priceAssignedBy:
+          type: string
+          nullable: true
+      required:
+        - id
+        - pricingType
+        - pricingStatus
+        - applicationPrice
+        - paymentAmount
+        - paymentStatus
+
+    CreatePaymentRequestBody:
+      type: object
+      properties:
+        service:
+          type: string
+          maxLength: 200
+        name:
+          type: string
+          minLength: 1
+          maxLength: 100
+        phone:
+          type: string
+          maxLength: 20
+        email:
+          type: string
+          format: email
+          nullable: true
+        amount:
+          type: number
+          minimum: 1
+          maximum: 100000000
+        notes:
+          type: string
+          maxLength: 5000
+          nullable: true
+      required:
+        - service
+        - name
+        - amount
+
+    PaymentRequestPublic:
+      type: object
+      properties:
+        token:
+          type: string
+        service:
+          type: string
+        name:
+          type: string
+        amount:
+          type: number
+        paymentStatus:
+          type: string
+        paidAt:
+          type: string
+          format: date-time
+          nullable: true
+        createdAt:
+          type: string
+          format: date-time
+      required:
+        - token
+        - service
+        - name
+        - amount
+        - paymentStatus
+        - createdAt
+
+    PaymentRequestCreateResponse:
+      allOf:
+        - $ref: "#/components/schemas/PaymentRequestPublic"
+        - type: object
+          properties:
+            paymentPageUrl:
+              type: string
+              format: uri
+          required:
+            - paymentPageUrl
 
     AdminLoginBody:
       type: object

@@ -27,6 +27,11 @@ export const applicationsTable = pgTable("applications", {
   paymentTxnId: text("payment_txn_id").unique(),
   paymentAmount: numeric("payment_amount", { precision: 12, scale: 2, mode: "number" }),
   paidAt: timestamp("paid_at"),
+  pricingType: text("pricing_type").default("fixed").notNull(),
+  applicationPrice: numeric("application_price", { precision: 12, scale: 2, mode: "number" }),
+  priceAssignedAt: timestamp("price_assigned_at"),
+  priceAssignedBy: text("price_assigned_by"),
+  internalNotes: text("internal_notes"),
   documentUrl: text("document_url"),
   documentKey: text("document_key"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
@@ -44,6 +49,24 @@ export const servicePricesTable = pgTable("service_prices", {
 });
 
 export type ServicePrice = typeof servicePricesTable.$inferSelect;
+
+export const paymentRequestsTable = pgTable("payment_requests", {
+  id: serial("id").primaryKey(),
+  token: text("token").notNull().unique(),
+  service: text("service").notNull(),
+  name: text("name").notNull(),
+  phone: text("phone"),
+  email: text("email"),
+  amount: numeric("amount", { precision: 12, scale: 2, mode: "number" }).notNull(),
+  paymentStatus: text("payment_status").default("not_started").notNull(),
+  paymentTxnId: text("payment_txn_id").unique(),
+  paidAt: timestamp("paid_at"),
+  notes: text("notes"),
+  createdBy: text("created_by").notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+export type PaymentRequest = typeof paymentRequestsTable.$inferSelect;
 
 export const visitorsTable = pgTable("visitors", {
   id: serial("id").primaryKey(),

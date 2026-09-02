@@ -69,6 +69,9 @@ const COPY = {
     privateLabel: "Private", privateText: "No upload or sign-in", flexible: "Flexible", flexibleText: "Choose your target size",
     easy: "Easy", easyText: "Download when ready", clear: "Clear", noFiles: "Choose at least one file first.",
     targetHint: "Quality is preserved as much as possible. Very small targets may require some visual compression.",
+     switchWarning: "Switching tools will discard the files currently selected in this tool. Continue?",
+     targetExact: "The target is a best effort; exact output size cannot always be guaranteed.",
+     opening: "Opening secure payment…",
   },
   pa: {
     private: "100% ਨਿੱਜੀ ਅਤੇ ਲੋਕਲ", hero: "PDF ਅਤੇ ਤਸਵੀਰਾਂ ਦੇ ਸੰਦ",
@@ -89,6 +92,9 @@ const COPY = {
     privateLabel: "ਨਿੱਜੀ", privateText: "ਕੋਈ upload ਜਾਂ sign-in ਨਹੀਂ", flexible: "ਲਚਕੀਲਾ", flexibleText: "ਨਿਸ਼ਾਨਾ ਆਕਾਰ ਚੁਣੋ",
     easy: "ਸੌਖਾ", easyText: "ਤਿਆਰ ਹੋਣ ਤੇ ਡਾਊਨਲੋਡ ਕਰੋ", clear: "ਸਾਫ਼ ਕਰੋ", noFiles: "ਪਹਿਲਾਂ ਘੱਟੋ-ਘੱਟ ਇੱਕ ਫਾਈਲ ਚੁਣੋ।",
     targetHint: "ਗੁਣਵੱਤਾ ਨੂੰ ਜਿੰਨਾ ਹੋ ਸਕੇ ਬਚਾਇਆ ਜਾਂਦਾ ਹੈ। ਬਹੁਤ ਛੋਟੇ ਨਿਸ਼ਾਨੇ ਆਕਾਰ ਲਈ ਕੁਝ visual compression ਲੋੜੀਂਦੀ ਹੋ ਸਕਦੀ ਹੈ।",
+     switchWarning: "ਸੰਦ ਬਦਲਣ ਨਾਲ ਇਸ ਸੰਦ ਵਿੱਚ ਚੁਣੀਆਂ ਫਾਈਲਾਂ ਮਿਟ ਜਾਣਗੀਆਂ। ਕੀ ਜਾਰੀ ਰੱਖਣਾ ਹੈ?",
+     targetExact: "ਇਹ ਨਿਸ਼ਾਨਾ best effort ਹੈ; ਆਉਟਪੁੱਟ ਦਾ ਬਿਲਕੁਲ ਸਹੀ ਆਕਾਰ ਹਮੇਸ਼ਾ ਯਕੀਨੀ ਨਹੀਂ ਕੀਤਾ ਜਾ ਸਕਦਾ।",
+     opening: "ਸੁਰੱਖਿਅਤ ਭੁਗਤਾਨ ਖੁੱਲ੍ਹ ਰਿਹਾ ਹੈ…",
   },
 } as const;
 
@@ -234,22 +240,44 @@ function ImageQueue({ items, onRemove, onDownload }: { items: ImageItem[]; onRem
   })}</div>;
 }
 
-function ImageCompressor() {
+function ImageCompressor({ onDirty }: { onDirty: (dirty: boolean) => void }) {
   const { lang } = useT();
   const c = COPY[lang];
   const [items, setItems] = useState<ImageItem[]>([]);
   const [targetKb, setTargetKb] = useState(500);
   const [working, setWorking] = useState(false);
-  const add = (files: File[]) => setItems((current) => [...current, ...files.filter(isImage).filter((file) => file.size <= MAX_FILE_BYTES).map((file) => ({ id: idFor(file), file, preview: URL.createObjectURL(file) }))]);
+  const [message, setMessage] = useState("");
+  const add = (files: File[]) => {
+    const next = files.filter(isImage).filter((file) => file.size <= MAX_FILE_BYTES).map((file) => ({ id: idFor(file), file, preview: URL.createObjectURL(file) }));
+    if (next.length) onDirty(true);
+    setItems((current) => [...current, ...next]);
+  };
   const process = async () => {
     setWorking(true);
-    for (const item of items) {
-      const output = await compressToTarget(item.file, targetKb * 1024);
-      setItems((current) => current.map((entry) => entry.id === item.id ? { ...entry, output, outputName: `${item.file.name.replace(/\.[^.]+$/, "")}-compressed.jpg` } : entry));
+    setMessage("");
+    try {
+      for (const item of items) {
+        const output = await compressToTarget(item.file, targetKb * 1024);
+        setItems((current) => current.map((entry) => entry.id === item.id ? { ...entry, output, outputName: `${item.file.name.replace(/\.[^.]+$/, "")}-compressed.jpg` } : entry));
+      }
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : "Image compression failed.");
+    } finally {
+      setWorking(false);
     }
-    setWorking(false);
   };
-  const clear = () => { items.forEach((item) => URL.revokeObjectURL(item.preview)); setItems([]); };
+  const save = (item: ImageItem) => {
+    if (!item.output) return;
+    try {
+      download(item.output, item.outputName || "compressed-image.jpg");
+      URL.revokeObjectURL(item.preview);
+      setItems((current) => current.filter((entry) => entry.id !== item.id));
+      onDirty(items.length > 1);
+    } catch {
+      // Keep the item available if the browser rejects the download.
+    }
+  };
+  const clear = () => { items.forEach((item) => URL.revokeObjectURL(item.preview)); setItems([]); onDirty(false); };
   return <ToolCard>
     <SectionTitle icon={FileImage} title={c.imageTitle} detail={c.imageDetail} />
     <DropZone accept="image/*" multiple onFiles={add} label={c.dropImages} hint={c.imageHint} />
@@ -258,7 +286,8 @@ function ImageCompressor() {
         <div className="mt-2 flex items-center gap-2"><input type="number" min="20" max="10000" value={targetKb} onChange={(e) => setTargetKb(Math.max(20, Number(e.target.value)))} className="w-full rounded-lg border px-3 py-2" /><span className="text-xs text-slate-400">{c.each}</span></div>
       </label>
     </div>
-    {items.length > 0 && <ImageQueue items={items} onRemove={(id) => setItems((current) => current.filter((item) => item.id !== id))} onDownload={(item) => item.output && download(item.output, item.outputName || "compressed-image.jpg")} />}
+    {items.length > 0 && <ImageQueue items={items} onRemove={(id) => { setItems((current) => current.filter((item) => item.id !== id)); onDirty(items.length > 1); }} onDownload={save} />}
+    {message && <p className="mt-4 rounded-lg bg-red-50 p-3 text-sm text-red-700">{message}</p>}
     <div className="mt-5 flex flex-wrap justify-end gap-2">
       {items.length > 0 && <Button variant="ghost" onClick={clear} className="text-xs"><Trash2 className="mr-1.5 h-4 w-4" />{c.clear}</Button>}
       {items.length > 0 && <Button disabled={working} onClick={process} className="btn-gold rounded-xl">{working ? <RefreshCw className="mr-2 h-4 w-4 animate-spin" /> : <Zap className="mr-2 h-4 w-4" />}{working ? c.compressing : c.compressImages}</Button>}
@@ -267,12 +296,16 @@ function ImageCompressor() {
   </ToolCard>;
 }
 
-function ImagesToPdf() {
+function ImagesToPdf({ onDirty }: { onDirty: (dirty: boolean) => void }) {
   const { lang } = useT();
   const c = COPY[lang];
   const [items, setItems] = useState<ImageItem[]>([]);
   const [working, setWorking] = useState(false);
-  const add = (files: File[]) => setItems((current) => [...current, ...files.filter(isImage).map((file) => ({ id: idFor(file), file, preview: URL.createObjectURL(file) }))]);
+  const add = (files: File[]) => {
+    const next = files.filter(isImage).map((file) => ({ id: idFor(file), file, preview: URL.createObjectURL(file) }));
+    if (next.length) onDirty(true);
+    setItems((current) => [...current, ...next]);
+  };
   const move = (index: number, direction: number) => setItems((current) => { const next = [...current]; const target = index + direction; if (target < 0 || target >= next.length) return current; [next[index], next[target]] = [next[target], next[index]]; return next; });
   const createPdf = async () => {
     setWorking(true);
@@ -284,7 +317,10 @@ function ImagesToPdf() {
       const page = pdf.addPage([image.width * scale, image.height * scale]);
       page.drawImage(image, { x: 0, y: 0, width: image.width * scale, height: image.height * scale });
     }
-    download(pdfBlob(await pdf.save()), "images-to-pdf.pdf");
+     download(pdfBlob(await pdf.save()), `${items[0]?.file.name.replace(/\.[^.]+$/, "") || "images"}-to-pdf.pdf`);
+     items.forEach((item) => URL.revokeObjectURL(item.preview));
+     setItems([]);
+     onDirty(false);
     setWorking(false);
   };
   return <ToolCard><SectionTitle icon={ImagePlus} title={c.imagesPdfTitle} detail={c.imagesPdfDetail} />
@@ -308,7 +344,36 @@ async function pagePreview(file: File, pageNumber: number) {
   return result;
 }
 
-function PdfEditor() {
+async function compressPdfToTarget(file: File, targetBytes: number) {
+  let quality = 0.82;
+  let scale = 1.25;
+  let output = new Blob();
+  for (let attempt = 0; attempt < 9; attempt += 1) {
+    const source = await getDocument({ data: new Uint8Array(await file.arrayBuffer()) }).promise;
+    const out = await PDFDocument.create();
+    for (let number = 1; number <= source.numPages; number += 1) {
+      const page = await source.getPage(number);
+      const viewport = page.getViewport({ scale });
+      const canvas = document.createElement("canvas");
+      canvas.width = Math.max(1, Math.round(viewport.width));
+      canvas.height = Math.max(1, Math.round(viewport.height));
+      const context = canvas.getContext("2d");
+      if (!context) throw new Error("Could not render PDF.");
+      await page.render({ canvasContext: context, viewport }).promise;
+      const image = await out.embedJpg(canvas.toDataURL("image/jpeg", quality));
+      const outputPage = out.addPage([viewport.width, viewport.height]);
+      outputPage.drawImage(image, { x: 0, y: 0, width: viewport.width, height: viewport.height });
+    }
+    output = pdfBlob(await out.save());
+    await source.destroy();
+    if (output.size <= targetBytes || targetBytes >= file.size) break;
+    if (quality > 0.38) quality = Math.max(0.38, quality - 0.08);
+    else scale = Math.max(0.45, scale * 0.8);
+  }
+  return output;
+}
+
+function PdfEditor({ onDirty }: { onDirty: (dirty: boolean) => void }) {
   const { lang } = useT();
   const c = COPY[lang];
   const [pages, setPages] = useState<EditorPage[]>([]);
@@ -323,11 +388,16 @@ function PdfEditor() {
         for (let page = 1; page <= pdf.numPages; page += 1) additions.push({ id: idFor(file, `${page}`), source: "pdf", file, pageIndex: page - 1, preview: await pagePreview(file, page), name: `${file.name} — page ${page}` });
         await pdf.destroy();
       }
+      if (additions.length) onDirty(true);
       setPages((current) => [...current, ...additions]);
     } catch (error) { setMessage(error instanceof Error ? error.message : "PDF could not be opened."); }
     setWorking(false);
   };
-  const addImages = (files: File[]) => setPages((current) => [...current, ...files.filter(isImage).map((file) => ({ id: idFor(file), source: "image" as const, file, pageIndex: 0, preview: URL.createObjectURL(file), name: file.name }))]);
+  const addImages = (files: File[]) => {
+    const additions = files.filter(isImage).map((file) => ({ id: idFor(file), source: "image" as const, file, pageIndex: 0, preview: URL.createObjectURL(file), name: file.name }));
+    if (additions.length) onDirty(true);
+    setPages((current) => [...current, ...additions]);
+  };
   const move = (index: number, target: number) => setPages((current) => { if (target < 0 || target >= current.length) return current; const next = [...current]; [next[index], next[target]] = [next[target], next[index]]; return next; });
   const createPdf = async () => {
     setWorking(true); setMessage("");
@@ -346,7 +416,10 @@ function PdfEditor() {
           outputPage.drawImage(image, { x: 0, y: 0, width: image.width * scale, height: image.height * scale });
         }
       }
-      download(pdfBlob(await out.save()), "edited-merged-document.pdf");
+       download(pdfBlob(await out.save()), `${pages[0]?.file.name.replace(/\.[^.]+$/, "") || "edited"}-merged.pdf`);
+       pages.filter((page) => page.source === "image").forEach((page) => URL.revokeObjectURL(page.preview));
+       setPages([]);
+       onDirty(false);
     } catch (error) { setMessage(error instanceof Error ? error.message : "PDF could not be created."); }
     setWorking(false);
   };
@@ -359,41 +432,46 @@ function PdfEditor() {
   </ToolCard>;
 }
 
-function PdfCompression() {
+function PdfCompression({ onDirty }: { onDirty: (dirty: boolean) => void }) {
   const { lang } = useT();
   const c = COPY[lang];
   const inputRef = useRef<HTMLInputElement>(null);
   const [files, setFiles] = useState<File[]>([]);
-  const [targetMb, setTargetMb] = useState(1.9);
+  const [targetKb, setTargetKb] = useState(1900);
   const [working, setWorking] = useState(false);
-  const add = (list: File[]) => setFiles((current) => [...current, ...list.filter(isPdf).filter((file) => file.size <= MAX_FILE_BYTES)]);
+  const [message, setMessage] = useState("");
+  const add = (list: File[]) => {
+    const next = list.filter(isPdf).filter((file) => file.size <= MAX_FILE_BYTES);
+    if (next.length) onDirty(true);
+    setFiles((current) => [...current, ...next]);
+  };
   const process = async () => {
     setWorking(true);
-    for (const file of files) {
-      const source = await getDocument({ data: new Uint8Array(await file.arrayBuffer()) }).promise;
-      const out = await PDFDocument.create();
-      for (let number = 1; number <= source.numPages; number += 1) {
-        const page = await source.getPage(number);
-        const viewport = page.getViewport({ scale: 1.25 });
-        const canvas = document.createElement("canvas"); canvas.width = viewport.width; canvas.height = viewport.height;
-        const context = canvas.getContext("2d");
-        if (!context) throw new Error("Could not render PDF.");
-        await page.render({ canvasContext: context, viewport }).promise;
-        const image = await out.embedJpg(canvas.toDataURL("image/jpeg", 0.82));
-        const outputPage = out.addPage([viewport.width, viewport.height]);
-        outputPage.drawImage(image, { x: 0, y: 0, width: viewport.width, height: viewport.height });
+    setMessage("");
+    try {
+      for (const file of files) {
+        const blob = await compressPdfToTarget(file, targetKb * 1024);
+        download(blob, `${file.name.replace(/\.pdf$/i, "")}-compressed.pdf`);
       }
-      const blob = pdfBlob(await out.save());
-      download(blob, `${file.name.replace(/\.pdf$/i, "")}-compressed.pdf`);
-      await source.destroy();
+      setFiles([]);
+      onDirty(false);
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : "PDF compression failed.");
+    } finally {
+      setWorking(false);
     }
-    setWorking(false);
   };
   return <ToolCard><SectionTitle icon={FileText} title={c.pdfTitle} detail={c.pdfDetail} />
     <DropZone accept=".pdf,application/pdf" multiple onFiles={add} label={c.dropPdfs} hint={c.pdfHint} />
     <input ref={inputRef} type="hidden" />
-    <div className="mt-5 rounded-xl border p-4" style={{ borderColor: "#e5ebf4", background: "#fbfcfe" }}><label className="flex items-center justify-between text-sm font-bold text-slate-700">{c.target} <span className="rounded-lg px-3 py-1" style={{ background: "rgba(212,160,23,.13)", color: NAVY }}>{targetMb.toFixed(1)} MB</span></label><input type="range" min="0.5" max="10" step="0.1" value={targetMb} onChange={(e) => setTargetMb(Number(e.target.value))} className="mt-3 w-full accent-[#D4A017]" /><p className="mt-1 text-xs text-slate-400">{c.targetHint}</p></div>
-    {files.length > 0 && <div className="mt-5 space-y-2">{files.map((file) => <div key={idFor(file)} className="flex items-center gap-3 rounded-xl border bg-white p-3" style={{ borderColor: "#e5ebf4" }}><FileText className="h-5 w-5" style={{ color: GOLD }} /><span className="min-w-0 flex-1 truncate text-sm font-bold text-slate-700">{file.name}</span><span className="text-xs text-slate-500">{bytesLabel(file.size)}</span><button onClick={() => setFiles((current) => current.filter((entry) => entry !== file))} className="text-slate-400 hover:text-red-600"><X className="h-4 w-4" /></button></div>)}</div>}
+    <div className="mt-5 rounded-xl border p-4" style={{ borderColor: "#e5ebf4", background: "#fbfcfe" }}>
+      <label className="flex items-center justify-between text-sm font-bold text-slate-700">{c.target} <span className="rounded-lg px-3 py-1" style={{ background: "rgba(212,160,23,.13)", color: NAVY }}>{targetKb >= 1024 ? `${(targetKb / 1024).toFixed(2)} MB` : `${targetKb} KB`}</span></label>
+      <input type="range" min="10" max="10240" step="10" value={targetKb} onChange={(e) => setTargetKb(Number(e.target.value))} className="mt-3 w-full accent-[#D4A017]" />
+      <div className="mt-2 flex items-center gap-2"><input type="number" min="10" max="10240" step="1" value={targetKb} onChange={(e) => setTargetKb(Math.min(10240, Math.max(10, Number(e.target.value) || 10)))} className="w-28 rounded-lg border px-3 py-2 text-sm" /><span className="text-xs text-slate-500">KB</span></div>
+      <p className="mt-2 text-xs text-slate-400">{c.targetHint} {c.targetExact}</p>
+    </div>
+    {message && <p className="mt-4 rounded-lg bg-red-50 p-3 text-sm text-red-700">{message}</p>}
+     {files.length > 0 && <div className="mt-5 space-y-2">{files.map((file) => <div key={idFor(file)} className="flex items-center gap-3 rounded-xl border bg-white p-3" style={{ borderColor: "#e5ebf4" }}><FileText className="h-5 w-5" style={{ color: GOLD }} /><span className="min-w-0 flex-1 truncate text-sm font-bold text-slate-700">{file.name}</span><span className="text-xs text-slate-500">{bytesLabel(file.size)}</span><button onClick={() => { setFiles((current) => current.filter((entry) => entry !== file)); onDirty(files.length > 1); }} className="text-slate-400 hover:text-red-600"><X className="h-4 w-4" /></button></div>)}</div>}
     {files.length > 0 && <div className="mt-5 flex justify-end"><Button disabled={working} onClick={process} className="btn-gold rounded-xl">{working ? c.compressing : c.pdfCompress}<Download className="ml-2 h-4 w-4" /></Button></div>}
   </ToolCard>;
 }
@@ -405,16 +483,22 @@ export default function DocumentTools() {
   const { lang } = useT();
   const c = COPY[lang];
   const [tab, setTab] = useState<ToolTab>("pdf-compress");
+  const [dirtyTools, setDirtyTools] = useState<Record<ToolTab, boolean>>({ "pdf-compress": false, "image-compress": false, "images-pdf": false, "pdf-edit": false });
   const tabs: { id: ToolTab; label: string; icon: typeof FileText }[] = [
     { id: "pdf-compress", label: c.pdfCompress, icon: FileText },
     { id: "image-compress", label: c.imageCompress, icon: FileImage },
     { id: "images-pdf", label: c.imagesPdf, icon: ImagePlus },
     { id: "pdf-edit", label: c.pdfEdit, icon: Layers3 },
   ];
-  return <div className="min-h-screen" style={{ background: SOFT_BG }}>
+   const switchTool = (next: ToolTab) => {
+     if (next === tab) return;
+     if (dirtyTools[tab] && !window.confirm(c.switchWarning)) return;
+     setTab(next);
+   };
+   return <div className="min-h-screen" style={{ background: SOFT_BG }}>
     <Seo title={`${c.hero} — Apna Enterprise`} description={c.heroDesc} path="/pdf-compressor" />
     <section className="border-b py-12" style={{ background: "linear-gradient(135deg,#071B4A 0%,#102c68 100%)" }}><div className="container mx-auto px-4 lg:px-8"><div className="max-w-3xl"><div className="mb-4 inline-flex items-center gap-2 rounded-full border px-3 py-1 text-xs font-bold uppercase tracking-wider" style={{ borderColor: "rgba(242,193,78,.4)", color: GOLD_LIGHT }}><LockKeyhole className="h-3.5 w-3.5" /> {c.private}</div><h1 className="text-3xl font-extrabold text-white md:text-5xl">{c.hero}</h1><p className="mt-4 max-w-2xl text-base leading-7 text-blue-100/80 md:text-lg">{c.heroDesc}</p></div></div></section>
-    <div className="container mx-auto px-4 py-8 lg:px-8"><div className="mb-6 grid grid-cols-2 gap-2 rounded-2xl border bg-white p-2 sm:grid-cols-4" style={{ borderColor: "#e5ebf4" }}>{tabs.map(({ id, label, icon: Icon }) => <button key={id} onClick={() => setTab(id)} className="flex min-h-16 items-center justify-center gap-2 rounded-xl px-2 text-center text-xs font-bold transition-colors sm:text-sm" style={{ background: tab === id ? "rgba(212,160,23,.14)" : "transparent", color: tab === id ? NAVY : "#64748b" }}><Icon className="h-4 w-4" style={{ color: tab === id ? GOLD : "currentColor" }} />{label}</button>)}</div>{tab === "pdf-compress" && <PdfCompression />}{tab === "image-compress" && <ImageCompressor />}{tab === "images-pdf" && <ImagesToPdf />}{tab === "pdf-edit" && <PdfEditor />}<div className="mt-6 grid gap-3 sm:grid-cols-3"><Trust icon={LockKeyhole} title={c.privateLabel} text={c.privateText} /><Trust icon={Zap} title={c.flexible} text={c.flexibleText} /><Trust icon={Check} title={c.easy} text={c.easyText} /></div></div>
+     <div className="container mx-auto px-4 py-8 lg:px-8"><div className="mb-6 grid grid-cols-2 gap-2 rounded-2xl border bg-white p-2 sm:grid-cols-4" style={{ borderColor: "#e5ebf4" }}>{tabs.map(({ id, label, icon: Icon }) => <button key={id} onClick={() => switchTool(id)} className="flex min-h-16 items-center justify-center gap-2 rounded-xl px-2 text-center text-xs font-bold transition-colors sm:text-sm" style={{ background: tab === id ? "rgba(212,160,23,.14)" : "transparent", color: tab === id ? NAVY : "#64748b" }}><Icon className="h-4 w-4" style={{ color: tab === id ? GOLD : "currentColor" }} />{label}</button>)}</div>{tab === "pdf-compress" && <PdfCompression onDirty={(dirty) => setDirtyTools((current) => ({ ...current, "pdf-compress": dirty }))} />}{tab === "image-compress" && <ImageCompressor onDirty={(dirty) => setDirtyTools((current) => ({ ...current, "image-compress": dirty }))} />}{tab === "images-pdf" && <ImagesToPdf onDirty={(dirty) => setDirtyTools((current) => ({ ...current, "images-pdf": dirty }))} />}{tab === "pdf-edit" && <PdfEditor onDirty={(dirty) => setDirtyTools((current) => ({ ...current, "pdf-edit": dirty }))} />}<div className="mt-6 grid gap-3 sm:grid-cols-3"><Trust icon={LockKeyhole} title={c.privateLabel} text={c.privateText} /><Trust icon={Zap} title={c.flexible} text={c.flexibleText} /><Trust icon={Check} title={c.easy} text={c.easyText} /></div></div>
   </div>;
 }
 

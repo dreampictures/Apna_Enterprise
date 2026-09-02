@@ -1,0 +1,934 @@
+You are working on the existing APNA ENTERPRISE website codebase.
+
+IMPORTANT: This is an update to an already working production website.
+
+DO NOT rebuild the project from scratch.
+DO NOT remove existing features.
+DO NOT break any existing workflow.
+DO NOT change existing functionality unless it is explicitly required below.
+DO NOT delete database data.
+DO NOT replace the current architecture.
+
+Before making changes:
+
+1. Inspect the existing codebase carefully.
+2. Understand the current implementation of each affected feature.
+3. Reuse the existing architecture and components wherever possible.
+4. Make backward-compatible changes.
+5. Preserve all existing routes, APIs, database data, admin functionality, and working features.
+6. If a database schema change is needed, make it safely and preserve existing records.
+7. Test all affected old functionality after implementing the updates.
+8. Do not expose secrets, API keys, passwords, PayU credentials, or environment variables.
+
+PROJECT CONTEXT
+
+The project is the APNA ENTERPRISE website.
+
+Current architecture:
+
+- pnpm TypeScript monorepo
+- React 19 + Vite frontend
+- Express 5 backend
+- PostgreSQL database
+- Drizzle ORM
+- Zod validation
+- React Query
+- React Hook Form
+- PayU payment integration
+- Cloudflare R2
+- Fly.io deployment
+
+Main frontend:
+
+artifacts/global-enterprise
+
+Main backend:
+
+artifacts/api-server
+
+Database schema:
+
+lib/db/src/schema/index.ts
+
+Existing application features include:
+
+- Public service pages
+- Online applications
+- Application tracking
+- PayU payments
+- Admin dashboard
+- Service pricing
+- Government/job updates
+- PDF/image tools
+- Khaata
+- Cameti
+- Lead capture
+- Visitor analytics
+- English/Punjabi language system
+
+IMPORTANT:
+The existing website is live.
+All changes must be safe and backward compatible.
+
+==================================================
+UPDATE 1: PDF AND IMAGE TOOLS
+==================================================
+
+Current route:
+
+/pdf-compressor
+
+Current tools include:
+
+1. PDF Compressor
+2. Image Compressor
+3. Images to PDF
+4. Merge/Edit PDF
+
+These tools currently work browser-side and utility files are not uploaded to the server.
+
+Implement the following improvements.
+
+------------------------------------------
+1A. AUTO REMOVE FILE AFTER DOWNLOAD
+------------------------------------------
+
+When a user completes processing and downloads the generated output file:
+
+- Automatically clear the uploaded file.
+- Reset the current tool state.
+- Reset the upload area to its initial empty state.
+- Clear temporary processing state.
+- Allow the user to immediately upload another file.
+
+This should happen after the download action is successfully triggered.
+
+Apply this behavior consistently to relevant PDF and image tools.
+
+Do not affect files before the user has downloaded the output.
+
+------------------------------------------
+1B. WARNING BEFORE SWITCHING TOOL
+------------------------------------------
+
+Current problem:
+
+When a file is uploaded in one tool and the user clicks another tool/tab, the uploaded file may be removed automatically.
+
+New behavior:
+
+If the current tool contains:
+
+- an uploaded file
+- uploaded images
+- edited PDF state
+- or any unsaved/current work
+
+and the user tries to switch to another tool:
+
+Show a confirmation dialog BEFORE clearing anything.
+
+English version example:
+
+Title:
+Leave this tool?
+
+Message:
+You have an uploaded file or unfinished work. If you leave this tool, your current file and work will be removed.
+
+Buttons:
+
+Cancel
+Leave Tool
+
+Behavior:
+
+Cancel:
+- Stay on the current tool.
+- Preserve all uploaded files and current state.
+
+Leave Tool:
+- Clear current tool files/state.
+- Switch to the selected tool.
+
+IMPORTANT:
+
+Do not automatically delete an uploaded file merely because the user clicked another tool.
+
+The warning should appear only when there is actual work that would be lost.
+
+------------------------------------------
+1C. ORIGINAL FILE NAME ON DOWNLOAD
+------------------------------------------
+
+Current problem:
+
+Processed files are downloaded with renamed or generic file names.
+
+New behavior:
+
+Preserve the original uploaded filename base whenever possible.
+
+Example:
+
+Uploaded:
+
+my-document.pdf
+
+Downloaded:
+
+my-document.pdf
+
+If a suffix is necessary to distinguish the processed file:
+
+my-document-compressed.pdf
+
+Requirements:
+
+- Preserve the original base filename.
+- Preserve the appropriate file extension.
+- Do not use unnecessary random filenames.
+- Apply consistently to all relevant PDF/image tools.
+
+For multiple images converted into one PDF, use a sensible descriptive filename.
+
+Example:
+
+images-to-pdf.pdf
+
+------------------------------------------
+1D. PDF COMPRESSOR TARGET SIZE
+------------------------------------------
+
+Current problem:
+
+The PDF compression target slider only supports a limited range, approximately down to 500 KB.
+
+New requirement:
+
+Allow target size selection down to:
+
+10 KB
+
+The UI should support:
+
+- Slider control
+- Manual numeric input
+- Unit selection or clear handling for KB/MB if necessary
+
+The slider and manual value must stay synchronized.
+
+Example:
+
+If the user moves the slider:
+
+Manual value updates.
+
+If the user manually enters a valid target size:
+
+Slider updates accordingly.
+
+Support sensible values such as:
+
+10 KB
+20 KB
+50 KB
+100 KB
+500 KB
+1 MB
+and larger supported values.
+
+IMPORTANT TECHNICAL RULE:
+
+Do not falsely guarantee an exact compressed size.
+
+PDF compression may not always reach the requested target without unacceptable quality loss or technical limitations.
+
+The UI should communicate the actual result honestly.
+
+Do not create corrupted PDFs.
+
+Maintain good error handling.
+
+==================================================
+UPDATE 2: DYNAMIC APPLICATION PRICING
+==================================================
+
+Some services cannot have a fixed price because the final cost depends on the customer's requirements.
+
+Implement a reusable per-application dynamic pricing system.
+
+IMPORTANT:
+
+Do not break the existing fixed service price system.
+
+Existing services with fixed prices must continue working exactly as they currently do.
+
+New system should allow an application to use either:
+
+1. Fixed service price
+or
+2. Admin-assigned custom application price
+
+Do not create separate duplicated payment systems for every service.
+
+Create a reusable architecture.
+
+------------------------------------------
+2A. SERVICES REQUIRING ADMIN PRICE
+------------------------------------------
+
+Initially support:
+
+- Air Ticket Booking
+- Train Ticket Booking
+- Bus Ticket Booking
+- Government Job Application Forms
+
+The architecture should allow additional services to use this system later.
+
+------------------------------------------
+2B. CLIENT APPLICATION FLOW
+------------------------------------------
+
+For dynamic-price services:
+
+Step 1:
+
+Client submits the application.
+
+Step 2:
+
+The system creates:
+
+- Application record
+- Tracking number
+
+Step 3:
+
+No immediate payment should be required if the final price has not yet been determined.
+
+Step 4:
+
+The application should enter an appropriate state such as:
+
+Waiting for Price
+
+or an equivalent internal workflow.
+
+Step 5:
+
+Admin reviews the application.
+
+Step 6:
+
+Admin determines the final price.
+
+Step 7:
+
+Admin attaches the price to that specific application.
+
+Step 8:
+
+The client can check the application using the tracking number.
+
+Step 9:
+
+Once the price has been assigned, the Track page displays the payable amount and payment option.
+
+Step 10:
+
+Client completes payment through the existing PayU payment architecture.
+
+Step 11:
+
+Payment status is updated securely.
+
+==================================================
+UPDATE 3: AIR TICKET BOOKING CUSTOM PRICE
+==================================================
+
+When a customer applies for Air Ticket Booking:
+
+The admin must be able to review:
+
+- Departure location
+- Destination
+- Travel date
+- Return date if applicable
+- Passenger information
+- Other submitted details
+
+The admin can check the current ticket price externally.
+
+Then the admin must be able to enter a final price for THAT SPECIFIC APPLICATION.
+
+The price should be stored against the individual application.
+
+Example:
+
+Tracking Number:
+
+APN123456
+
+Service:
+
+Air Ticket Booking
+
+Final Payable Amount:
+
+₹7,500
+
+The client must be able to see the assigned amount through the existing application tracking system.
+
+When the amount has been assigned:
+
+Show:
+
+Payment Required
+
+Amount Payable
+
+Pay Now button
+
+Do not expose internal cost calculations or admin notes unless explicitly intended.
+
+After payment:
+
+- Update payment status securely.
+- Save transaction information.
+- Continue using the existing PayU verification process.
+- Do not mark an application as paid based only on a frontend action.
+
+==================================================
+UPDATE 4: TRAIN AND BUS TICKET CUSTOM PRICE
+==================================================
+
+Implement the same dynamic-price workflow for:
+
+- Train Ticket Booking
+- Bus Ticket Booking
+
+Do not create three completely separate systems.
+
+Use one reusable application-level pricing system.
+
+The admin should be able to:
+
+- Review client requirements.
+- Check the relevant ticket information.
+- Set the final payable amount.
+- Save the amount against the application.
+
+The client should:
+
+- Track the application using the tracking number.
+- See the assigned amount when available.
+- Pay through the secure existing PayU workflow.
+
+==================================================
+UPDATE 5: GOVERNMENT FORM FILLING
+==================================================
+
+Service:
+
+Government Job Application Forms
+
+The final service fee should not always be predetermined.
+
+The client should be able to provide information about the post/application they want to apply for.
+
+Add appropriate fields such as:
+
+Post Name / Application Name
+
+Department, if known
+
+Advertisement or vacancy details, if known
+
+Official link, if available
+
+Additional information/message
+
+The existing dynamic fields architecture should be reused.
+
+Do not unnecessarily duplicate the form system.
+
+------------------------------------------
+ADMIN WORKFLOW
+------------------------------------------
+
+After the client submits the request:
+
+The admin reviews:
+
+- Post information
+- Department information
+- Advertisement details
+- Other submitted information
+
+The admin determines the service price.
+
+The admin attaches the final service fee to the specific application.
+
+The client can then:
+
+1. Open the Track page.
+2. Enter the tracking number.
+3. View the assigned payable amount.
+4. Use Pay Now.
+5. Complete payment through the existing PayU flow.
+
+After verified payment:
+
+The application should show the appropriate paid status.
+
+The admin can proceed with the service.
+
+IMPORTANT:
+
+Clearly separate:
+
+Official application fee, if relevant
+and
+Apna Enterprise service fee
+
+Do not automatically combine or misrepresent charges.
+
+The system should allow the admin to clearly communicate the amount being requested.
+
+==================================================
+UPDATE 6: TRACK PAGE PAYMENT FLOW
+==================================================
+
+Enhance the existing /track page.
+
+Current tracking functionality must remain intact.
+
+Existing statuses include:
+
+- Pending
+- Review
+- Applying
+- Applied
+- Rejected
+- Completed
+
+Add the dynamic pricing/payment experience without breaking these statuses.
+
+For applications waiting for admin pricing:
+
+Show an appropriate message.
+
+English example:
+
+Your request is being reviewed.
+
+We are reviewing your service requirements. Payment will become available once the final service amount has been determined.
+
+Do not show a Pay Now button before an amount is actually assigned.
+
+Once the admin assigns a price:
+
+Display:
+
+Service
+
+Assigned Amount
+
+Payment Status
+
+Pay Now button if unpaid
+
+If payment is already completed:
+
+Display:
+
+Payment Received
+
+Do not expose sensitive transaction information publicly.
+
+The payment button must securely initiate the existing backend PayU flow.
+
+Do not trust client-side price values.
+
+The backend must use the stored application price.
+
+==================================================
+UPDATE 7: ADMIN APPLICATION PRICE MANAGEMENT
+==================================================
+
+Enhance the existing Applications section in the Admin Dashboard.
+
+For each application, where appropriate, the admin should be able to:
+
+- See whether the service uses fixed or dynamic pricing.
+- See the current payable amount.
+- Enter or update a custom application price.
+- Save the price.
+- See whether payment is pending, paid, or failed.
+- Optionally add internal admin notes.
+
+IMPORTANT:
+
+Admin notes must not be publicly visible unless explicitly designed to be public.
+
+For dynamic-price applications:
+
+Before the price is assigned:
+
+Price Status:
+
+Waiting for Price
+
+After admin sets a price:
+
+Price Status:
+
+Price Assigned
+
+After successful verified payment:
+
+Payment Status:
+
+Paid
+
+Do not allow frontend users to manipulate the application price.
+
+Validate all amounts server-side.
+
+Use secure authentication for admin-only actions.
+
+==================================================
+UPDATE 8: APPLICATION SUBMISSION SUCCESS POPUP
+==================================================
+
+After a client successfully submits any service application:
+
+Show a clear success popup/dialog.
+
+The popup should:
+
+- Confirm the request was received.
+- Display the tracking number.
+- Explain what happens next.
+- Provide a button to track the application.
+
+English example:
+
+Application Received Successfully!
+
+We have received your request. Our team will review the information provided and contact you on WhatsApp if additional information is required.
+
+Your Tracking Number:
+APN123456
+
+Buttons:
+
+Track Application
+Close
+
+The exact wording may be improved professionally.
+
+For ticket services, use wording relevant to ticket availability and price review.
+
+For government form services, use wording relevant to post/application review.
+
+IMPORTANT:
+
+Do not falsely promise immediate processing.
+
+Do not claim that approval is guaranteed.
+
+==================================================
+UPDATE 9: LANGUAGE RULE FOR ALL NEW UI
+==================================================
+
+The website already supports:
+
+- English
+- Punjabi Gurmukhi
+
+STRICT REQUIREMENT:
+
+Every new user-facing UI element added in this update must support both languages.
+
+This includes:
+
+- Popups
+- Dialogs
+- Buttons
+- Notifications
+- Error messages
+- Success messages
+- Payment messages
+- Dynamic pricing messages
+- Status labels
+- Tool-switch warnings
+- PDF tool messages
+
+LANGUAGE BEHAVIOR:
+
+If the website is currently being viewed in English:
+
+Show English.
+
+If the website is currently being viewed in Punjabi:
+
+Show proper Punjabi Gurmukhi.
+
+Do not show mixed language unnecessarily.
+
+Do not use Roman Punjabi.
+
+All Punjabi translations must be proper Gurmukhi and professionally written.
+
+Reuse and improve the existing i18n architecture.
+
+Do not create random hard-coded strings in new components.
+
+IMPORTANT ADDITION:
+
+If practical and safe, improve language persistence so the selected language remains selected after page refresh.
+
+However:
+
+Do not break the existing language toggle.
+
+==================================================
+UPDATE 10: PAYMENT SYSTEM SAFETY
+==================================================
+
+The existing website already uses PayU.
+
+Current payment flow and security must not be weakened.
+
+Continue to:
+
+- Generate payment information server-side.
+- Calculate or retrieve payment amounts server-side.
+- Validate PayU callbacks.
+- Validate transaction ID.
+- Validate amount.
+- Validate payment status.
+- Validate payment hash.
+
+Do not mark payments successful based only on:
+
+- frontend redirects
+- frontend messages
+- manually modified requests
+
+The dynamic application pricing system must integrate with the existing payment architecture.
+
+Do not duplicate PayU callback logic unnecessarily.
+
+Reuse secure existing payment logic where possible.
+
+Current PayU test/live configuration must remain environment-driven.
+
+Do not expose:
+
+- PayU key
+- PayU salt
+- secrets
+- environment variables
+
+==================================================
+UPDATE 11: ADMIN MANUAL PAYMENT / QR SYSTEM
+==================================================
+
+Plan and implement this carefully using the existing payment architecture.
+
+Requirement:
+
+For customers physically visiting the shop, the admin should be able to create a manual payment request.
+
+The workflow should allow the admin to:
+
+1. Select or enter the service.
+2. Enter client details if required.
+3. Enter the payable amount.
+4. Generate a payment request.
+5. Provide a secure payment page or supported payment QR option.
+6. Allow the customer to make payment.
+7. Reliably verify payment.
+8. Record the payment in the system.
+
+IMPORTANT:
+
+Do not implement an insecure fake QR payment confirmation.
+
+Do not mark a payment as paid merely because someone uploads or claims payment.
+
+If a PayU-supported dynamic payment link/QR method is available for the current merchant integration, use the officially supported secure approach.
+
+If the current PayU integration does not support the required QR workflow:
+
+DO NOT invent a fake implementation.
+
+Instead:
+
+- Clearly identify the limitation.
+- Preserve existing working payment functionality.
+- Implement the underlying manual payment request architecture only if safe.
+- Report what additional PayU product/API access or credentials are required.
+
+Do not expose merchant credentials.
+
+==================================================
+DATABASE CHANGES
+==================================================
+
+Make database changes only where necessary.
+
+The current applications table includes fields such as:
+
+- tracking_number
+- service
+- status
+- payment_status
+- payment_txn_id
+- payment_amount
+- paid_at
+
+Analyze whether existing fields can support the new requirements.
+
+If new fields are required, consider safe additions such as:
+
+- pricing_type
+- application_price
+- price_assigned_at
+- price_assigned_by
+- internal_notes
+
+Use appropriate naming based on the existing codebase conventions.
+
+IMPORTANT:
+
+Do not delete existing columns.
+
+Do not break existing records.
+
+Existing applications must continue to work.
+
+Use backward-compatible defaults.
+
+Because this project currently performs schema updates at startup rather than using a fully versioned migration system:
+
+Be especially careful.
+
+Ensure schema update logic is safe for existing production databases.
+
+==================================================
+BACKWARD COMPATIBILITY REQUIREMENTS
+==================================================
+
+The following existing features MUST continue working:
+
+- Homepage
+- Services page
+- Existing service applications
+- Fixed-price service payments
+- Free services
+- Existing application tracking
+- Existing application statuses
+- Admin login
+- Admin applications management
+- Leads
+- Analytics
+- Service pricing
+- Announcements
+- Excel import
+- Smart URL import
+- Khaata
+- Cameti
+- PDF tools
+- Visitor tracking
+- Language toggle
+- SEO
+- Cloudflare R2
+- Fly.io deployment
+- Existing PayU callbacks
+
+Do not remove or redesign unrelated systems.
+
+==================================================
+SECURITY CHECK
+==================================================
+
+While touching related code, do not introduce security regressions.
+
+Pay special attention to:
+
+- Admin-only endpoints
+- Application price modification
+- Payment amount tampering
+- PayU callback validation
+- Authentication
+- User input validation
+
+Do not change unrelated authentication systems unless necessary.
+
+However, if you discover that a newly modified endpoint is unauthenticated when it must be admin-only, secure that endpoint.
+
+Do not expose internal admin notes publicly.
+
+==================================================
+TESTING REQUIREMENTS
+==================================================
+
+Before considering the update complete:
+
+1. Run TypeScript checks.
+2. Run/build the frontend.
+3. Run/build the backend.
+4. Check for lint/build errors if configured.
+5. Test existing fixed-price application flow.
+6. Test a free application.
+7. Test dynamic-price application flow.
+8. Test Air Ticket flow.
+9. Test Train Ticket flow.
+10. Test Bus Ticket flow.
+11. Test Government Form flow.
+12. Test price assignment from Admin.
+13. Test tracking before price assignment.
+14. Test tracking after price assignment.
+15. Test payment initiation.
+16. Verify payment amounts come from the backend.
+17. Test English UI.
+18. Test Punjabi Gurmukhi UI.
+19. Test PDF tool tab switching.
+20. Test Cancel on tool-switch warning.
+21. Test Leave Tool behavior.
+22. Test auto-clear after download.
+23. Test original filename preservation.
+24. Test PDF compressor slider and manual input.
+25. Test mobile layout.
+26. Verify old functionality still works.
+
+Do not deploy broken code.
+
+==================================================
+FINAL RESPONSE REQUIRED
+==================================================
+
+After implementation, provide a clear report containing:
+
+1. What files were changed.
+2. What database changes were made.
+3. Which existing fields/features were reused.
+4. How dynamic application pricing works.
+5. How the tracking page payment flow works.
+6. How the PDF tool improvements work.
+7. How language switching works for the new UI.
+8. Manual payment/QR implementation status.
+9. Tests performed.
+10. Any limitations or features that require additional PayU account/API access.
+
+Before making any destructive change, stop and explain the issue.
+
+The primary goal is:
+
+ADD THE NEW FEATURES SAFELY
+WITHOUT BREAKING ANY EXISTING WORKING FUNCTIONALITY.

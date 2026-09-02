@@ -2,7 +2,7 @@ import { useState } from "react";
 import Seo from "@/components/Seo";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { FaSearch, FaCheckCircle, FaClock, FaTimesCircle, FaClipboardList, FaPhone, FaArrowRight, FaCheck } from "react-icons/fa";
+import { FaSearch, FaCheckCircle, FaClock, FaTimesCircle, FaClipboardList, FaPhone, FaArrowRight, FaCheck, FaCreditCard } from "react-icons/fa";
 import { Link } from "wouter";
 import { useT } from "@/i18n";
 
@@ -15,6 +15,20 @@ type TrackResult = {
   status: string;
   createdAt: string;
   callbackRequested: boolean;
+  pricingType?: string;
+  pricingStatus?: string;
+  applicationPrice?: number | null;
+  paymentStatus?: string;
+  paymentAmount?: number | null;
+};
+
+type PaymentInfo = {
+  action: string;
+  fields: Record<string, string>;
+  amount: number;
+  baseAmount: number;
+  gatewayFee: number;
+  gatewayFeeGst: number;
 };
 
 const STATUS_CONFIG: Record<string, { label: (t: any) => string; color: string; bg: string; border: string; icon: React.ElementType; step: number }> = {
@@ -77,6 +91,10 @@ export default function Track() {
   const [result, setResult] = useState<TrackResult | null>(null);
   const [notFound, setNotFound] = useState(false);
   const [error, setError] = useState("");
+  const [paymentInfo, setPaymentInfo] = useState<PaymentInfo | null>(null);
+  const [paymentLoading, setPaymentLoading] = useState(false);
+  const [paymentSubmitting, setPaymentSubmitting] = useState(false);
+  const [paymentError, setPaymentError] = useState("");
 
   async function handleTrack(e: React.FormEvent) {
     e.preventDefault();
@@ -87,6 +105,8 @@ export default function Track() {
     setResult(null);
     setNotFound(false);
     setError("");
+    setPaymentInfo(null);
+    setPaymentError("");
 
     try {
       const res = await fetch(`/api/applications/track/${encodeURIComponent(tn)}`);
@@ -105,9 +125,35 @@ export default function Track() {
     }
   }
 
+  async function startPayment() {
+    if (!result || paymentLoading) return;
+    setPaymentLoading(true);
+    setPaymentError("");
+    try {
+      const response = await fetch(`/api/applications/track/${encodeURIComponent(result.trackingNumber)}/payment`, { method: "POST" });
+      const data = await response.json().catch(() => null);
+      if (!response.ok) throw new Error(data?.error ?? t.track_payment_error);
+      setPaymentInfo(data);
+    } catch (paymentStartError) {
+      setPaymentError(paymentStartError instanceof Error ? paymentStartError.message : t.track_payment_error);
+    } finally {
+      setPaymentLoading(false);
+    }
+  }
+
+  function submitPayU(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    if (paymentSubmitting) return;
+    setPaymentSubmitting(true);
+    event.currentTarget.submit();
+  }
+
   const cfg = result ? (STATUS_CONFIG[result.status] ?? STATUS_CONFIG.pending) : null;
   const currentStep = cfg?.step ?? 1;
   const isRejected = result?.status === "rejected";
+  const isDynamic = result?.pricingType === "dynamic";
+  const paymentStatus = result?.paymentStatus ?? "not_required";
+  const canPay = isDynamic && result?.pricingStatus === "price_assigned" && paymentStatus !== "paid";
 
   return (
     <div className="flex flex-col min-h-full">
@@ -276,7 +322,50 @@ export default function Track() {
                     {result.callbackRequested ? t.track_callback_yes : t.track_callback_no}
                   </span>
                 </div>
+                {isDynamic && (
+                  <>
+                    <div className="flex items-start justify-between gap-4 py-3 border-t border-slate-100">
+                      <span className="text-xs font-bold uppercase tracking-wider text-slate-400">{t.track_price_label}</span>
+                      <span className={`text-sm font-semibold text-right ${result.pricingStatus === "price_assigned" ? "text-slate-800" : "text-amber-700"}`}>
+                        {result.pricingStatus === "price_assigned" && result.applicationPrice != null
+                          ? `₹${Number(result.applicationPrice).toLocaleString("en-IN", { minimumFractionDigits: 2 })}`
+                          : t.track_price_waiting}
+                      </span>
+                    </div>
+                    <div className="flex items-start justify-between gap-4 py-3">
+                      <span className="text-xs font-bold uppercase tracking-wider text-slate-400">{t.track_payment_label}</span>
+                      <span className={`text-sm font-semibold text-right ${paymentStatus === "paid" ? "text-green-700" : paymentStatus === "failed" ? "text-red-700" : "text-slate-700"}`}>
+                        {paymentStatus === "paid" ? t.track_payment_paid : paymentStatus === "failed" ? t.track_payment_failed : paymentStatus === "initiated" ? t.track_payment_initiated : t.track_payment_not_started}
+                      </span>
+                    </div>
+                  </>
+                )}
               </div>
+
+              {canPay && !paymentInfo && (
+                <div className="mx-6 mb-5 rounded-xl border border-amber-200 bg-amber-50/70 p-4">
+                  <p className="text-sm text-slate-600 mb-3">{t.track_payment_desc}</p>
+                  <Button type="button" onClick={startPayment} disabled={paymentLoading} className="btn-gold w-full h-11 rounded-xl font-bold gap-2">
+                    <FaCreditCard />
+                    {paymentLoading ? t.payment_opening : t.track_pay_now}
+                  </Button>
+                  {paymentError && <p className="mt-2 text-xs text-red-600">{paymentError}</p>}
+                </div>
+              )}
+
+              {paymentInfo && (
+                <div className="mx-6 mb-5 rounded-xl border border-blue-100 bg-blue-50/60 p-4">
+                  <div className="flex justify-between text-sm text-slate-600"><span>{t.track_price_label}</span><strong>₹{paymentInfo.baseAmount.toLocaleString("en-IN", { minimumFractionDigits: 2 })}</strong></div>
+                  <div className="flex justify-between text-sm text-slate-600 mt-2"><span>Gateway fee + GST</span><span>₹{(paymentInfo.gatewayFee + paymentInfo.gatewayFeeGst).toLocaleString("en-IN", { minimumFractionDigits: 2 })}</span></div>
+                  <div className="flex justify-between items-center border-t border-blue-100 mt-3 pt-3"><span className="font-semibold text-slate-700">{t.pay_online_total}</span><strong className="text-lg text-primary">₹{paymentInfo.amount.toLocaleString("en-IN", { minimumFractionDigits: 2 })}</strong></div>
+                  <form action={paymentInfo.action} method="POST" onSubmit={submitPayU} className="mt-4">
+                    {Object.entries(paymentInfo.fields).map(([key, value]) => <input key={key} type="hidden" name={key} value={value} />)}
+                    <Button type="submit" disabled={paymentSubmitting} className="btn-gold w-full h-11 rounded-xl font-bold gap-2">
+                      <FaCreditCard /> {paymentSubmitting ? t.payment_opening : t.track_pay_now}
+                    </Button>
+                  </form>
+                </div>
+              )}
 
               {/* Footer */}
               <div className="px-6 py-4" style={{ background: "#f8fafd", borderTop: "1px solid #e8edf5" }}>

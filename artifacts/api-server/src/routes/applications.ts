@@ -1,8 +1,14 @@
 import { Router } from "express";
-import { createHash, timingSafeEqual } from "node:crypto";
-import { db, applicationsTable, servicePricesTable } from "@workspace/db";
+import { createHash, randomBytes, timingSafeEqual } from "node:crypto";
+import { db, applicationsTable, paymentRequestsTable, servicePricesTable } from "@workspace/db";
 import { eq, desc, count, sql } from "drizzle-orm";
-import { CreateApplicationBody, ListApplicationsQueryParams, ExportApplicationsCsvQueryParams } from "@workspace/api-zod";
+import {
+  CreateApplicationBody,
+  CreatePaymentRequestBody,
+  ListApplicationsQueryParams,
+  ExportApplicationsCsvQueryParams,
+  SetApplicationPriceBody,
+} from "@workspace/api-zod";
 import { requireAuth } from "../middlewares/auth";
 
 const router = Router();
@@ -57,6 +63,12 @@ const PAYU_EMPTY_UDFS = ["", "", ""] as const;
 const PAYU_EMPTY_SPLIT_PAYMENT_FIELDS = ["", "", "", "", ""] as const;
 const PAYMENT_GATEWAY_FEE_RATE = 0.02;
 const PAYMENT_GATEWAY_GST_RATE = 0.18;
+const DYNAMIC_PRICED_SERVICES = new Set([
+  "Air Ticket Booking",
+  "Train Ticket Booking",
+  "Bus Ticket Booking",
+  "Job Application Forms (Govt Naukri)",
+]);
 
 function roundCurrency(amount: number): number {
   return Math.round((amount + Number.EPSILON) * 100) / 100;
@@ -108,6 +120,71 @@ function isValidPayUHash(expected: string, actual: string): boolean {
   return expectedBuffer.length === actualBuffer.length && timingSafeEqual(expectedBuffer, actualBuffer);
 }
 
+function pricingStatus(pricingType: string, applicationPrice: number | null | undefined): string {
+  if (pricingType !== "dynamic") return "fixed";
+  return applicationPrice === null || applicationPrice === undefined ? "waiting_for_price" : "price_assigned";
+}
+
+function createPaymentFields(
+  req: any,
+  {
+    id,
+    reference,
+    name,
+    email,
+    phone,
+    baseAmount,
+    productinfo,
+  }: {
+    id: number;
+    reference: string;
+    name: string;
+    email: string;
+    phone?: string | null;
+    baseAmount: number;
+    productinfo: string;
+  },
+) {
+  const key = process.env.PAYU_MERCHANT_KEY;
+  const salt = process.env.PAYU_MERCHANT_SALT;
+  if (!key || !salt) {
+    throw new Error("Payment gateway is not configured");
+  }
+
+  const paymentBreakdown = calculatePaymentBreakdown(baseAmount);
+  const txnid = `AE${Date.now()}${id}${randomBytes(4).toString("hex")}`;
+  const amount = paymentBreakdown.amount.toFixed(2);
+  const appUrl = publicAppUrl(req);
+  const fields = {
+    key,
+    txnid,
+    amount,
+    productinfo,
+    firstname: name,
+    email,
+    phone: phone ?? "",
+    udf1: reference,
+    udf2: String(id),
+    udf3: "",
+    udf4: "",
+    udf5: "",
+    surl: `${appUrl}/api/payments/payu/success`,
+    furl: `${appUrl}/api/payments/payu/failure`,
+    hash: createPayUHash({
+      key,
+      txnid,
+      amount,
+      productinfo,
+      firstname: name,
+      email,
+      trackingNumber: reference,
+      applicationId: id,
+    }),
+  };
+
+  return { fields, txnid, ...paymentBreakdown };
+}
+
 // POST /applications - Submit a new service application
 router.post("/applications", async (req, res) => {
   const parsed = CreateApplicationBody.safeParse(req.body);
@@ -122,15 +199,16 @@ router.post("/applications", async (req, res) => {
     .from(servicePricesTable)
     .where(eq(servicePricesTable.service, service))
     .limit(1);
-  const baseAmount = configuredPrice?.price ?? 0;
-  const paymentBreakdown = calculatePaymentBreakdown(baseAmount);
-  const paymentAmount = paymentBreakdown.amount;
+  const pricingType = DYNAMIC_PRICED_SERVICES.has(service) ? "dynamic" : "fixed";
+  const baseAmount = pricingType === "dynamic" ? null : (configuredPrice?.price ?? 0);
+  const paymentBreakdown = baseAmount === null ? null : calculatePaymentBreakdown(baseAmount);
+  const paymentAmount = paymentBreakdown?.amount ?? null;
 
-  if (paymentAmount > 0 && (!process.env.PAYU_MERCHANT_KEY || !process.env.PAYU_MERCHANT_SALT)) {
+  if (paymentAmount !== null && paymentAmount > 0 && (!process.env.PAYU_MERCHANT_KEY || !process.env.PAYU_MERCHANT_SALT)) {
     res.status(503).json({ error: "Payment gateway is not configured. Please contact the office." });
     return;
   }
-  if (paymentAmount > 0 && !email) {
+  if (paymentAmount !== null && paymentAmount > 0 && !email) {
     res.status(400).json({ error: "Email is required for online payment." });
     return;
   }
@@ -151,8 +229,10 @@ router.post("/applications", async (req, res) => {
           message: message ?? null,
           serviceDetails: details ?? "{}",
           callbackRequested: callbackRequested ?? false,
-          paymentStatus: paymentAmount > 0 ? "initiated" : "not_required",
+           paymentStatus: paymentAmount !== null && paymentAmount > 0 ? "initiated" : "not_required",
           paymentAmount,
+          pricingType,
+          applicationPrice: baseAmount,
         })
         .returning();
 
@@ -165,48 +245,28 @@ router.post("/applications", async (req, res) => {
         service: app.service,
         message: app.message,
         details: app.serviceDetails,
+         pricingType: app.pricingType,
+         pricingStatus: pricingStatus(app.pricingType, app.applicationPrice),
+         applicationPrice: app.applicationPrice,
         createdAt: app.createdAt.toISOString(),
       };
 
-      if (paymentAmount > 0) {
-        const key = process.env.PAYU_MERCHANT_KEY!;
-        const txnid = `AE${Date.now()}${app.id}`;
-        const amount = paymentAmount.toFixed(2);
-        const productinfo = `${service} application`;
-        const action = payuPaymentUrl();
-        const appUrl = publicAppUrl(req);
-        const fields = {
-          key,
-          txnid,
-          amount,
-          productinfo,
-          firstname: name,
-          email: email!,
-          phone,
-          udf1: app.trackingNumber,
-          udf2: String(app.id),
-          udf3: "",
-          udf4: "",
-          udf5: "",
-          surl: `${appUrl}/api/payments/payu/success`,
-          furl: `${appUrl}/api/payments/payu/failure`,
-           hash: createPayUHash({
-             key,
-             txnid,
-             amount,
-             productinfo,
-             firstname: name,
-             email: email!,
-             trackingNumber: app.trackingNumber,
-             applicationId: app.id,
-           }),
-        };
-        await db
-          .update(applicationsTable)
-          .set({ paymentTxnId: txnid })
-          .where(eq(applicationsTable.id, app.id));
-        response.payment = { required: true, action, fields, ...paymentBreakdown };
-      } else {
+       if (paymentAmount !== null && paymentAmount > 0) {
+         const payment = createPaymentFields(req, {
+           id: app.id,
+           reference: app.trackingNumber,
+           name: app.name,
+           email: app.email!,
+           phone: app.phone,
+           baseAmount: baseAmount!,
+           productinfo: `${service} application`,
+         });
+         await db
+           .update(applicationsTable)
+           .set({ paymentTxnId: payment.txnid })
+           .where(eq(applicationsTable.id, app.id));
+         response.payment = { required: true, action: payuPaymentUrl(), ...payment };
+       } else if (paymentAmount === 0) {
         response.payment = {
           required: false,
           ...calculatePaymentBreakdown(0),
@@ -239,9 +299,17 @@ async function handlePayUResponse(req: any, res: any, success: boolean) {
     .from(applicationsTable)
     .where(eq(applicationsTable.paymentTxnId, txnid))
     .limit(1);
+  const [manualRequest] = app
+    ? []
+    : await db
+        .select()
+        .from(paymentRequestsTable)
+        .where(eq(paymentRequestsTable.paymentTxnId, txnid))
+        .limit(1);
 
   let valid = false;
-  if (app && process.env.PAYU_MERCHANT_SALT && payload.hash && payload.key) {
+  const paymentRecord = app ?? manualRequest;
+  if (paymentRecord && process.env.PAYU_MERCHANT_SALT && payload.hash && payload.key) {
     const reverseHash = payuHash([
       process.env.PAYU_MERCHANT_SALT,
       status,
@@ -261,20 +329,38 @@ async function handlePayUResponse(req: any, res: any, success: boolean) {
     valid = payload.key === process.env.PAYU_MERCHANT_KEY && isValidPayUHash(reverseHash, payload.hash);
   }
 
-  const amountMatches = app && Number(payload.amount) === Number(app.paymentAmount);
-  if (app && valid && amountMatches && success && status.toLowerCase() === "success") {
+  const expectedAmount = app?.paymentAmount
+    ?? (manualRequest ? calculatePaymentBreakdown(Number(manualRequest.amount)).amount : null);
+  const amountMatches = paymentRecord && expectedAmount !== null && Number(payload.amount) === Number(expectedAmount);
+  const statusValue = status.toLowerCase();
+  const paymentSucceeded = valid && amountMatches && success && statusValue === "success";
+  if (app && paymentSucceeded) {
     await db
       .update(applicationsTable)
       .set({ paymentStatus: "paid", paidAt: new Date() })
       .where(eq(applicationsTable.id, app.id));
-  } else if (app && valid && !success) {
+  } else if (app && valid && amountMatches && !success) {
     await db
       .update(applicationsTable)
       .set({ paymentStatus: "failed" })
       .where(eq(applicationsTable.id, app.id));
+  } else if (manualRequest && paymentSucceeded) {
+    await db
+      .update(paymentRequestsTable)
+      .set({ paymentStatus: "paid", paidAt: new Date() })
+      .where(eq(paymentRequestsTable.id, manualRequest.id));
+  } else if (manualRequest && valid && amountMatches && !success) {
+    await db
+      .update(paymentRequestsTable)
+      .set({ paymentStatus: "failed" })
+      .where(eq(paymentRequestsTable.id, manualRequest.id));
   }
 
-  const result = valid && amountMatches && success && status.toLowerCase() === "success" ? "success" : "failed";
+  const result = paymentSucceeded ? "success" : "failed";
+  if (manualRequest) {
+    res.redirect(303, `${publicAppUrl(req)}/pay/${encodeURIComponent(manualRequest.token)}?payment=${result}`);
+    return;
+  }
   const tracking = app?.trackingNumber ?? "";
   res.redirect(303, `${publicAppUrl(req)}/apply?payment=${result}&tracking=${encodeURIComponent(tracking)}`);
 }
@@ -314,6 +400,8 @@ router.get("/applications/track/:trackingNumber", async (req, res) => {
         callbackRequested: applicationsTable.callbackRequested,
          paymentStatus: applicationsTable.paymentStatus,
          paymentAmount: applicationsTable.paymentAmount,
+         pricingType: applicationsTable.pricingType,
+         applicationPrice: applicationsTable.applicationPrice,
          serviceDetails: applicationsTable.serviceDetails,
         createdAt: applicationsTable.createdAt,
       })
@@ -333,12 +421,87 @@ router.get("/applications/track/:trackingNumber", async (req, res) => {
       callbackRequested: app.callbackRequested,
       paymentStatus: app.paymentStatus,
       paymentAmount: app.paymentAmount ?? 0,
+      pricingType: app.pricingType,
+      pricingStatus: pricingStatus(app.pricingType, app.applicationPrice),
+      applicationPrice: app.applicationPrice,
        details: app.serviceDetails,
       createdAt: app.createdAt.toISOString(),
     });
   } catch (err) {
     req.log.error({ err }, "Failed to track application");
     res.status(500).json({ error: "Failed to fetch application" });
+  }
+});
+
+router.post("/applications/track/:trackingNumber/payment", async (req, res) => {
+  const trackingNumber = String(req.params.trackingNumber ?? "").trim().toUpperCase();
+  if (!trackingNumber || trackingNumber.length > 20) {
+    res.status(400).json({ error: "Invalid tracking number" });
+    return;
+  }
+
+  try {
+    const [app] = await db
+      .select()
+      .from(applicationsTable)
+      .where(eq(applicationsTable.trackingNumber, trackingNumber))
+      .limit(1);
+
+    if (!app) {
+      res.status(404).json({ error: "Application not found" });
+      return;
+    }
+    if (app.paymentStatus === "paid") {
+      res.status(400).json({ error: "This application has already been paid." });
+      return;
+    }
+    if (app.pricingType === "dynamic" && app.applicationPrice === null) {
+      res.status(400).json({ error: "The final service amount has not been assigned yet." });
+      return;
+    }
+    if (!app.applicationPrice && app.pricingType !== "dynamic") {
+      res.status(400).json({ error: "Online payment is not required for this application." });
+      return;
+    }
+    if (!app.email) {
+      res.status(400).json({ error: "An email address is required for online payment. Please contact the office." });
+      return;
+    }
+
+    let fixedServicePrice: number | null = null;
+    if (app.pricingType !== "dynamic" && app.applicationPrice === null) {
+      const [configuredPrice] = await db
+        .select({ price: servicePricesTable.price })
+        .from(servicePricesTable)
+        .where(eq(servicePricesTable.service, app.service))
+        .limit(1);
+      fixedServicePrice = configuredPrice?.price ?? null;
+    }
+    const baseAmount = app.pricingType === "dynamic"
+      ? Number(app.applicationPrice)
+      : Number(app.applicationPrice ?? fixedServicePrice ?? 0);
+    if (!Number.isFinite(baseAmount) || baseAmount <= 0) {
+      res.status(400).json({ error: "A valid payable amount is not available." });
+      return;
+    }
+
+    const payment = createPaymentFields(req, {
+      id: app.id,
+      reference: app.trackingNumber,
+      name: app.name,
+      email: app.email,
+      phone: app.phone,
+      baseAmount: app.pricingType === "dynamic" ? baseAmount : Number(app.paymentAmount),
+      productinfo: `${app.service} application`,
+    });
+    await db
+      .update(applicationsTable)
+      .set({ paymentTxnId: payment.txnid, paymentAmount: payment.amount, paymentStatus: "initiated" })
+      .where(eq(applicationsTable.id, app.id));
+    res.json({ required: true, action: payuPaymentUrl(), ...payment });
+  } catch (err) {
+    req.log.error({ err }, "Failed to initiate application payment");
+    res.status(500).json({ error: "Failed to initiate payment" });
   }
 });
 
@@ -420,6 +583,9 @@ router.get("/applications", requireAuth, async (req, res) => {
         callbackRequested: a.callbackRequested,
         paymentStatus: a.paymentStatus,
         paymentAmount: a.paymentAmount,
+         pricingType: a.pricingType,
+         pricingStatus: pricingStatus(a.pricingType, a.applicationPrice),
+         applicationPrice: a.applicationPrice,
         paidAt: a.paidAt?.toISOString() ?? null,
          details: a.serviceDetails,
         createdAt: a.createdAt.toISOString(),
@@ -429,6 +595,70 @@ router.get("/applications", requireAuth, async (req, res) => {
   } catch (err) {
     req.log.error({ err }, "Failed to list applications");
     res.status(500).json({ error: "Failed to fetch applications" });
+  }
+});
+
+router.patch("/applications/:id/price", requireAuth, async (req, res) => {
+  const id = parseInt(String(req.params.id), 10);
+  if (Number.isNaN(id)) {
+    res.status(400).json({ error: "Invalid application ID" });
+    return;
+  }
+  const parsed = SetApplicationPriceBody.safeParse(req.body);
+  if (!parsed.success || !Number.isFinite(parsed.data.price) || parsed.data.price <= 0) {
+    res.status(400).json({ error: "Price must be a positive number." });
+    return;
+  }
+
+  try {
+    const [app] = await db
+      .select()
+      .from(applicationsTable)
+      .where(eq(applicationsTable.id, id))
+      .limit(1);
+    if (!app) {
+      res.status(404).json({ error: "Application not found" });
+      return;
+    }
+    if (app.pricingType !== "dynamic") {
+      res.status(400).json({ error: "This application uses a fixed service price." });
+      return;
+    }
+    if (app.paymentStatus === "paid") {
+      res.status(400).json({ error: "A paid application cannot be repriced." });
+      return;
+    }
+
+    const applicationPrice = Number(parsed.data.price);
+    const paymentAmount = calculatePaymentBreakdown(applicationPrice).amount;
+    const user = (req as any).user as { username?: string } | undefined;
+    const [updated] = await db
+      .update(applicationsTable)
+      .set({
+        applicationPrice,
+        paymentAmount,
+        paymentStatus: "not_required",
+        paymentTxnId: null,
+        priceAssignedAt: new Date(),
+        priceAssignedBy: user?.username ?? "admin",
+        internalNotes: parsed.data.internalNotes ?? null,
+      })
+      .where(eq(applicationsTable.id, id))
+      .returning();
+
+    res.json({
+      id: updated.id,
+      pricingType: updated.pricingType,
+      pricingStatus: pricingStatus(updated.pricingType, updated.applicationPrice),
+      applicationPrice: updated.applicationPrice,
+      paymentAmount: updated.paymentAmount,
+      paymentStatus: updated.paymentStatus,
+      priceAssignedAt: updated.priceAssignedAt?.toISOString() ?? null,
+      priceAssignedBy: updated.priceAssignedBy ?? null,
+    });
+  } catch (err) {
+    req.log.error({ err }, "Failed to assign application price");
+    res.status(500).json({ error: "Failed to save application price" });
   }
 });
 
@@ -518,6 +748,124 @@ router.get("/applications/export", requireAuth, async (req, res) => {
   } catch (err) {
     req.log.error({ err }, "Failed to export applications");
     res.status(500).json({ error: "Failed to export" });
+  }
+});
+
+router.post("/payment-requests", requireAuth, async (req, res) => {
+  const parsed = CreatePaymentRequestBody.safeParse(req.body);
+  if (!parsed.success || !parsed.data.email) {
+    res.status(400).json({ error: "Service, client name, amount, and email are required." });
+    return;
+  }
+
+  try {
+    const token = randomBytes(24).toString("hex");
+    const user = (req as any).user as { username?: string } | undefined;
+    const [request] = await db
+      .insert(paymentRequestsTable)
+      .values({
+        token,
+        service: parsed.data.service,
+        name: parsed.data.name,
+        phone: parsed.data.phone ?? null,
+        email: parsed.data.email,
+        amount: parsed.data.amount,
+        notes: parsed.data.notes ?? null,
+        createdBy: user?.username ?? "admin",
+      })
+      .returning();
+
+    res.status(201).json({
+      token: request.token,
+      service: request.service,
+      name: request.name,
+      amount: request.amount,
+      paymentStatus: request.paymentStatus,
+      paidAt: null,
+      createdAt: request.createdAt.toISOString(),
+      paymentPageUrl: `${publicAppUrl(req)}/pay/${request.token}`,
+    });
+  } catch (err) {
+    req.log.error({ err }, "Failed to create manual payment request");
+    res.status(500).json({ error: "Failed to create payment request" });
+  }
+});
+
+router.get("/payment-requests/:token", async (req, res) => {
+  const token = String(req.params.token ?? "").trim();
+  if (token.length < 32 || token.length > 64) {
+    res.status(404).json({ error: "Payment request not found" });
+    return;
+  }
+
+  try {
+    const [request] = await db
+      .select()
+      .from(paymentRequestsTable)
+      .where(eq(paymentRequestsTable.token, token))
+      .limit(1);
+    if (!request) {
+      res.status(404).json({ error: "Payment request not found" });
+      return;
+    }
+    res.json({
+      token: request.token,
+      service: request.service,
+      name: request.name,
+      amount: request.amount,
+      paymentStatus: request.paymentStatus,
+      paidAt: request.paidAt?.toISOString() ?? null,
+      createdAt: request.createdAt.toISOString(),
+    });
+  } catch (err) {
+    req.log.error({ err }, "Failed to fetch manual payment request");
+    res.status(500).json({ error: "Failed to fetch payment request" });
+  }
+});
+
+router.post("/payment-requests/:token/payment", async (req, res) => {
+  const token = String(req.params.token ?? "").trim();
+  if (token.length < 32 || token.length > 64) {
+    res.status(404).json({ error: "Payment request not found" });
+    return;
+  }
+
+  try {
+    const [request] = await db
+      .select()
+      .from(paymentRequestsTable)
+      .where(eq(paymentRequestsTable.token, token))
+      .limit(1);
+    if (!request) {
+      res.status(404).json({ error: "Payment request not found" });
+      return;
+    }
+    if (request.paymentStatus === "paid") {
+      res.status(400).json({ error: "This payment request has already been paid." });
+      return;
+    }
+    if (!request.email) {
+      res.status(400).json({ error: "The payment request does not have a client email address." });
+      return;
+    }
+
+    const payment = createPaymentFields(req, {
+      id: request.id,
+      reference: request.token,
+      name: request.name,
+      email: request.email,
+      phone: request.phone,
+      baseAmount: Number(request.amount),
+      productinfo: `${request.service} manual payment`,
+    });
+    await db
+      .update(paymentRequestsTable)
+      .set({ paymentTxnId: payment.txnid, paymentStatus: "initiated" })
+      .where(eq(paymentRequestsTable.id, request.id));
+    res.json({ required: true, action: payuPaymentUrl(), ...payment });
+  } catch (err) {
+    req.log.error({ err }, "Failed to initiate manual payment");
+    res.status(500).json({ error: "Failed to initiate payment" });
   }
 });
 

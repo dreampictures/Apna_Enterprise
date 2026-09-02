@@ -12,6 +12,7 @@ export type CreateApplicationBodyService =
 export const CreateApplicationBodyService = {
   Air_Ticket_Booking: "Air Ticket Booking",
   Train_Ticket_Booking: "Train Ticket Booking",
+  Bus_Ticket_Booking: "Bus Ticket Booking",
   International_Parcel_Booking: "International Parcel Booking",
   PAN_Card_Apply: "PAN Card Apply",
   Aadhaar_Card_Services: "Aadhaar Card Services",

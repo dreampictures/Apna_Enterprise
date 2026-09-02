@@ -21,16 +21,22 @@ import type {
   AdminLoginResponse,
   ApplicationCreateResponse,
   ApplicationListResponse,
+  ApplicationPayment,
+  ApplicationPricingResponse,
   ApplicationReceipt,
   CreateApplicationBody,
+  CreatePaymentRequestBody,
   DashboardStats,
   DeleteApplication200,
   ErrorResponse,
   ExportApplicationsCsvParams,
   HealthStatus,
   ListApplicationsParams,
+  PaymentRequestCreateResponse,
+  PaymentRequestPublic,
   ServicePrice,
   ServicePriceList,
+  SetApplicationPriceBody,
   SetServicePriceBody,
   TrackApplicationResponse,
   VisitorCount,
@@ -491,6 +497,183 @@ export function useTrackApplication<
 }
 
 /**
+ * @summary Initiate payment for an application using its stored amount
+ */
+export const getInitiateApplicationPaymentUrl = (trackingNumber: string) => {
+  return `/api/applications/track/${trackingNumber}/payment`;
+};
+
+export const initiateApplicationPayment = async (
+  trackingNumber: string,
+  options?: RequestInit,
+): Promise<ApplicationPayment> => {
+  return customFetch<ApplicationPayment>(
+    getInitiateApplicationPaymentUrl(trackingNumber),
+    {
+      ...options,
+      method: "POST",
+    },
+  );
+};
+
+export const getInitiateApplicationPaymentMutationOptions = <
+  TError = ErrorType<ErrorResponse>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof initiateApplicationPayment>>,
+    TError,
+    { trackingNumber: string },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof initiateApplicationPayment>>,
+  TError,
+  { trackingNumber: string },
+  TContext
+> => {
+  const mutationKey = ["initiateApplicationPayment"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof initiateApplicationPayment>>,
+    { trackingNumber: string }
+  > = (props) => {
+    const { trackingNumber } = props ?? {};
+
+    return initiateApplicationPayment(trackingNumber, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type InitiateApplicationPaymentMutationResult = NonNullable<
+  Awaited<ReturnType<typeof initiateApplicationPayment>>
+>;
+
+export type InitiateApplicationPaymentMutationError = ErrorType<ErrorResponse>;
+
+/**
+ * @summary Initiate payment for an application using its stored amount
+ */
+export const useInitiateApplicationPayment = <
+  TError = ErrorType<ErrorResponse>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof initiateApplicationPayment>>,
+    TError,
+    { trackingNumber: string },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof initiateApplicationPayment>>,
+  TError,
+  { trackingNumber: string },
+  TContext
+> => {
+  return useMutation(getInitiateApplicationPaymentMutationOptions(options));
+};
+
+/**
+ * @summary Assign an application-specific service price (admin only)
+ */
+export const getSetApplicationPriceUrl = (id: number) => {
+  return `/api/applications/${id}/price`;
+};
+
+export const setApplicationPrice = async (
+  id: number,
+  setApplicationPriceBody: SetApplicationPriceBody,
+  options?: RequestInit,
+): Promise<ApplicationPricingResponse> => {
+  return customFetch<ApplicationPricingResponse>(
+    getSetApplicationPriceUrl(id),
+    {
+      ...options,
+      method: "PATCH",
+      headers: { "Content-Type": "application/json", ...options?.headers },
+      body: JSON.stringify(setApplicationPriceBody),
+    },
+  );
+};
+
+export const getSetApplicationPriceMutationOptions = <
+  TError = ErrorType<ErrorResponse>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof setApplicationPrice>>,
+    TError,
+    { id: number; data: BodyType<SetApplicationPriceBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof setApplicationPrice>>,
+  TError,
+  { id: number; data: BodyType<SetApplicationPriceBody> },
+  TContext
+> => {
+  const mutationKey = ["setApplicationPrice"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof setApplicationPrice>>,
+    { id: number; data: BodyType<SetApplicationPriceBody> }
+  > = (props) => {
+    const { id, data } = props ?? {};
+
+    return setApplicationPrice(id, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type SetApplicationPriceMutationResult = NonNullable<
+  Awaited<ReturnType<typeof setApplicationPrice>>
+>;
+export type SetApplicationPriceMutationBody = BodyType<SetApplicationPriceBody>;
+export type SetApplicationPriceMutationError = ErrorType<ErrorResponse>;
+
+/**
+ * @summary Assign an application-specific service price (admin only)
+ */
+export const useSetApplicationPrice = <
+  TError = ErrorType<ErrorResponse>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof setApplicationPrice>>,
+    TError,
+    { id: number; data: BodyType<SetApplicationPriceBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof setApplicationPrice>>,
+  TError,
+  { id: number; data: BodyType<SetApplicationPriceBody> },
+  TContext
+> => {
+  return useMutation(getSetApplicationPriceMutationOptions(options));
+};
+
+/**
  * @summary Delete an application (admin only)
  */
 export const getDeleteApplicationUrl = (id: number) => {
@@ -673,6 +856,272 @@ export function useExportApplicationsCsv<
 
   return { ...query, queryKey: queryOptions.queryKey };
 }
+
+/**
+ * @summary Create a secure manual payment request (admin only)
+ */
+export const getCreatePaymentRequestUrl = () => {
+  return `/api/payment-requests`;
+};
+
+export const createPaymentRequest = async (
+  createPaymentRequestBody: CreatePaymentRequestBody,
+  options?: RequestInit,
+): Promise<PaymentRequestCreateResponse> => {
+  return customFetch<PaymentRequestCreateResponse>(
+    getCreatePaymentRequestUrl(),
+    {
+      ...options,
+      method: "POST",
+      headers: { "Content-Type": "application/json", ...options?.headers },
+      body: JSON.stringify(createPaymentRequestBody),
+    },
+  );
+};
+
+export const getCreatePaymentRequestMutationOptions = <
+  TError = ErrorType<ErrorResponse>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof createPaymentRequest>>,
+    TError,
+    { data: BodyType<CreatePaymentRequestBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof createPaymentRequest>>,
+  TError,
+  { data: BodyType<CreatePaymentRequestBody> },
+  TContext
+> => {
+  const mutationKey = ["createPaymentRequest"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof createPaymentRequest>>,
+    { data: BodyType<CreatePaymentRequestBody> }
+  > = (props) => {
+    const { data } = props ?? {};
+
+    return createPaymentRequest(data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type CreatePaymentRequestMutationResult = NonNullable<
+  Awaited<ReturnType<typeof createPaymentRequest>>
+>;
+export type CreatePaymentRequestMutationBody =
+  BodyType<CreatePaymentRequestBody>;
+export type CreatePaymentRequestMutationError = ErrorType<ErrorResponse>;
+
+/**
+ * @summary Create a secure manual payment request (admin only)
+ */
+export const useCreatePaymentRequest = <
+  TError = ErrorType<ErrorResponse>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof createPaymentRequest>>,
+    TError,
+    { data: BodyType<CreatePaymentRequestBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof createPaymentRequest>>,
+  TError,
+  { data: BodyType<CreatePaymentRequestBody> },
+  TContext
+> => {
+  return useMutation(getCreatePaymentRequestMutationOptions(options));
+};
+
+/**
+ * @summary Get a public manual payment request
+ */
+export const getGetPaymentRequestUrl = (token: string) => {
+  return `/api/payment-requests/${token}`;
+};
+
+export const getPaymentRequest = async (
+  token: string,
+  options?: RequestInit,
+): Promise<PaymentRequestPublic> => {
+  return customFetch<PaymentRequestPublic>(getGetPaymentRequestUrl(token), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getGetPaymentRequestQueryKey = (token: string) => {
+  return [`/api/payment-requests/${token}`] as const;
+};
+
+export const getGetPaymentRequestQueryOptions = <
+  TData = Awaited<ReturnType<typeof getPaymentRequest>>,
+  TError = ErrorType<ErrorResponse>,
+>(
+  token: string,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getPaymentRequest>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getGetPaymentRequestQueryKey(token);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof getPaymentRequest>>
+  > = ({ signal }) => getPaymentRequest(token, { signal, ...requestOptions });
+
+  return {
+    queryKey,
+    queryFn,
+    enabled: !!token,
+    ...queryOptions,
+  } as UseQueryOptions<
+    Awaited<ReturnType<typeof getPaymentRequest>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type GetPaymentRequestQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getPaymentRequest>>
+>;
+export type GetPaymentRequestQueryError = ErrorType<ErrorResponse>;
+
+/**
+ * @summary Get a public manual payment request
+ */
+
+export function useGetPaymentRequest<
+  TData = Awaited<ReturnType<typeof getPaymentRequest>>,
+  TError = ErrorType<ErrorResponse>,
+>(
+  token: string,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getPaymentRequest>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getGetPaymentRequestQueryOptions(token, options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary Initiate a manual payment request through PayU
+ */
+export const getInitiatePaymentRequestPaymentUrl = (token: string) => {
+  return `/api/payment-requests/${token}/payment`;
+};
+
+export const initiatePaymentRequestPayment = async (
+  token: string,
+  options?: RequestInit,
+): Promise<ApplicationPayment> => {
+  return customFetch<ApplicationPayment>(
+    getInitiatePaymentRequestPaymentUrl(token),
+    {
+      ...options,
+      method: "POST",
+    },
+  );
+};
+
+export const getInitiatePaymentRequestPaymentMutationOptions = <
+  TError = ErrorType<ErrorResponse>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof initiatePaymentRequestPayment>>,
+    TError,
+    { token: string },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof initiatePaymentRequestPayment>>,
+  TError,
+  { token: string },
+  TContext
+> => {
+  const mutationKey = ["initiatePaymentRequestPayment"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof initiatePaymentRequestPayment>>,
+    { token: string }
+  > = (props) => {
+    const { token } = props ?? {};
+
+    return initiatePaymentRequestPayment(token, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type InitiatePaymentRequestPaymentMutationResult = NonNullable<
+  Awaited<ReturnType<typeof initiatePaymentRequestPayment>>
+>;
+
+export type InitiatePaymentRequestPaymentMutationError =
+  ErrorType<ErrorResponse>;
+
+/**
+ * @summary Initiate a manual payment request through PayU
+ */
+export const useInitiatePaymentRequestPayment = <
+  TError = ErrorType<ErrorResponse>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof initiatePaymentRequestPayment>>,
+    TError,
+    { token: string },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof initiatePaymentRequestPayment>>,
+  TError,
+  { token: string },
+  TContext
+> => {
+  return useMutation(getInitiatePaymentRequestPaymentMutationOptions(options));
+};
 
 /**
  * @summary Admin login

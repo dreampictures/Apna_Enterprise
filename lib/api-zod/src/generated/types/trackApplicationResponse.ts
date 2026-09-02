@@ -13,5 +13,8 @@ export interface TrackApplicationResponse {
   callbackRequested: boolean;
   paymentStatus?: string;
   paymentAmount?: number | null;
+  pricingType?: string;
+  pricingStatus?: string;
+  applicationPrice?: number | null;
   createdAt: Date;
 }
