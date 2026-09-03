@@ -14,3 +14,9 @@ Use `flyctl` for Fly.io commands in this workspace; the installed `fly` binary m
 **Why:** Calling `fly` can fail before deployment with unknown `--app`/`-a` flags even though the correct Fly.io CLI is installed.
 
 **How to apply:** Run status, deploy, secrets, and logs through `flyctl`, with the existing Fly API token available to the command environment.
+
+An authenticated Fly token may still be unable to see the deployed app when it belongs to a different Fly account or organization; verify app visibility before deploying.
+
+**Why:** A token can authenticate successfully and list a builder app while `flyctl status --app apna-enterprise` returns “Could not find App”.
+
+**How to apply:** Do not recreate or rename the app to work around this. Use a token from the account/org that owns `apna-enterprise`, or have that account grant access first.
