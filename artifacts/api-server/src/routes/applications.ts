@@ -10,8 +10,12 @@ import {
   SetApplicationPriceBody,
 } from "@workspace/api-zod";
 import { requireAuth } from "../middlewares/auth";
+import { createRateLimiter } from "../middlewares/rateLimit";
 
 const router = Router();
+const applicationSubmitRateLimit = createRateLimiter({ windowMs: 15 * 60 * 1000, max: 20 });
+const publicPaymentRateLimit = createRateLimiter({ windowMs: 15 * 60 * 1000, max: 20 });
+const trackingRateLimit = createRateLimiter({ windowMs: 15 * 60 * 1000, max: 60 });
 
 const VALID_STATUSES = ["pending", "review", "applying", "applied", "rejected", "completed"] as const;
 type AppStatus = (typeof VALID_STATUSES)[number];
@@ -186,7 +190,7 @@ function createPaymentFields(
 }
 
 // POST /applications - Submit a new service application
-router.post("/applications", async (req, res) => {
+router.post("/applications", applicationSubmitRateLimit, async (req, res) => {
   const parsed = CreateApplicationBody.safeParse(req.body);
   if (!parsed.success) {
     res.status(400).json({ error: "Validation failed: " + parsed.error.message });
@@ -384,8 +388,8 @@ router.post("/payments/payu/failure", async (req, res) => {
 });
 
 // GET /applications/track/:trackingNumber - Public tracking endpoint
-router.get("/applications/track/:trackingNumber", async (req, res) => {
-  const { trackingNumber } = req.params;
+router.get("/applications/track/:trackingNumber", trackingRateLimit, async (req, res) => {
+  const trackingNumber = String(req.params.trackingNumber ?? "");
   if (!trackingNumber || trackingNumber.length > 20) {
     res.status(400).json({ error: "Invalid tracking number" });
     return;
@@ -433,7 +437,7 @@ router.get("/applications/track/:trackingNumber", async (req, res) => {
   }
 });
 
-router.post("/applications/track/:trackingNumber/payment", async (req, res) => {
+router.post("/applications/track/:trackingNumber/payment", publicPaymentRateLimit, async (req, res) => {
   const trackingNumber = String(req.params.trackingNumber ?? "").trim().toUpperCase();
   if (!trackingNumber || trackingNumber.length > 20) {
     res.status(400).json({ error: "Invalid tracking number" });
@@ -751,6 +755,53 @@ router.get("/applications/export", requireAuth, async (req, res) => {
   }
 });
 
+router.get("/admin/payments", requireAuth, async (req, res) => {
+  try {
+    const [applications, paymentRequests] = await Promise.all([
+      db.select().from(applicationsTable).orderBy(desc(applicationsTable.createdAt)),
+      db.select().from(paymentRequestsTable).orderBy(desc(paymentRequestsTable.createdAt)),
+    ]);
+
+    const payments = [
+      ...applications
+        .filter((application) => application.paymentStatus !== "not_required")
+        .map((application) => ({
+          id: `application-${application.id}`,
+          source: "application" as const,
+          reference: application.trackingNumber,
+          service: application.service,
+          clientName: application.name,
+          email: application.email,
+          phone: application.phone,
+          amount: application.paymentAmount ?? 0,
+          paymentStatus: application.paymentStatus,
+          transactionId: application.paymentTxnId,
+          paidAt: application.paidAt?.toISOString() ?? null,
+          createdAt: application.createdAt.toISOString(),
+        })),
+      ...paymentRequests.map((request) => ({
+        id: `manual-${request.id}`,
+        source: "manual" as const,
+        reference: `PR-${request.id}`,
+        service: request.service,
+        clientName: request.name,
+        email: request.email,
+        phone: request.phone,
+        amount: request.amount,
+        paymentStatus: request.paymentStatus,
+        transactionId: request.paymentTxnId,
+        paidAt: request.paidAt?.toISOString() ?? null,
+        createdAt: request.createdAt.toISOString(),
+      })),
+    ].sort((a, b) => b.createdAt.localeCompare(a.createdAt));
+
+    res.json({ payments });
+  } catch (err) {
+    req.log.error({ err }, "Failed to list payments");
+    res.status(500).json({ error: "Failed to fetch payments" });
+  }
+});
+
 router.post("/payment-requests", requireAuth, async (req, res) => {
   const parsed = CreatePaymentRequestBody.safeParse(req.body);
   if (!parsed.success || !parsed.data.email) {
@@ -823,7 +874,7 @@ router.get("/payment-requests/:token", async (req, res) => {
   }
 });
 
-router.post("/payment-requests/:token/payment", async (req, res) => {
+router.post("/payment-requests/:token/payment", publicPaymentRateLimit, async (req, res) => {
   const token = String(req.params.token ?? "").trim();
   if (token.length < 32 || token.length > 64) {
     res.status(404).json({ error: "Payment request not found" });

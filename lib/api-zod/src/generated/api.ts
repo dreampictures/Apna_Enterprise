@@ -264,6 +264,28 @@ export const CreatePaymentRequestBody = zod.object({
 });
 
 /**
+ * @summary List application and manual payments (admin only)
+ */
+export const ListAdminPaymentsResponse = zod.object({
+  payments: zod.array(
+    zod.object({
+      id: zod.string(),
+      source: zod.enum(["application", "manual"]),
+      reference: zod.string(),
+      service: zod.string(),
+      clientName: zod.string(),
+      email: zod.string().email().nullish(),
+      phone: zod.string().nullish(),
+      amount: zod.number(),
+      paymentStatus: zod.string(),
+      transactionId: zod.string().nullish(),
+      paidAt: zod.coerce.date().nullish(),
+      createdAt: zod.coerce.date(),
+    }),
+  ),
+});
+
+/**
  * @summary Get a public manual payment request
  */
 export const getPaymentRequestPathTokenMin = 32;

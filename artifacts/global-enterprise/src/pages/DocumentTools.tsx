@@ -302,9 +302,15 @@ function ImagesToPdf({ onDirty }: { onDirty: (dirty: boolean) => void }) {
   const [items, setItems] = useState<ImageItem[]>([]);
   const [working, setWorking] = useState(false);
   const add = (files: File[]) => {
-    const next = files.filter(isImage).map((file) => ({ id: idFor(file), file, preview: URL.createObjectURL(file) }));
+    const next = files.filter(isImage).filter((file) => file.size <= MAX_FILE_BYTES).map((file) => ({ id: idFor(file), file, preview: URL.createObjectURL(file) }));
     if (next.length) onDirty(true);
     setItems((current) => [...current, ...next]);
+  };
+  const remove = (id: string) => {
+    const item = items.find((entry) => entry.id === id);
+    if (item) URL.revokeObjectURL(item.preview);
+    setItems((current) => current.filter((entry) => entry.id !== id));
+    onDirty(items.length > 1);
   };
   const move = (index: number, direction: number) => setItems((current) => { const next = [...current]; const target = index + direction; if (target < 0 || target >= next.length) return current; [next[index], next[target]] = [next[target], next[index]]; return next; });
   const createPdf = async () => {
@@ -325,7 +331,7 @@ function ImagesToPdf({ onDirty }: { onDirty: (dirty: boolean) => void }) {
   };
   return <ToolCard><SectionTitle icon={ImagePlus} title={c.imagesPdfTitle} detail={c.imagesPdfDetail} />
     <DropZone accept="image/*" multiple onFiles={add} label={c.dropImages} hint={c.imageHint} />
-    <div className="mt-5 space-y-2">{items.map((item, index) => <div key={item.id} className="flex items-center gap-3 rounded-xl border bg-white p-3" style={{ borderColor: "#e5ebf4" }}><GripVertical className="h-4 w-4 text-slate-300" /><img src={item.preview} alt="" className="h-14 w-14 rounded-lg object-cover" /><p className="min-w-0 flex-1 truncate text-sm font-bold text-slate-700">{index + 1}. {item.file.name}</p><button disabled={index === 0} onClick={() => move(index, -1)} className="rounded p-1 disabled:opacity-30"><ArrowLeft className="h-4 w-4" /></button><button disabled={index === items.length - 1} onClick={() => move(index, 1)} className="rounded p-1 disabled:opacity-30"><ArrowRight className="h-4 w-4" /></button><button onClick={() => setItems((current) => current.filter((entry) => entry.id !== item.id))} className="rounded p-1 text-slate-400 hover:text-red-600"><X className="h-4 w-4" /></button></div>)}</div>
+     <div className="mt-5 space-y-2">{items.map((item, index) => <div key={item.id} className="flex items-center gap-3 rounded-xl border bg-white p-3" style={{ borderColor: "#e5ebf4" }}><GripVertical className="h-4 w-4 text-slate-300" /><img src={item.preview} alt="" className="h-14 w-14 rounded-lg object-cover" /><p className="min-w-0 flex-1 truncate text-sm font-bold text-slate-700">{index + 1}. {item.file.name}</p><button disabled={index === 0} onClick={() => move(index, -1)} className="rounded p-1 disabled:opacity-30"><ArrowLeft className="h-4 w-4" /></button><button disabled={index === items.length - 1} onClick={() => move(index, 1)} className="rounded p-1 disabled:opacity-30"><ArrowRight className="h-4 w-4" /></button><button onClick={() => remove(item.id)} className="rounded p-1 text-slate-400 hover:text-red-600"><X className="h-4 w-4" /></button></div>)}</div>
     {items.length > 0 && <div className="mt-5 flex justify-end"><Button disabled={working} onClick={createPdf} className="btn-gold rounded-xl">{working ? c.creating : c.createPdf}<Download className="ml-2 h-4 w-4" /></Button></div>}
   </ToolCard>;
 }
@@ -394,9 +400,15 @@ function PdfEditor({ onDirty }: { onDirty: (dirty: boolean) => void }) {
     setWorking(false);
   };
   const addImages = (files: File[]) => {
-    const additions = files.filter(isImage).map((file) => ({ id: idFor(file), source: "image" as const, file, pageIndex: 0, preview: URL.createObjectURL(file), name: file.name }));
+    const additions = files.filter(isImage).filter((file) => file.size <= MAX_FILE_BYTES).map((file) => ({ id: idFor(file), source: "image" as const, file, pageIndex: 0, preview: URL.createObjectURL(file), name: file.name }));
     if (additions.length) onDirty(true);
     setPages((current) => [...current, ...additions]);
+  };
+  const removePage = (id: string) => {
+    const page = pages.find((entry) => entry.id === id);
+    if (page?.source === "image") URL.revokeObjectURL(page.preview);
+    setPages((current) => current.filter((entry) => entry.id !== id));
+    onDirty(pages.length > 1);
   };
   const move = (index: number, target: number) => setPages((current) => { if (target < 0 || target >= current.length) return current; const next = [...current]; [next[index], next[target]] = [next[target], next[index]]; return next; });
   const createPdf = async () => {
@@ -424,10 +436,10 @@ function PdfEditor({ onDirty }: { onDirty: (dirty: boolean) => void }) {
     setWorking(false);
   };
   return <ToolCard><SectionTitle icon={Merge} title={c.editorTitle} detail={c.editorDetail} />
-    <div className="grid gap-3 sm:grid-cols-2"><DropZone accept=".pdf,application/pdf" multiple onFiles={addPdfs} label={c.addPdf} hint={c.pdfUploadHint} /><DropZone accept="image/*" multiple onFiles={addImages} label={c.addImage} hint={c.imagePageHint} /></div>
+     <div className="grid gap-3 sm:grid-cols-2"><DropZone accept=".pdf,application/pdf" multiple onFiles={(files) => addPdfs(files.filter((file) => file.size <= MAX_FILE_BYTES))} label={c.addPdf} hint={c.pdfUploadHint} /><DropZone accept="image/*" multiple onFiles={addImages} label={c.addImage} hint={c.imagePageHint} /></div>
     {working && <p className="mt-4 flex items-center gap-2 text-sm font-semibold text-slate-500"><RefreshCw className="h-4 w-4 animate-spin" />{c.processing}</p>}
     {message && <p className="mt-4 rounded-lg bg-red-50 p-3 text-sm text-red-700">{message}</p>}
-    {pages.length > 0 && <><div className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4">{pages.map((page, index) => <div key={page.id} draggable onDragStart={(event) => event.dataTransfer.setData("text/plain", String(index))} onDragOver={(event) => event.preventDefault()} onDrop={(event) => { const from = Number(event.dataTransfer.getData("text/plain")); move(from, index); }} className="group relative rounded-xl border bg-white p-2 shadow-sm" style={{ borderColor: "#e5ebf4" }}><img src={page.preview} alt="" className="h-36 w-full rounded-lg bg-slate-50 object-contain" /><p className="mt-2 truncate text-xs font-bold text-slate-600">{index + 1}. {page.name}</p><div className="mt-2 flex items-center justify-between"><GripVertical className="h-4 w-4 cursor-grab text-slate-300" /><div className="flex gap-1"><button onClick={() => move(index, index - 1)} disabled={index === 0} className="rounded bg-slate-50 p-1 disabled:opacity-30"><ArrowLeft className="h-3 w-3" /></button><button onClick={() => move(index, index + 1)} disabled={index === pages.length - 1} className="rounded bg-slate-50 p-1 disabled:opacity-30"><ArrowRight className="h-3 w-3" /></button><button onClick={() => setPages((current) => current.filter((entry) => entry.id !== page.id))} className="rounded bg-red-50 p-1 text-red-500"><Trash2 className="h-3 w-3" /></button></div></div></div>)}</div><div className="mt-5 flex flex-wrap items-center justify-between gap-3"><p className="text-sm font-semibold text-slate-500">{pages.length} {c.selected}</p><Button disabled={working} onClick={createPdf} className="btn-gold rounded-xl">{c.createMerged} <Download className="ml-2 h-4 w-4" /></Button></div></>}
+     {pages.length > 0 && <><div className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4">{pages.map((page, index) => <div key={page.id} draggable onDragStart={(event) => event.dataTransfer.setData("text/plain", String(index))} onDragOver={(event) => event.preventDefault()} onDrop={(event) => { const from = Number(event.dataTransfer.getData("text/plain")); move(from, index); }} className="group relative rounded-xl border bg-white p-2 shadow-sm" style={{ borderColor: "#e5ebf4" }}><img src={page.preview} alt="" className="h-36 w-full rounded-lg bg-slate-50 object-contain" /><p className="mt-2 truncate text-xs font-bold text-slate-600">{index + 1}. {page.name}</p><div className="mt-2 flex items-center justify-between"><GripVertical className="h-4 w-4 cursor-grab text-slate-300" /><div className="flex gap-1"><button onClick={() => move(index, index - 1)} disabled={index === 0} className="rounded bg-slate-50 p-1 disabled:opacity-30"><ArrowLeft className="h-3 w-3" /></button><button onClick={() => move(index, index + 1)} disabled={index === pages.length - 1} className="rounded bg-slate-50 p-1 disabled:opacity-30"><ArrowRight className="h-3 w-3" /></button><button onClick={() => removePage(page.id)} className="rounded bg-red-50 p-1 text-red-500"><Trash2 className="h-3 w-3" /></button></div></div></div>)}</div><div className="mt-5 flex flex-wrap items-center justify-between gap-3"><p className="text-sm font-semibold text-slate-500">{pages.length} {c.selected}</p><Button disabled={working} onClick={createPdf} className="btn-gold rounded-xl">{c.createMerged} <Download className="ml-2 h-4 w-4" /></Button></div></>}
     <Note>{c.localNote}</Note>
   </ToolCard>;
 }

@@ -3,8 +3,10 @@ import multer from "multer";
 import { randomUUID } from "crypto";
 import { uploadToR2 } from "../lib/r2";
 import { requireAuth } from "../middlewares/auth";
+import { createRateLimiter } from "../middlewares/rateLimit";
 
 const router = Router();
+const publicUploadRateLimit = createRateLimiter({ windowMs: 15 * 60 * 1000, max: 10 });
 
 // Memory storage — files kept in RAM, sent to R2 immediately
 const upload = multer({
@@ -63,6 +65,7 @@ router.post(
  */
 router.post(
   "/upload/pdf/public",
+  publicUploadRateLimit,
   upload.single("file"),
   async (req, res) => {
     if (!req.file) {

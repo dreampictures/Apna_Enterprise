@@ -19,6 +19,7 @@ import type {
 import type {
   AdminLoginBody,
   AdminLoginResponse,
+  AdminPaymentsResponse,
   ApplicationCreateResponse,
   ApplicationListResponse,
   ApplicationPayment,
@@ -946,6 +947,81 @@ export const useCreatePaymentRequest = <
 > => {
   return useMutation(getCreatePaymentRequestMutationOptions(options));
 };
+
+/**
+ * @summary List application and manual payments (admin only)
+ */
+export const getListAdminPaymentsUrl = () => {
+  return `/api/admin/payments`;
+};
+
+export const listAdminPayments = async (
+  options?: RequestInit,
+): Promise<AdminPaymentsResponse> => {
+  return customFetch<AdminPaymentsResponse>(getListAdminPaymentsUrl(), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getListAdminPaymentsQueryKey = () => {
+  return [`/api/admin/payments`] as const;
+};
+
+export const getListAdminPaymentsQueryOptions = <
+  TData = Awaited<ReturnType<typeof listAdminPayments>>,
+  TError = ErrorType<ErrorResponse>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof listAdminPayments>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getListAdminPaymentsQueryKey();
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof listAdminPayments>>
+  > = ({ signal }) => listAdminPayments({ signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof listAdminPayments>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type ListAdminPaymentsQueryResult = NonNullable<
+  Awaited<ReturnType<typeof listAdminPayments>>
+>;
+export type ListAdminPaymentsQueryError = ErrorType<ErrorResponse>;
+
+/**
+ * @summary List application and manual payments (admin only)
+ */
+
+export function useListAdminPayments<
+  TData = Awaited<ReturnType<typeof listAdminPayments>>,
+  TError = ErrorType<ErrorResponse>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof listAdminPayments>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getListAdminPaymentsQueryOptions(options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
 
 /**
  * @summary Get a public manual payment request

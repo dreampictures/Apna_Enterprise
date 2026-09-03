@@ -80,6 +80,36 @@ function useServicePricing(token: string | null) {
   });
 }
 
+type AdminPayment = {
+  id: string;
+  source: "application" | "manual";
+  reference: string;
+  service: string;
+  clientName: string;
+  email?: string | null;
+  phone?: string | null;
+  amount: number;
+  paymentStatus: string;
+  transactionId?: string | null;
+  paidAt?: string | null;
+  createdAt: string;
+};
+
+function useAdminPayments(token: string | null, enabled: boolean) {
+  return useQuery<{ payments: AdminPayment[] }>({
+    queryKey: ["admin-payments"],
+    enabled: !!token && enabled,
+    refetchInterval: 15_000,
+    queryFn: async () => {
+      const res = await fetch("/api/admin/payments", {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (!res.ok) throw new Error("Failed to load payments");
+      return res.json();
+    },
+  });
+}
+
 type Tab = "applications" | "leads" | "analytics" | "pricing" | "payments" | "updates";
 type ApplicationFolder = "all" | "pending" | "review" | "in_progress" | "completed" | "rejected";
 
@@ -168,6 +198,8 @@ export default function AdminDashboard() {
   const { data: leadsData, isLoading: leadsLoading } = useLeads(token);
   const { data: pageData, isLoading: pageLoading } = usePageSummary(token);
   const { data: pricingData, isLoading: pricingLoading } = useServicePricing(token);
+  const { data: paymentsData, isLoading: paymentsLoading, isFetching: paymentsFetching, refetch: refetchPayments } =
+    useAdminPayments(token, activeTab === "payments");
   const [priceDrafts, setPriceDrafts] = useState<Record<string, string>>({});
   const [pricingError, setPricingError] = useState("");
   const [expandedApplication, setExpandedApplication] = useState<number | null>(null);
@@ -351,6 +383,7 @@ export default function AdminDashboard() {
       if (!response.ok) throw new Error(body?.error ?? "Could not create payment request");
       setManualPaymentLink(body.paymentPageUrl);
       setManualPayment((current) => ({ ...current, name: "", email: "", phone: "", amount: "", notes: "" }));
+      await queryClient.invalidateQueries({ queryKey: ["admin-payments"] });
     } catch (error) {
       setManualPaymentError(error instanceof Error ? error.message : "Could not create payment request");
     } finally {
@@ -1128,50 +1161,114 @@ export default function AdminDashboard() {
 
         {/* ── Manual Payments Tab ── */}
         {activeTab === "payments" && (
-          <div className="mx-auto max-w-2xl rounded-2xl border border-slate-100 bg-white shadow-md">
-            <div className="border-b border-slate-100 p-6">
-              <div className="flex items-start gap-3">
-                <div className="flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-xl bg-green-100 text-green-700"><FaCreditCard /></div>
-                <div>
-                  <h2 className="text-lg font-bold text-slate-900">{t.admin_payment_links}</h2>
-                  <p className="mt-1 text-sm text-slate-500">{t.admin_payment_links_desc}</p>
-                </div>
-              </div>
-            </div>
-            <form onSubmit={createManualPaymentRequest} className="grid gap-4 p-6 sm:grid-cols-2">
-              <label className="text-sm font-semibold text-slate-700 sm:col-span-2">{t.pay_service}
-                <select value={manualPayment.service} onChange={(event) => setManualPayment((current) => ({ ...current, service: event.target.value }))} className="mt-1 h-10 w-full rounded-lg border border-slate-300 bg-white px-3">
-                  <option value="">{t.admin_select_service}</option>
-                  {ALL_SERVICE_IDS.map((service) => <option key={service} value={service}>{service}</option>)}
-                </select>
-              </label>
-              <label className="text-sm font-semibold text-slate-700">{t.admin_client_name}
-                <input required value={manualPayment.name} onChange={(event) => setManualPayment((current) => ({ ...current, name: event.target.value }))} className="mt-1 h-10 w-full rounded-lg border border-slate-300 px-3" />
-              </label>
-              <label className="text-sm font-semibold text-slate-700">{t.admin_client_email}
-                <input required type="email" value={manualPayment.email} onChange={(event) => setManualPayment((current) => ({ ...current, email: event.target.value }))} className="mt-1 h-10 w-full rounded-lg border border-slate-300 px-3" />
-              </label>
-              <label className="text-sm font-semibold text-slate-700">{t.admin_phone_optional}
-                <input value={manualPayment.phone} onChange={(event) => setManualPayment((current) => ({ ...current, phone: event.target.value }))} className="mt-1 h-10 w-full rounded-lg border border-slate-300 px-3" />
-              </label>
-              <label className="text-sm font-semibold text-slate-700">{t.admin_service_amount}
-                <input required type="number" min="1" step="0.01" value={manualPayment.amount} onChange={(event) => setManualPayment((current) => ({ ...current, amount: event.target.value }))} className="mt-1 h-10 w-full rounded-lg border border-slate-300 px-3" />
-              </label>
-              <label className="text-sm font-semibold text-slate-700 sm:col-span-2">{t.admin_internal_note}
-                <textarea value={manualPayment.notes} onChange={(event) => setManualPayment((current) => ({ ...current, notes: event.target.value }))} maxLength={5000} rows={3} className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2" />
-              </label>
-              {manualPaymentError && <p className="text-sm text-red-600 sm:col-span-2">{manualPaymentError}</p>}
-              {manualPaymentLink && (
-                <div className="rounded-xl border border-green-200 bg-green-50 p-4 text-sm text-green-800 sm:col-span-2">
-                  <p className="font-bold">{t.admin_link_ready}</p>
-                  <div className="mt-2 flex gap-2">
-                    <input readOnly value={manualPaymentLink} className="min-w-0 flex-1 rounded-lg border border-green-200 bg-white px-3 py-2 text-xs" />
-                    <Button type="button" variant="outline" onClick={() => navigator.clipboard.writeText(manualPaymentLink)}>{t.admin_copy}</Button>
+          <div className="space-y-6">
+            <div className="mx-auto max-w-2xl rounded-2xl border border-slate-100 bg-white shadow-md">
+              <div className="border-b border-slate-100 p-6">
+                <div className="flex items-start gap-3">
+                  <div className="flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-xl bg-green-100 text-green-700"><FaCreditCard /></div>
+                  <div>
+                    <h2 className="text-lg font-bold text-slate-900">{t.admin_payment_links}</h2>
+                    <p className="mt-1 text-sm text-slate-500">{t.admin_payment_links_desc}</p>
                   </div>
                 </div>
+              </div>
+              <form onSubmit={createManualPaymentRequest} className="grid gap-4 p-6 sm:grid-cols-2">
+                <label className="text-sm font-semibold text-slate-700 sm:col-span-2">{t.pay_service}
+                  <select value={manualPayment.service} onChange={(event) => setManualPayment((current) => ({ ...current, service: event.target.value }))} className="mt-1 h-10 w-full rounded-lg border border-slate-300 bg-white px-3">
+                    <option value="">{t.admin_select_service}</option>
+                    {ALL_SERVICE_IDS.map((service) => <option key={service} value={service}>{service}</option>)}
+                  </select>
+                </label>
+                <label className="text-sm font-semibold text-slate-700">{t.admin_client_name}
+                  <input required value={manualPayment.name} onChange={(event) => setManualPayment((current) => ({ ...current, name: event.target.value }))} className="mt-1 h-10 w-full rounded-lg border border-slate-300 px-3" />
+                </label>
+                <label className="text-sm font-semibold text-slate-700">{t.admin_client_email}
+                  <input required type="email" value={manualPayment.email} onChange={(event) => setManualPayment((current) => ({ ...current, email: event.target.value }))} className="mt-1 h-10 w-full rounded-lg border border-slate-300 px-3" />
+                </label>
+                <label className="text-sm font-semibold text-slate-700">{t.admin_phone_optional}
+                  <input value={manualPayment.phone} onChange={(event) => setManualPayment((current) => ({ ...current, phone: event.target.value }))} className="mt-1 h-10 w-full rounded-lg border border-slate-300 px-3" />
+                </label>
+                <label className="text-sm font-semibold text-slate-700">{t.admin_service_amount}
+                  <input required type="number" min="1" step="0.01" value={manualPayment.amount} onChange={(event) => setManualPayment((current) => ({ ...current, amount: event.target.value }))} className="mt-1 h-10 w-full rounded-lg border border-slate-300 px-3" />
+                </label>
+                <label className="text-sm font-semibold text-slate-700 sm:col-span-2">{t.admin_internal_note}
+                  <textarea value={manualPayment.notes} onChange={(event) => setManualPayment((current) => ({ ...current, notes: event.target.value }))} maxLength={5000} rows={3} className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2" />
+                </label>
+                {manualPaymentError && <p className="text-sm text-red-600 sm:col-span-2">{manualPaymentError}</p>}
+                {manualPaymentLink && (
+                  <div className="rounded-xl border border-green-200 bg-green-50 p-4 text-sm text-green-800 sm:col-span-2">
+                    <p className="font-bold">{t.admin_link_ready}</p>
+                    <div className="mt-2 flex gap-2">
+                      <input readOnly value={manualPaymentLink} className="min-w-0 flex-1 rounded-lg border border-green-200 bg-white px-3 py-2 text-xs" />
+                      <Button type="button" variant="outline" onClick={() => navigator.clipboard.writeText(manualPaymentLink)}>{t.admin_copy}</Button>
+                    </div>
+                  </div>
+                )}
+                <Button type="submit" disabled={manualPaymentSaving} className="btn-gold h-11 sm:col-span-2">{manualPaymentSaving ? t.admin_saving : t.admin_create_link}</Button>
+              </form>
+            </div>
+
+            <div className="rounded-2xl border border-slate-100 bg-white shadow-md">
+              <div className="flex flex-col gap-3 border-b border-slate-100 p-6 sm:flex-row sm:items-center sm:justify-between">
+                <div>
+                  <h2 className="text-lg font-bold text-slate-900">All Payments</h2>
+                  <p className="mt-1 text-sm text-slate-500">Online application payments and manual payment links in one place.</p>
+                </div>
+                <Button type="button" variant="outline" onClick={() => refetchPayments()} disabled={paymentsFetching} className="self-start">
+                  {paymentsFetching ? "Refreshing…" : "Refresh"}
+                </Button>
+              </div>
+              {paymentsLoading ? (
+                <div className="space-y-3 p-6">
+                  {[...Array(4)].map((_, index) => <Skeleton key={index} className="h-16 w-full rounded-lg" />)}
+                </div>
+              ) : !paymentsData?.payments?.length ? (
+                <div className="py-16 text-center text-slate-500">
+                  <FaCreditCard className="mx-auto mb-3 text-4xl text-slate-300" />
+                  <p className="font-medium">No payments yet</p>
+                  <p className="mt-1 text-sm">Payments from applications and manual links will appear here.</p>
+                </div>
+              ) : (
+                <div className="divide-y divide-slate-100">
+                  {paymentsData.payments.map((payment) => {
+                    const status = payment.paymentStatus.toLowerCase();
+                    const paid = status === "paid";
+                    const failed = status === "failed";
+                    const pending = status === "initiated" || status === "not_started";
+                    return (
+                      <div key={payment.id} className="grid gap-3 p-5 sm:grid-cols-[1fr_auto] sm:items-center">
+                        <div className="min-w-0">
+                          <div className="flex flex-wrap items-center gap-2">
+                            <p className="font-bold text-slate-900">{payment.clientName}</p>
+                            <span className={`rounded-full border px-2 py-0.5 text-[11px] font-bold ${
+                              paid ? "border-green-200 bg-green-50 text-green-700" : failed ? "border-red-200 bg-red-50 text-red-700" : pending ? "border-amber-200 bg-amber-50 text-amber-700" : "border-slate-200 bg-slate-100 text-slate-600"
+                            }`}>
+                              {paid ? "Success / Paid" : failed ? "Failed" : pending ? "Pending" : payment.paymentStatus}
+                            </span>
+                            <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[11px] font-semibold text-slate-600">
+                              {payment.source === "manual" ? "Manual link" : "Application"}
+                            </span>
+                          </div>
+                          <p className="mt-1 text-sm text-primary">{payment.service}</p>
+                          <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-xs text-slate-500">
+                            <span>Ref: <strong className="font-mono text-slate-700">{payment.reference}</strong></span>
+                            {payment.email && <span>{payment.email}</span>}
+                            {payment.phone && <span>{payment.phone}</span>}
+                            <span>Created {new Date(payment.createdAt).toLocaleString("en-IN")}</span>
+                            {payment.paidAt && <span className="font-semibold text-green-700">Paid {new Date(payment.paidAt).toLocaleString("en-IN")}</span>}
+                          </div>
+                          {payment.transactionId && <p className="mt-1 truncate text-[11px] text-slate-400">Txn: {payment.transactionId}</p>}
+                        </div>
+                        <div className="text-left sm:text-right">
+                          <p className="text-xl font-extrabold text-slate-900">₹{Number(payment.amount).toLocaleString("en-IN", { minimumFractionDigits: 2 })}</p>
+                          <p className="text-xs text-slate-400">Gateway amount</p>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
               )}
-              <Button type="submit" disabled={manualPaymentSaving} className="btn-gold h-11 sm:col-span-2">{manualPaymentSaving ? t.admin_saving : t.admin_create_link}</Button>
-            </form>
+            </div>
           </div>
         )}
 

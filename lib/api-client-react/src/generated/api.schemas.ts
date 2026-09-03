@@ -195,6 +195,33 @@ export interface PaymentRequestPublic {
   createdAt: string;
 }
 
+export type AdminPaymentSource =
+  (typeof AdminPaymentSource)[keyof typeof AdminPaymentSource];
+
+export const AdminPaymentSource = {
+  application: "application",
+  manual: "manual",
+} as const;
+
+export interface AdminPayment {
+  id: string;
+  source: AdminPaymentSource;
+  reference: string;
+  service: string;
+  clientName: string;
+  email?: string | null;
+  phone?: string | null;
+  amount: number;
+  paymentStatus: string;
+  transactionId?: string | null;
+  paidAt?: string | null;
+  createdAt: string;
+}
+
+export interface AdminPaymentsResponse {
+  payments: AdminPayment[];
+}
+
 export type PaymentRequestCreateResponse = PaymentRequestPublic & {
   paymentPageUrl: string;
 };

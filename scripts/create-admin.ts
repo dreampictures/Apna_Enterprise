@@ -10,8 +10,13 @@ if (!DB_URL) {
   process.exit(1);
 }
 
-const USERNAME = process.env.ADMIN_USERNAME ?? "admin";
-const PASSWORD = process.env.ADMIN_PASSWORD ?? "Admin@1234";
+const USERNAME = process.env.ADMIN_USERNAME;
+const PASSWORD = process.env.ADMIN_PASSWORD;
+
+if (!USERNAME || !PASSWORD) {
+  console.error("Set ADMIN_USERNAME and ADMIN_PASSWORD before running this script.");
+  process.exit(1);
+}
 
 const pool = new Pool({ connectionString: DB_URL });
 
@@ -24,6 +29,6 @@ await pool.query(
   [USERNAME, hash],
 );
 
-console.log(`✅  Admin user ready  →  username: ${USERNAME}  |  password: ${PASSWORD}`);
+console.log(`✅ Admin user ready: ${USERNAME}`);
 
 await pool.end();

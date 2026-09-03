@@ -4,14 +4,19 @@ import { eq, desc, count, sql } from "drizzle-orm";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import { AdminLoginBody } from "@workspace/api-zod";
-import { requireAuth } from "../middlewares/auth";
+import { createRateLimiter } from "../middlewares/rateLimit";
+import { JWT_SECRET, requireAuth } from "../middlewares/auth";
 
 const router = Router();
 
-const JWT_SECRET = process.env.JWT_SECRET ?? "fallback-secret";
+const loginRateLimit = createRateLimiter({
+  windowMs: 15 * 60 * 1000,
+  max: 10,
+  message: "Too many login attempts. Please try again in a few minutes.",
+});
 
 // POST /admin/login
-router.post("/admin/login", async (req, res) => {
+router.post("/admin/login", loginRateLimit, async (req, res) => {
   const parsed = AdminLoginBody.safeParse(req.body);
   if (!parsed.success) {
     res.status(400).json({ error: "Invalid request body" });
