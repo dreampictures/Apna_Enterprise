@@ -68,6 +68,7 @@ export const CreateApplicationBody = zod.object({
     "Website Design Services",
     "AEPS (Aadhaar Enabled Payment System)",
     "Online Payments",
+    "Insurance Services",
   ]),
   message: zod.string().max(createApplicationBodyMessageMax).optional(),
   callbackRequested: zod.boolean().optional(),

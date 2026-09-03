@@ -72,7 +72,15 @@ const DYNAMIC_PRICED_SERVICES = new Set([
   "Train Ticket Booking",
   "Bus Ticket Booking",
   "Job Application Forms (Govt Naukri)",
+  "Insurance Services",
 ]);
+const INSURANCE_TYPES = [
+  "Car Insurance - Comprehensive",
+  "Car Insurance - Third Party",
+  "Bike Insurance - Comprehensive",
+  "Bike Insurance - Third Party",
+  "Health Insurance",
+] as const;
 
 function roundCurrency(amount: number): number {
   return Math.round((amount + Number.EPSILON) * 100) / 100;
@@ -127,6 +135,40 @@ function isValidPayUHash(expected: string, actual: string): boolean {
 function pricingStatus(pricingType: string, applicationPrice: number | null | undefined): string {
   if (pricingType !== "dynamic") return "fixed";
   return applicationPrice === null || applicationPrice === undefined ? "waiting_for_price" : "price_assigned";
+}
+
+function validateInsuranceDetails(service: string, details: string | undefined): string | null {
+  if (service !== "Insurance Services") return null;
+
+  let parsed: Record<string, unknown>;
+  try {
+    const value = JSON.parse(details ?? "{}");
+    if (!value || typeof value !== "object" || Array.isArray(value)) return "Insurance details are invalid.";
+    parsed = value as Record<string, unknown>;
+  } catch {
+    return "Insurance details are invalid.";
+  }
+
+  const insuranceType = String(parsed.insuranceType ?? "");
+  if (!(INSURANCE_TYPES as readonly string[]).includes(insuranceType)) {
+    return "Please select a valid insurance type.";
+  }
+
+  const isVehicleInsurance = insuranceType.startsWith("Car Insurance") || insuranceType.startsWith("Bike Insurance");
+  if (isVehicleInsurance && !String(parsed.rcNumber ?? "").trim()) {
+    return "RC Number is required for car or bike insurance.";
+  }
+  if (insuranceType === "Health Insurance") {
+    if (!["individual", "family", "senior-citizen"].includes(String(parsed.healthCover ?? ""))) {
+      return "Please select a valid health cover type.";
+    }
+    const members = Number(parsed.members);
+    if (!Number.isInteger(members) || members < 1 || members > 50) {
+      return "Please enter a valid number of people to cover.";
+    }
+  }
+
+  return null;
 }
 
 function createPaymentFields(
@@ -198,6 +240,11 @@ router.post("/applications", applicationSubmitRateLimit, async (req, res) => {
   }
 
   const { name, phone, email, service, message, callbackRequested, details } = parsed.data;
+  const insuranceDetailsError = validateInsuranceDetails(service, details);
+  if (insuranceDetailsError) {
+    res.status(400).json({ error: insuranceDetailsError });
+    return;
+  }
   const [configuredPrice] = await db
     .select({ price: servicePricesTable.price })
     .from(servicePricesTable)

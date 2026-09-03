@@ -7,7 +7,7 @@ import {
   FaStore, FaBuilding, FaBriefcase, FaGraduationCap, FaSchool,
   FaTrophy, FaAward, FaClipboardList, FaPrint, FaLaptopCode,
   FaUniversity, FaCreditCard, FaBoxOpen, FaShippingFast,
-  FaGlobe, FaSearch, FaTimes, FaArrowRight,
+  FaGlobe, FaSearch, FaTimes, FaArrowRight, FaShieldAlt,
 } from "react-icons/fa";
 import { Button } from "@/components/ui/button";
 import { SERVICE_CATEGORIES } from "@/lib/services";
@@ -62,6 +62,7 @@ const CATEGORY_ICONS: Record<string, React.ElementType> = {
   forms: FaClipboardList,
   digital: FaPrint,
   financial: FaUniversity,
+  insurance: FaShieldAlt,
   parcel: FaShippingFast,
 };
 
@@ -71,6 +72,7 @@ const CATEGORY_GRADIENT: Record<string, string> = {
   forms:     "linear-gradient(135deg, #5b21b6, #8b5cf6)",
   digital:   "linear-gradient(135deg, #92400e, #f59e0b)",
   financial: "linear-gradient(135deg, #9f1239, #f43f5e)",
+  insurance: "linear-gradient(135deg, #3730a3, #6366f1)",
   parcel:    "linear-gradient(135deg, #164e63, #06b6d4)",
 };
 
@@ -80,6 +82,7 @@ const CATEGORY_ICON_LIGHT: Record<string, string> = {
   forms:     "bg-violet-50 text-violet-600",
   digital:   "bg-amber-50 text-amber-600",
   financial: "bg-rose-50 text-rose-600",
+  insurance: "bg-indigo-50 text-indigo-600",
   parcel:    "bg-cyan-50 text-cyan-600",
 };
 

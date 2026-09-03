@@ -16,6 +16,7 @@ export interface ServiceField {
   help?: string;
   paHelp?: string;
   options?: ServiceFieldOption[];
+  visibleWhen?: (details: Record<string, unknown>) => boolean;
 }
 
 export interface ServiceFormConfig {
@@ -296,6 +297,66 @@ export const SERVICE_FORM_CONFIG: Record<string, ServiceFormConfig> = {
     fields: [
       { id: "paymentType", label: "Payment type", kind: "select", required: true, options: [{ value: "bill-payment", label: "Utility bill" }, { value: "mobile-recharge", label: "Mobile recharge" }, { value: "other", label: "Other online payment" }] },
       { id: "provider", label: "Provider / biller", kind: "text", required: true, placeholder: "Electricity board, mobile operator, etc." },
+    ],
+  },
+  "Insurance Services": {
+    intro: "Choose the insurance cover you need. A valid RC Number is required for every car or bike insurance request so we can check the correct quotation.",
+    introPa: "ਲੋੜੀਂਦੀ ਬੀਮਾ ਸੇਵਾ ਚੁਣੋ। ਸਹੀ ਕੋਟੇਸ਼ਨ ਲਈ ਹਰ ਕਾਰ ਜਾਂ ਬਾਈਕ ਬੀਮਾ ਬੇਨਤੀ ਵਿੱਚ RC ਨੰਬਰ ਲਾਜ਼ਮੀ ਹੈ।",
+    fields: [
+      {
+        id: "insuranceType",
+        label: "Insurance type",
+        paLabel: "ਬੀਮਾ ਕਿਸਮ",
+        kind: "select",
+        required: true,
+        options: [
+          { value: "Car Insurance - Comprehensive", label: "Car Insurance — Comprehensive" },
+          { value: "Car Insurance - Third Party", label: "Car Insurance — Third Party" },
+          { value: "Bike Insurance - Comprehensive", label: "Bike Insurance — Comprehensive" },
+          { value: "Bike Insurance - Third Party", label: "Bike Insurance — Third Party" },
+          { value: "Health Insurance", label: "Health Insurance" },
+        ],
+      },
+      {
+        id: "rcNumber",
+        label: "RC Number",
+        paLabel: "RC ਨੰਬਰ",
+        kind: "text",
+        placeholder: "Enter vehicle RC number",
+        paPlaceholder: "ਵਾਹਨ ਦਾ RC ਨੰਬਰ ਦਰਜ ਕਰੋ",
+        help: "Required for car and bike insurance.",
+        paHelp: "ਕਾਰ ਅਤੇ ਬਾਈਕ ਬੀਮੇ ਲਈ ਲਾਜ਼ਮੀ।",
+        visibleWhen: (details) => String(details.insuranceType ?? "").startsWith("Car Insurance") || String(details.insuranceType ?? "").startsWith("Bike Insurance"),
+      },
+      {
+        id: "policyExpiry",
+        label: "Existing policy expiry date (if renewing)",
+        paLabel: "ਮੌਜੂਦਾ ਪਾਲਿਸੀ ਦੀ ਮਿਆਦ (ਜੇ renewal ਹੈ)",
+        kind: "date",
+        visibleWhen: (details) => String(details.insuranceType ?? "").startsWith("Car Insurance") || String(details.insuranceType ?? "").startsWith("Bike Insurance"),
+      },
+      {
+        id: "healthCover",
+        label: "Health cover type",
+        paLabel: "ਹੈਲਥ ਕਵਰ ਕਿਸਮ",
+        kind: "select",
+        required: true,
+        options: [
+          { value: "individual", label: "Individual" },
+          { value: "family", label: "Family floater" },
+          { value: "senior-citizen", label: "Senior citizen" },
+        ],
+        visibleWhen: (details) => details.insuranceType === "Health Insurance",
+      },
+      {
+        id: "members",
+        label: "Number of people to cover",
+        paLabel: "ਕਵਰ ਕੀਤੇ ਜਾਣ ਵਾਲੇ ਲੋਕਾਂ ਦੀ ਗਿਣਤੀ",
+        kind: "number",
+        required: true,
+        placeholder: "e.g. 1",
+        visibleWhen: (details) => details.insuranceType === "Health Insurance",
+      },
     ],
   },
 };

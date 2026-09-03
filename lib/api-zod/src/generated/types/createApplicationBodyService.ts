@@ -39,4 +39,5 @@ export const CreateApplicationBodyService = {
   "AEPS_(Aadhaar_Enabled_Payment_System)":
     "AEPS (Aadhaar Enabled Payment System)",
   Online_Payments: "Online Payments",
+  Insurance_Services: "Insurance Services",
 } as const;

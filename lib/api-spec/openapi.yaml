@@ -616,6 +616,7 @@ components:
             - Website Design Services
             - AEPS (Aadhaar Enabled Payment System)
             - Online Payments
+            - Insurance Services
         message:
           type: string
           maxLength: 1000

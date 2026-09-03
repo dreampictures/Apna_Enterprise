@@ -98,6 +98,7 @@ export default function Apply() {
     }).superRefine((values, ctx) => {
       const config = getServiceFormConfig(values.service);
       for (const field of config.fields) {
+        if (field.visibleWhen && !field.visibleWhen(values.details)) continue;
         const value = values.details?.[field.id];
         const empty = Array.isArray(value) ? value.length === 0 : value === undefined || value === null || String(value).trim() === "";
         if (field.required && empty) {
@@ -115,6 +116,18 @@ export default function Apply() {
           path: ["details", "returnDate"],
           message: "Return date is required for a round trip",
         });
+      }
+
+      if (values.service === "Insurance Services") {
+        const insuranceType = String(values.details?.insuranceType ?? "");
+        const isVehicleInsurance = insuranceType.startsWith("Car Insurance") || insuranceType.startsWith("Bike Insurance");
+        if (isVehicleInsurance && !String(values.details?.rcNumber ?? "").trim()) {
+          ctx.addIssue({
+            code: z.ZodIssueCode.custom,
+            path: ["details", "rcNumber"],
+            message: "RC Number is required for car or bike insurance",
+          });
+        }
       }
     }),
     [t]
@@ -729,7 +742,7 @@ function ServiceDetailsFields({
       )}
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        {config.fields.map((field) => {
+        {config.fields.filter((field) => !field.visibleWhen || field.visibleWhen(details)).map((field) => {
           const error = detailErrors?.[field.id]?.message;
           return (
             <div key={field.id} className={field.kind === "textarea" || field.kind === "documents" ? "sm:col-span-2" : ""}>

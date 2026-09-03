@@ -183,6 +183,18 @@ export const SERVICE_CATEGORIES: ServiceCategory[] = [
     ],
   },
   {
+    id: "insurance",
+    name: "Insurance Services",
+    colorClass: "bg-indigo-50 text-indigo-600 border-indigo-200",
+    services: [
+      {
+        id: "Insurance Services",
+        name: "Insurance (Car, Bike & Health)",
+        description: "Car and bike comprehensive or third-party insurance assistance, plus health insurance guidance with quotation support.",
+      },
+    ],
+  },
+  {
     id: "parcel",
     name: "Parcel Services",
     colorClass: "bg-cyan-50 text-cyan-600 border-cyan-200",
