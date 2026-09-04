@@ -16,6 +16,7 @@ const router = Router();
 const applicationSubmitRateLimit = createRateLimiter({ windowMs: 15 * 60 * 1000, max: 20 });
 const publicPaymentRateLimit = createRateLimiter({ windowMs: 15 * 60 * 1000, max: 20 });
 const trackingRateLimit = createRateLimiter({ windowMs: 15 * 60 * 1000, max: 60 });
+const MANUAL_PAYMENT_LINK_TTL_MS = 5 * 60 * 1000;
 
 const VALID_STATUSES = ["pending", "review", "applying", "applied", "rejected", "completed"] as const;
 type AppStatus = (typeof VALID_STATUSES)[number];
@@ -231,6 +232,10 @@ function createPaymentFields(
   return { fields, txnid, ...paymentBreakdown };
 }
 
+function isManualPaymentExpired(expiresAt: Date): boolean {
+  return expiresAt.getTime() <= Date.now();
+}
+
 // POST /applications - Submit a new service application
 router.post("/applications", applicationSubmitRateLimit, async (req, res) => {
   const parsed = CreateApplicationBody.safeParse(req.body);
@@ -384,7 +389,9 @@ async function handlePayUResponse(req: any, res: any, success: boolean) {
     ?? (manualRequest ? calculatePaymentBreakdown(Number(manualRequest.amount)).amount : null);
   const amountMatches = paymentRecord && expectedAmount !== null && Number(payload.amount) === Number(expectedAmount);
   const statusValue = status.toLowerCase();
-  const paymentSucceeded = valid && amountMatches && success && statusValue === "success";
+  const alreadyPaid = paymentRecord?.paymentStatus === "paid";
+  const manualRequestExpired = manualRequest ? isManualPaymentExpired(manualRequest.expiresAt) : false;
+  const paymentSucceeded = valid && amountMatches && success && statusValue === "success" && !alreadyPaid && !manualRequestExpired;
   if (app && paymentSucceeded) {
     await db
       .update(applicationsTable)
@@ -399,7 +406,7 @@ async function handlePayUResponse(req: any, res: any, success: boolean) {
     await db
       .update(paymentRequestsTable)
       .set({ paymentStatus: "paid", paidAt: new Date() })
-      .where(eq(paymentRequestsTable.id, manualRequest.id));
+      .where(sql`${paymentRequestsTable.id} = ${manualRequest.id} AND ${paymentRequestsTable.paymentStatus} <> 'paid'`);
   } else if (manualRequest && valid && amountMatches && !success) {
     await db
       .update(paymentRequestsTable)
@@ -835,7 +842,11 @@ router.get("/admin/payments", requireAuth, async (req, res) => {
         email: request.email,
         phone: request.phone,
         amount: request.amount,
-        paymentStatus: request.paymentStatus,
+        paymentStatus: request.paymentStatus === "paid"
+          ? "paid"
+          : isManualPaymentExpired(request.expiresAt)
+            ? "expired"
+            : request.paymentStatus,
         transactionId: request.paymentTxnId,
         paidAt: request.paidAt?.toISOString() ?? null,
         createdAt: request.createdAt.toISOString(),
@@ -868,6 +879,7 @@ router.post("/payment-requests", requireAuth, async (req, res) => {
         phone: parsed.data.phone ?? null,
         email: parsed.data.email,
         amount: parsed.data.amount,
+        expiresAt: new Date(Date.now() + MANUAL_PAYMENT_LINK_TTL_MS),
         notes: parsed.data.notes ?? null,
         createdBy: user?.username ?? "admin",
       })
@@ -880,6 +892,8 @@ router.post("/payment-requests", requireAuth, async (req, res) => {
       amount: request.amount,
       paymentStatus: request.paymentStatus,
       paidAt: null,
+      expiresAt: request.expiresAt.toISOString(),
+      expired: false,
       createdAt: request.createdAt.toISOString(),
       paymentPageUrl: `${publicAppUrl(req)}/pay/${request.token}`,
     });
@@ -906,6 +920,7 @@ router.get("/payment-requests/:token", async (req, res) => {
       res.status(404).json({ error: "Payment request not found" });
       return;
     }
+    const expired = request.paymentStatus !== "paid" && isManualPaymentExpired(request.expiresAt);
     res.json({
       token: request.token,
       service: request.service,
@@ -913,6 +928,8 @@ router.get("/payment-requests/:token", async (req, res) => {
       amount: request.amount,
       paymentStatus: request.paymentStatus,
       paidAt: request.paidAt?.toISOString() ?? null,
+      expiresAt: request.expiresAt.toISOString(),
+      expired,
       createdAt: request.createdAt.toISOString(),
     });
   } catch (err) {
@@ -940,6 +957,14 @@ router.post("/payment-requests/:token/payment", publicPaymentRateLimit, async (r
     }
     if (request.paymentStatus === "paid") {
       res.status(400).json({ error: "This payment request has already been paid." });
+      return;
+    }
+    if (isManualPaymentExpired(request.expiresAt)) {
+      res.status(410).json({ error: "This payment link has expired. Please ask the office for a new link." });
+      return;
+    }
+    if (request.paymentStatus === "initiated") {
+      res.status(400).json({ error: "A payment attempt is already active for this link." });
       return;
     }
     if (!request.email) {

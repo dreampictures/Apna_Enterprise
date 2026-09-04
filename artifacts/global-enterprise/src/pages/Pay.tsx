@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRoute } from "wouter";
 import {
   useGetPaymentRequest,
@@ -31,10 +31,16 @@ export default function Pay() {
   const initiate = useInitiatePaymentRequestPayment();
   const [paymentInfo, setPaymentInfo] = useState<PaymentInfo | null>(null);
   const [paymentSubmitting, setPaymentSubmitting] = useState(false);
+  const [now, setNow] = useState(() => Date.now());
   const [paymentFailed, setPaymentFailed] = useState(
     new URLSearchParams(window.location.search).get("payment") === "failed",
   );
   const paymentSucceeded = new URLSearchParams(window.location.search).get("payment") === "success";
+
+  useEffect(() => {
+    const timer = window.setInterval(() => setNow(Date.now()), 1000);
+    return () => window.clearInterval(timer);
+  }, []);
 
   function startPayment() {
     if (!token || initiate.isPending || !request.data) return;
@@ -61,6 +67,10 @@ export default function Pay() {
   const total = request.data
     ? request.data.amount * (1 + 0.02 * 1.18)
     : 0;
+  const expired = Boolean(
+    request.data &&
+    (request.data.expired || new Date(request.data.expiresAt).getTime() <= now),
+  );
 
   return (
     <div className="flex min-h-full flex-col">
@@ -92,6 +102,12 @@ export default function Pay() {
                   <FaCheckCircle className="mx-auto mb-2 text-3xl" />
                   <p className="font-bold">{t.pay_paid}</p>
                 </div>
+              ) : expired ? (
+                <div className="mb-6 rounded-xl border border-amber-200 bg-amber-50 p-4 text-center text-amber-800">
+                  <FaExclamationCircle className="mx-auto mb-2 text-2xl" />
+                  <p className="font-bold">{t.pay_expired}</p>
+                  <p className="mt-1 text-sm">{t.pay_expired_desc}</p>
+                </div>
               ) : paymentFailed ? (
                 <div className="mb-6 rounded-xl border border-red-200 bg-red-50 p-4 text-center text-red-700">
                   <FaExclamationCircle className="mx-auto mb-2 text-2xl" />
@@ -119,13 +135,13 @@ export default function Pay() {
               </dl>
               <p className="mt-4 text-xs leading-5 text-slate-500">{t.pay_gateway_note}</p>
 
-              {!paymentSucceeded && request.data.paymentStatus !== "paid" && !paymentInfo && (
+              {!paymentSucceeded && request.data.paymentStatus !== "paid" && !expired && !paymentInfo && (
                 <Button type="button" onClick={startPayment} disabled={initiate.isPending} className="btn-gold mt-6 h-12 w-full rounded-xl text-base font-bold">
                   <FaCreditCard className="mr-2" />
                   {initiate.isPending ? t.payment_opening : t.pay_button}
                 </Button>
               )}
-              {paymentInfo && (
+              {paymentInfo && !expired && (
                 <form action={paymentInfo.action} method="POST" onSubmit={submitPayU} className="mt-6">
                   {Object.entries(paymentInfo.fields).map(([key, value]) => (
                     <input key={key} type="hidden" name={key} value={value} />

@@ -13,5 +13,7 @@ export interface PaymentRequestPublic {
   amount: number;
   paymentStatus: string;
   paidAt?: Date | null;
+  expiresAt: Date;
+  expired: boolean;
   createdAt: Date;
 }

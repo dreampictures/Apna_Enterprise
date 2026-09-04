@@ -195,10 +195,16 @@ export async function ensureSchema() {
          payment_status TEXT NOT NULL DEFAULT 'not_started',
          payment_txn_id TEXT UNIQUE,
          paid_at TIMESTAMP,
+         expires_at TIMESTAMP,
          notes TEXT,
          created_by TEXT NOT NULL,
          created_at TIMESTAMP DEFAULT NOW() NOT NULL
        );
+       ALTER TABLE payment_requests ADD COLUMN IF NOT EXISTS expires_at TIMESTAMP;
+       UPDATE payment_requests
+       SET expires_at = created_at + INTERVAL '5 minutes'
+       WHERE expires_at IS NULL;
+       ALTER TABLE payment_requests ALTER COLUMN expires_at SET NOT NULL;
 
       ALTER TABLE announcements ADD COLUMN IF NOT EXISTS pdf_url TEXT;
       ALTER TABLE announcements ADD COLUMN IF NOT EXISTS pdf_key TEXT;

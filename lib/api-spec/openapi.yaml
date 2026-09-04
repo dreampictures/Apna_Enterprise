@@ -910,6 +910,11 @@ components:
           type: string
           format: date-time
           nullable: true
+        expiresAt:
+          type: string
+          format: date-time
+        expired:
+          type: boolean
         createdAt:
           type: string
           format: date-time
@@ -919,6 +924,8 @@ components:
         - name
         - amount
         - paymentStatus
+        - expiresAt
+        - expired
         - createdAt
 
     AdminPayment:

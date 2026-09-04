@@ -169,6 +169,8 @@ export interface Translations {
   pay_button: string;
   pay_paid: string;
   pay_failed: string;
+  pay_expired: string;
+  pay_expired_desc: string;
   pay_not_found: string;
   pay_error: string;
   pay_secure_note: string;
@@ -423,6 +425,8 @@ const en: Translations = {
   pay_button: "Continue to PayU",
   pay_paid: "Payment received",
   pay_failed: "Payment was not completed. You can try again.",
+  pay_expired: "This payment link has expired",
+  pay_expired_desc: "This link was valid for 5 minutes and can only be used once. Please contact the office for a new payment link.",
   pay_not_found: "Payment request not found",
   pay_error: "We could not load this payment request. Please contact the office.",
   pay_secure_note: "You will leave this site and complete payment on PayU's secure page.",
@@ -672,6 +676,8 @@ const pa: Translations = {
   pay_button: "PayU ਤੇ ਜਾਰੀ ਰੱਖੋ",
   pay_paid: "ਭੁਗਤਾਨ ਪ੍ਰਾਪਤ ਹੋ ਗਿਆ",
   pay_failed: "ਭੁਗਤਾਨ ਪੂਰਾ ਨਹੀਂ ਹੋਇਆ। ਦੁਬਾਰਾ ਕੋਸ਼ਿਸ਼ ਕਰੋ।",
+  pay_expired: "ਇਹ ਭੁਗਤਾਨ ਲਿੰਕ ਮਿਆਦ ਪੁੱਗ ਚੁੱਕੀ ਹੈ",
+  pay_expired_desc: "ਇਹ ਲਿੰਕ 5 ਮਿੰਟ ਲਈ ਹੀ ਵੈਧ ਸੀ ਅਤੇ ਸਿਰਫ਼ ਇੱਕ ਵਾਰ ਵਰਤਿਆ ਜਾ ਸਕਦਾ ਹੈ। ਨਵੇਂ ਭੁਗਤਾਨ ਲਿੰਕ ਲਈ ਦਫ਼ਤਰ ਨਾਲ ਸੰਪਰਕ ਕਰੋ।",
   pay_not_found: "ਭੁਗਤਾਨ ਬੇਨਤੀ ਨਹੀਂ ਮਿਲੀ",
   pay_error: "ਇਹ ਭੁਗਤਾਨ ਬੇਨਤੀ ਲੋਡ ਨਹੀਂ ਹੋ ਸਕੀ। ਦਫ਼ਤਰ ਨਾਲ ਸੰਪਰਕ ਕਰੋ।",
   pay_secure_note: "ਤੁਸੀਂ ਇਸ ਸਾਈਟ ਤੋਂ PayU ਦੇ ਸੁਰੱਖਿਅਤ ਪੰਨੇ ਤੇ ਜਾਵੋਗੇ।",

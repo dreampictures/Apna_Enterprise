@@ -306,6 +306,8 @@ export const GetPaymentRequestResponse = zod.object({
   amount: zod.number(),
   paymentStatus: zod.string(),
   paidAt: zod.coerce.date().nullish(),
+  expiresAt: zod.coerce.date(),
+  expired: zod.boolean(),
   createdAt: zod.coerce.date(),
 });
 

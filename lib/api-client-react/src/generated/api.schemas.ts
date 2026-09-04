@@ -193,6 +193,8 @@ export interface PaymentRequestPublic {
   amount: number;
   paymentStatus: string;
   paidAt?: string | null;
+  expiresAt: string;
+  expired: boolean;
   createdAt: string;
 }
 
