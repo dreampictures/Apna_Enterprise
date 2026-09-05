@@ -417,7 +417,10 @@ function PdfEditor({ onDirty }: { onDirty: (dirty: boolean) => void }) {
       const out = await PDFDocument.create();
       for (const page of pages) {
         if (page.source === "pdf") {
-          const source = await PDFDocument.load(await page.file.arrayBuffer());
+          const source = await PDFDocument.load(await page.file.arrayBuffer(), {
+            ignoreEncryption: true,
+            updateMetadata: false,
+          });
           const [copied] = await out.copyPages(source, [page.pageIndex]);
           out.addPage(copied);
         } else {
