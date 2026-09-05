@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { PDFDocument } from "pdf-lib";
+import JSZip from "jszip";
 import {
   AlertCircle,
   ArrowDown,
@@ -63,7 +64,7 @@ const COPY = {
     target: "Target size", each: "each", compressImages: "Compress images", compressing: "Compressing…",
     createPdf: "Create & download PDF", creating: "Creating…", addPdf: "Add PDF pages", addImage: "Add image pages",
     pdfUploadHint: "Upload one or many PDFs", imagePageHint: "Images can be added anywhere in the order",
-    createMerged: "Create merged PDF", processing: "Processing locally…", selected: "pages selected",
+     createMerged: "Create merged ZIP", processing: "Processing locally…", selected: "pages selected",
     localNote: "Drag a page card to arrange 1-2-3 in any order. Use the trash icon to delete. PDFs and images can be mixed.",
     imageNote: "The tool keeps the original dimensions and starts with high quality. It only reduces quality or dimensions as much as needed to reach your target size.",
     privateLabel: "Private", privateText: "No upload or sign-in", flexible: "Flexible", flexibleText: "Choose your target size",
@@ -86,7 +87,7 @@ const COPY = {
     target: "ਨਿਸ਼ਾਨਾ ਆਕਾਰ", each: "ਹਰ ਇੱਕ", compressImages: "ਤਸਵੀਰਾਂ ਸੰਕੁਚਿਤ ਕਰੋ", compressing: "ਸੰਕੁਚਿਤ ਹੋ ਰਿਹਾ ਹੈ…",
     createPdf: "PDF ਬਣਾਓ ਅਤੇ ਡਾਊਨਲੋਡ ਕਰੋ", creating: "ਬਣ ਰਿਹਾ ਹੈ…", addPdf: "PDF ਪੰਨੇ ਸ਼ਾਮਲ ਕਰੋ", addImage: "ਤਸਵੀਰ ਪੰਨੇ ਸ਼ਾਮਲ ਕਰੋ",
     pdfUploadHint: "ਇੱਕ ਜਾਂ ਕਈ PDFs ਚੁਣੋ", imagePageHint: "ਤਸਵੀਰਾਂ ਨੂੰ ਤਰਤੀਬ ਵਿੱਚ ਕਿਸੇ ਵੀ ਥਾਂ ਸ਼ਾਮਲ ਕਰ ਸਕਦੇ ਹੋ",
-    createMerged: "ਜੋੜੀ ਹੋਈ PDF ਬਣਾਓ", processing: "ਇੱਥੇ ਹੀ ਤਿਆਰ ਹੋ ਰਿਹਾ ਹੈ…", selected: "ਪੰਨੇ ਚੁਣੇ",
+     createMerged: "ਜੋੜੀ ਹੋਈ ZIP ਬਣਾਓ", processing: "ਇੱਥੇ ਹੀ ਤਿਆਰ ਹੋ ਰਿਹਾ ਹੈ…", selected: "ਪੰਨੇ ਚੁਣੇ",
     localNote: "ਪੰਨੇ ਨੂੰ ਖਿੱਚ ਕੇ 1-2-3 ਕਿਸੇ ਵੀ ਤਰਤੀਬ ਵਿੱਚ ਰੱਖੋ। ਕੂੜੇਦਾਨ ਨਾਲ ਮਿਟਾਓ। PDFs ਅਤੇ ਤਸਵੀਰਾਂ ਇਕੱਠੀਆਂ ਵਰਤ ਸਕਦੇ ਹੋ।",
     imageNote: "ਸੰਦ ਪਹਿਲਾਂ ਅਸਲ ਮਾਪ ਅਤੇ ਵਧੀਆ ਗੁਣਵੱਤਾ ਰੱਖਦਾ ਹੈ। ਨਿਸ਼ਾਨੇ ਆਕਾਰ ਲਈ ਜਿੰਨਾ ਲੋੜੀਂਦਾ ਹੋਵੇ, ਸਿਰਫ਼ ਉਨਾ ਹੀ ਗੁਣਵੱਤਾ ਜਾਂ ਮਾਪ ਘਟਾਇਆ ਜਾਂਦਾ ਹੈ।",
     privateLabel: "ਨਿੱਜੀ", privateText: "ਕੋਈ upload ਜਾਂ sign-in ਨਹੀਂ", flexible: "ਲਚਕੀਲਾ", flexibleText: "ਨਿਸ਼ਾਨਾ ਆਕਾਰ ਚੁਣੋ",
@@ -431,7 +432,11 @@ function PdfEditor({ onDirty }: { onDirty: (dirty: boolean) => void }) {
           outputPage.drawImage(image, { x: 0, y: 0, width: image.width * scale, height: image.height * scale });
         }
       }
-       download(pdfBlob(await out.save()), `${pages[0]?.file.name.replace(/\.[^.]+$/, "") || "edited"}-merged.pdf`);
+       const baseName = pages[0]?.file.name.replace(/\.[^.]+$/, "") || "edited";
+       const mergedPdfName = `${baseName}-merged.pdf`;
+       const zip = new JSZip();
+       zip.file(mergedPdfName, await out.save());
+       download(await zip.generateAsync({ type: "blob" }), `${baseName}-merged.zip`);
        pages.filter((page) => page.source === "image").forEach((page) => URL.revokeObjectURL(page.preview));
        setPages([]);
        onDirty(false);
