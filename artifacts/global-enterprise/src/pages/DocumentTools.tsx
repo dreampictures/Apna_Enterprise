@@ -8,6 +8,7 @@ import {
   ArrowRight,
   Check,
   Download,
+  FileArchive,
   FileImage,
   FilePlus2,
   FileText,
@@ -64,7 +65,7 @@ const COPY = {
     target: "Target size", each: "each", compressImages: "Compress images", compressing: "Compressing…",
     createPdf: "Create & download PDF", creating: "Creating…", addPdf: "Add PDF pages", addImage: "Add image pages",
     pdfUploadHint: "Upload one or many PDFs", imagePageHint: "Images can be added anywhere in the order",
-     createMerged: "Create merged ZIP", processing: "Processing locally…", selected: "pages selected",
+     createMerged: "Create merged PDF", processing: "Processing locally…", selected: "pages selected",
     localNote: "Drag a page card to arrange 1-2-3 in any order. Use the trash icon to delete. PDFs and images can be mixed.",
     imageNote: "The tool keeps the original dimensions and starts with high quality. It only reduces quality or dimensions as much as needed to reach your target size.",
     privateLabel: "Private", privateText: "No upload or sign-in", flexible: "Flexible", flexibleText: "Choose your target size",
@@ -87,7 +88,7 @@ const COPY = {
     target: "ਨਿਸ਼ਾਨਾ ਆਕਾਰ", each: "ਹਰ ਇੱਕ", compressImages: "ਤਸਵੀਰਾਂ ਸੰਕੁਚਿਤ ਕਰੋ", compressing: "ਸੰਕੁਚਿਤ ਹੋ ਰਿਹਾ ਹੈ…",
     createPdf: "PDF ਬਣਾਓ ਅਤੇ ਡਾਊਨਲੋਡ ਕਰੋ", creating: "ਬਣ ਰਿਹਾ ਹੈ…", addPdf: "PDF ਪੰਨੇ ਸ਼ਾਮਲ ਕਰੋ", addImage: "ਤਸਵੀਰ ਪੰਨੇ ਸ਼ਾਮਲ ਕਰੋ",
     pdfUploadHint: "ਇੱਕ ਜਾਂ ਕਈ PDFs ਚੁਣੋ", imagePageHint: "ਤਸਵੀਰਾਂ ਨੂੰ ਤਰਤੀਬ ਵਿੱਚ ਕਿਸੇ ਵੀ ਥਾਂ ਸ਼ਾਮਲ ਕਰ ਸਕਦੇ ਹੋ",
-     createMerged: "ਜੋੜੀ ਹੋਈ ZIP ਬਣਾਓ", processing: "ਇੱਥੇ ਹੀ ਤਿਆਰ ਹੋ ਰਿਹਾ ਹੈ…", selected: "ਪੰਨੇ ਚੁਣੇ",
+     createMerged: "ਜੋੜੀ ਹੋਈ PDF ਬਣਾਓ", processing: "ਇੱਥੇ ਹੀ ਤਿਆਰ ਹੋ ਰਿਹਾ ਹੈ…", selected: "ਪੰਨੇ ਚੁਣੇ",
     localNote: "ਪੰਨੇ ਨੂੰ ਖਿੱਚ ਕੇ 1-2-3 ਕਿਸੇ ਵੀ ਤਰਤੀਬ ਵਿੱਚ ਰੱਖੋ। ਕੂੜੇਦਾਨ ਨਾਲ ਮਿਟਾਓ। PDFs ਅਤੇ ਤਸਵੀਰਾਂ ਇਕੱਠੀਆਂ ਵਰਤ ਸਕਦੇ ਹੋ।",
     imageNote: "ਸੰਦ ਪਹਿਲਾਂ ਅਸਲ ਮਾਪ ਅਤੇ ਵਧੀਆ ਗੁਣਵੱਤਾ ਰੱਖਦਾ ਹੈ। ਨਿਸ਼ਾਨੇ ਆਕਾਰ ਲਈ ਜਿੰਨਾ ਲੋੜੀਂਦਾ ਹੋਵੇ, ਸਿਰਫ਼ ਉਨਾ ਹੀ ਗੁਣਵੱਤਾ ਜਾਂ ਮਾਪ ਘਟਾਇਆ ਜਾਂਦਾ ਹੈ।",
     privateLabel: "ਨਿੱਜੀ", privateText: "ਕੋਈ upload ਜਾਂ sign-in ਨਹੀਂ", flexible: "ਲਚਕੀਲਾ", flexibleText: "ਨਿਸ਼ਾਨਾ ਆਕਾਰ ਚੁਣੋ",
@@ -278,6 +279,29 @@ function ImageCompressor({ onDirty }: { onDirty: (dirty: boolean) => void }) {
       // Keep the item available if the browser rejects the download.
     }
   };
+  const readyItems = items.filter((item) => item.output);
+  const saveZip = async () => {
+    if (readyItems.length < 2) return;
+    try {
+      const zip = new JSZip();
+      readyItems.forEach((item) => {
+        if (item.output) {
+          zip.file(item.outputName || `${item.file.name.replace(/\.[^.]+$/, "")}-compressed.jpg`, item.output);
+        }
+      });
+      const blob = await zip.generateAsync({
+        type: "blob",
+        compression: "DEFLATE",
+        compressionOptions: { level: 6 },
+      });
+      download(blob, "compressed-images.zip");
+      readyItems.forEach((item) => URL.revokeObjectURL(item.preview));
+      setItems((current) => current.filter((item) => !item.output));
+      onDirty(items.length > readyItems.length);
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : "Image ZIP could not be created.");
+    }
+  };
   const clear = () => { items.forEach((item) => URL.revokeObjectURL(item.preview)); setItems([]); onDirty(false); };
   return <ToolCard>
     <SectionTitle icon={FileImage} title={c.imageTitle} detail={c.imageDetail} />
@@ -291,6 +315,7 @@ function ImageCompressor({ onDirty }: { onDirty: (dirty: boolean) => void }) {
     {message && <p className="mt-4 rounded-lg bg-red-50 p-3 text-sm text-red-700">{message}</p>}
     <div className="mt-5 flex flex-wrap justify-end gap-2">
       {items.length > 0 && <Button variant="ghost" onClick={clear} className="text-xs"><Trash2 className="mr-1.5 h-4 w-4" />{c.clear}</Button>}
+      {readyItems.length > 1 && <Button onClick={saveZip} className="rounded-xl text-xs" style={{ background: NAVY, color: "white" }}><FileArchive className="mr-1.5 h-4 w-4" />Download ZIP</Button>}
       {items.length > 0 && <Button disabled={working} onClick={process} className="btn-gold rounded-xl">{working ? <RefreshCw className="mr-2 h-4 w-4 animate-spin" /> : <Zap className="mr-2 h-4 w-4" />}{working ? c.compressing : c.compressImages}</Button>}
     </div>
     <Note>{c.imageNote}</Note>
@@ -433,10 +458,7 @@ function PdfEditor({ onDirty }: { onDirty: (dirty: boolean) => void }) {
         }
       }
        const baseName = pages[0]?.file.name.replace(/\.[^.]+$/, "") || "edited";
-       const mergedPdfName = `${baseName}-merged.pdf`;
-       const zip = new JSZip();
-       zip.file(mergedPdfName, await out.save());
-       download(await zip.generateAsync({ type: "blob" }), `${baseName}-merged.zip`);
+       download(pdfBlob(await out.save()), `${baseName}-merged.pdf`);
        pages.filter((page) => page.source === "image").forEach((page) => URL.revokeObjectURL(page.preview));
        setPages([]);
        onDirty(false);
