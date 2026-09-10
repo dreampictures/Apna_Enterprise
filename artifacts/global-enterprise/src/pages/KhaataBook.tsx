@@ -7,6 +7,7 @@ import {
   FaCalendarAlt, FaStickyNote, FaChevronRight,
   FaExclamationTriangle, FaSearch, FaLock,
   FaUsers, FaCheckCircle, FaChartLine, FaFilter,
+  FaClock,
 } from "react-icons/fa";
 
 /* ── Tokens ─────────────────────────────────────────────────── */
@@ -612,6 +613,19 @@ export default function KhaataBook() {
   const cleared  = clients.filter(c => c.balance === 0);
   const totalPending = pending.reduce((s, c) => s + c.balance, 0);
   const totalAdvance = advance.reduce((s, c) => s + Math.abs(c.balance), 0);
+  const recentClients = clients
+    .filter(c => c.latestTxnAt)
+    .slice()
+    .sort((a, b) => {
+      const da = a.latestTxnAt ?? a.createdAt;
+      const db = b.latestTxnAt ?? b.createdAt;
+      return db > da ? 1 : db < da ? -1 : 0;
+    })
+    .slice(0, 4);
+  const totalAccounts = clients.length || 1;
+  const pendingShare = (pending.length / totalAccounts) * 100;
+  const advanceShare = (advance.length / totalAccounts) * 100;
+  const clearedShare = (cleared.length / totalAccounts) * 100;
 
   /* ── Filtered + Sorted ── */
   const byTab = tab === "baki" ? pending : tab === "advance" ? advance : tab === "clear" ? cleared : clients;
@@ -646,243 +660,309 @@ export default function KhaataBook() {
           onAdded={c => setClients(p => [{ ...c, totalDebit: 0, totalCredit: 0, balance: 0 }, ...p])} />
       )}
 
-      <div className="flex-1 flex flex-col" style={{ background: "#f4f6fb" }}>
+      <div className="flex-1 flex flex-col" style={{ background: "#06132f", color: "white" }}>
+        <div className="relative overflow-hidden px-4 pb-12 pt-7"
+          style={{ background: "linear-gradient(135deg, #06132f 0%, #0a2458 58%, #071a40 100%)" }}>
+          <div className="absolute inset-0 opacity-[0.045] pointer-events-none" aria-hidden
+            style={{ backgroundImage: "radial-gradient(circle, #fff 1px, transparent 1px)", backgroundSize: "28px 28px" }} />
+          <div className="absolute -right-32 top-0 h-80 w-80 rounded-full opacity-20 pointer-events-none"
+            style={{ background: `radial-gradient(circle, ${GOLD} 0%, transparent 68%)` }} />
 
-        {/* ══ HERO HEADER ══ */}
-        <div className="relative overflow-hidden pb-28 pt-7 px-4"
-          style={{ background: `linear-gradient(145deg, ${NAVY} 0%, #102060 55%, #0a1a50 100%)` }}>
-          {/* dot grid decoration */}
-          <div className="absolute inset-0 opacity-[0.04] pointer-events-none" aria-hidden
-            style={{ backgroundImage: "radial-gradient(circle, white 1px, transparent 1px)", backgroundSize: "30px 30px" }} />
-          {/* gold glow top */}
-          <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[600px] h-24 opacity-10 pointer-events-none" aria-hidden
-            style={{ background: `radial-gradient(ellipse at 50% 0%, ${GOLD} 0%, transparent 70%)` }} />
-
-          <div className="relative max-w-3xl mx-auto">
-            {/* Top bar */}
-            <div className="flex items-center justify-between mb-8">
+          <div className="relative max-w-[1180px] mx-auto">
+            <div className="flex flex-col gap-5 md:flex-row md:items-center md:justify-between mb-7">
               <div className="flex items-center gap-3.5">
-                <div className="w-11 h-11 rounded-2xl flex items-center justify-center"
-                  style={{ background: `linear-gradient(135deg, ${GOLD}33, ${GOLD}11)`, border: `1px solid ${GOLD}44` }}>
-                  <FaBook className="text-lg" style={{ color: GOLD }} />
+                <div className="w-12 h-12 rounded-2xl flex items-center justify-center"
+                  style={{ background: "linear-gradient(135deg, #f8c544, #c38b0d)", boxShadow: "0 10px 24px rgba(212,160,23,.28)" }}>
+                  <FaBook className="text-xl text-[#06132f]" />
                 </div>
                 <div>
-                  <h1 className="text-xl font-black text-white leading-none">Khaata Book</h1>
-                  <p className="text-[10px] font-bold mt-0.5" style={{ color: `${GOLD}bb`, letterSpacing: "0.15em" }}>
+                  <h1 className="text-2xl font-black tracking-tight leading-none">Khaata Book</h1>
+                  <p className="text-[10px] font-bold mt-1 uppercase tracking-[0.22em]" style={{ color: "#f0c44e" }}>
                     APNA ENTERPRISE
                   </p>
+                  <p className="text-xs text-white/45 mt-1">Manage your clients, payments and settlements with ease.</p>
                 </div>
               </div>
-              <button
-                onClick={() => { sessionStorage.removeItem("khaata_auth"); setAuthed(false); }}
-                className="flex items-center gap-2 text-xs font-bold px-4 py-2.5 rounded-2xl transition-all active:scale-95"
-                style={{ background: "rgba(255,255,255,0.08)", border: "1px solid rgba(255,255,255,0.12)", color: "rgba(255,255,255,0.7)" }}>
-                <FaLock className="text-[10px]" /> Lock
-              </button>
+              <div className="flex items-center gap-2.5">
+                <div className="hidden sm:flex items-center gap-3 rounded-2xl px-4 py-2.5"
+                  style={{ background: "rgba(255,255,255,.08)", border: "1px solid rgba(255,255,255,.12)" }}>
+                  <FaCalendarAlt className="text-[#f0c44e]" />
+                  <div>
+                    <p className="text-xs font-bold text-white">{new Date().toLocaleDateString("en-IN", { weekday: "long", day: "numeric", month: "short", year: "numeric" })}</p>
+                    <p className="text-[10px] text-white/45">Keep your records up to date</p>
+                  </div>
+                </div>
+                <button onClick={() => setShowAdd(true)}
+                  className="flex items-center gap-2 rounded-2xl px-4 py-3 text-xs font-black text-[#06132f] transition-all hover:brightness-110 active:scale-95"
+                  style={{ background: "linear-gradient(135deg, #f6c343, #d99b17)", boxShadow: "0 8px 20px rgba(212,160,23,.22)" }}>
+                  <FaPlus /> Add New Entry
+                </button>
+                <button onClick={() => { sessionStorage.removeItem("khaata_auth"); setAuthed(false); }}
+                  className="flex items-center gap-2 rounded-2xl px-3.5 py-3 text-xs font-bold text-white/70 transition-all hover:bg-white/10"
+                  style={{ border: "1px solid rgba(255,255,255,.12)" }}>
+                  <FaLock className="text-[10px]" /> Lock
+                </button>
+              </div>
             </div>
 
-            {/* ── STAT CARDS GRID ── */}
-            <div className="grid grid-cols-2 gap-3">
-              {/* Total Pending */}
-              <div className="rounded-3xl p-5 relative overflow-hidden"
-                style={{ background: "rgba(239,68,68,0.14)", border: "1px solid rgba(239,68,68,0.22)" }}>
-                <div className="absolute -right-4 -bottom-4 w-20 h-20 rounded-full opacity-10"
-                  style={{ background: "#ef4444" }} />
-                <div className="flex items-center gap-2 mb-3">
-                  <div className="w-7 h-7 rounded-xl flex items-center justify-center"
-                    style={{ background: "rgba(239,68,68,0.25)" }}>
-                    <FaMoneyBillWave className="text-red-300 text-xs" />
-                  </div>
-                  <p className="text-[10px] font-extrabold text-red-200 uppercase tracking-wider">Total Pending</p>
+            <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-3.5">
+              <div className="relative overflow-hidden rounded-2xl p-5"
+                style={{ background: "linear-gradient(135deg, rgba(157,31,79,.75), rgba(81,22,72,.78))", border: "1px solid rgba(244,114,182,.18)" }}>
+                <div className="absolute -right-5 -bottom-7 h-24 w-32 rounded-full opacity-40"
+                  style={{ background: "radial-gradient(ellipse, #f43f5e, transparent 68%)" }} />
+                <div className="relative flex items-center gap-2 mb-3">
+                  <span className="w-8 h-8 rounded-xl flex items-center justify-center bg-white/10"><FaMoneyBillWave className="text-pink-200 text-sm" /></span>
+                  <p className="text-[10px] font-extrabold uppercase tracking-wider text-pink-100/75">Total Pending</p>
                 </div>
-                <p className="text-3xl font-black text-red-100 leading-none mb-1.5">{fmt(totalPending)}</p>
-                <p className="text-xs text-red-300 font-semibold">
-                  {pending.length} client{pending.length !== 1 ? "s" : ""} outstanding
-                </p>
+                <p className="relative text-3xl font-black leading-none">{fmt(totalPending)}</p>
+                <p className="relative mt-2 text-xs font-semibold text-pink-100/70">{pending.length} clients outstanding</p>
               </div>
 
-              {/* Total Advance */}
-              <div className="rounded-3xl p-5 relative overflow-hidden"
-                style={{ background: "rgba(34,197,94,0.14)", border: "1px solid rgba(34,197,94,0.22)" }}>
-                <div className="absolute -right-4 -bottom-4 w-20 h-20 rounded-full opacity-10"
-                  style={{ background: "#22c55e" }} />
-                <div className="flex items-center gap-2 mb-3">
-                  <div className="w-7 h-7 rounded-xl flex items-center justify-center"
-                    style={{ background: "rgba(34,197,94,0.25)" }}>
-                    <FaHandHoldingUsd className="text-green-300 text-xs" />
-                  </div>
-                  <p className="text-[10px] font-extrabold text-green-200 uppercase tracking-wider">Total Advance</p>
+              <div className="relative overflow-hidden rounded-2xl p-5"
+                style={{ background: "linear-gradient(135deg, rgba(0,111,99,.78), rgba(5,76,80,.78))", border: "1px solid rgba(45,212,191,.18)" }}>
+                <div className="absolute -right-5 -bottom-7 h-24 w-32 rounded-full opacity-40"
+                  style={{ background: "radial-gradient(ellipse, #14b8a6, transparent 68%)" }} />
+                <div className="relative flex items-center gap-2 mb-3">
+                  <span className="w-8 h-8 rounded-xl flex items-center justify-center bg-white/10"><FaHandHoldingUsd className="text-teal-200 text-sm" /></span>
+                  <p className="text-[10px] font-extrabold uppercase tracking-wider text-teal-100/75">Total Advance</p>
                 </div>
-                <p className="text-3xl font-black text-green-100 leading-none mb-1.5">{fmt(totalAdvance)}</p>
-                <p className="text-xs text-green-300 font-semibold">
-                  {advance.length} client{advance.length !== 1 ? "s" : ""} paid in advance
-                </p>
+                <p className="relative text-3xl font-black leading-none">{fmt(totalAdvance)}</p>
+                <p className="relative mt-2 text-xs font-semibold text-teal-100/70">{advance.length} clients paid in advance</p>
               </div>
 
-              {/* Total Clients */}
-              <div className="rounded-3xl p-4 flex items-center gap-3"
-                style={{ background: "rgba(255,255,255,0.07)", border: "1px solid rgba(255,255,255,0.1)" }}>
-                <div className="w-9 h-9 rounded-2xl flex items-center justify-center flex-shrink-0"
-                  style={{ background: "rgba(255,255,255,0.1)" }}>
-                  <FaUsers className="text-white/60 text-sm" />
+              <div className="relative overflow-hidden rounded-2xl p-5"
+                style={{ background: "linear-gradient(135deg, rgba(8,65,156,.82), rgba(17,54,121,.82))", border: "1px solid rgba(96,165,250,.18)" }}>
+                <div className="absolute -right-5 -bottom-7 h-24 w-32 rounded-full opacity-40"
+                  style={{ background: "radial-gradient(ellipse, #2563eb, transparent 68%)" }} />
+                <div className="relative flex items-center gap-2 mb-3">
+                  <span className="w-8 h-8 rounded-xl flex items-center justify-center bg-white/10"><FaUsers className="text-blue-200 text-sm" /></span>
+                  <p className="text-[10px] font-extrabold uppercase tracking-wider text-blue-100/75">Total Clients</p>
                 </div>
-                <div>
-                  <p className="text-[10px] font-bold text-white/50 uppercase tracking-wider">Total Clients</p>
-                  <p className="text-xl font-black text-white leading-tight">{clients.length}</p>
-                </div>
+                <p className="relative text-3xl font-black leading-none">{clients.length}</p>
+                <p className="relative mt-2 text-xs font-semibold text-blue-100/70">All registered clients</p>
               </div>
 
-              {/* Clear clients */}
-              <div className="rounded-3xl p-4 flex items-center gap-3"
-                style={{ background: "rgba(255,255,255,0.07)", border: "1px solid rgba(255,255,255,0.1)" }}>
-                <div className="w-9 h-9 rounded-2xl flex items-center justify-center flex-shrink-0"
-                  style={{ background: "rgba(34,197,94,0.15)" }}>
-                  <FaCheckCircle className="text-green-400 text-sm" />
+              <div className="relative overflow-hidden rounded-2xl p-5"
+                style={{ background: "linear-gradient(135deg, rgba(91,44,169,.82), rgba(64,30,122,.82))", border: "1px solid rgba(192,132,252,.18)" }}>
+                <div className="absolute -right-5 -bottom-7 h-24 w-32 rounded-full opacity-40"
+                  style={{ background: "radial-gradient(ellipse, #8b5cf6, transparent 68%)" }} />
+                <div className="relative flex items-center gap-2 mb-3">
+                  <span className="w-8 h-8 rounded-xl flex items-center justify-center bg-white/10"><FaCheckCircle className="text-violet-200 text-sm" /></span>
+                  <p className="text-[10px] font-extrabold uppercase tracking-wider text-violet-100/75">Clear / Settled</p>
                 </div>
-                <div>
-                  <p className="text-[10px] font-bold text-white/50 uppercase tracking-wider">Clear / Settled</p>
-                  <p className="text-xl font-black text-white leading-tight">{cleared.length}</p>
-                </div>
+                <p className="relative text-3xl font-black leading-none">{cleared.length}</p>
+                <p className="relative mt-2 text-xs font-semibold text-violet-100/70">Successfully closed accounts</p>
               </div>
             </div>
           </div>
         </div>
 
-        {/* ══ MAIN CONTENT ══ */}
-        <div className="px-4 -mt-14 max-w-3xl mx-auto w-full">
-
-          {/* Search + Sort row */}
-          <div className="flex gap-2.5 mb-4">
-            <div className="flex-1 flex items-center gap-3 bg-white rounded-2xl px-4 shadow-lg border border-white"
-              style={{ boxShadow: "0 8px 32px rgba(7,27,74,0.1)" }}>
-              <FaSearch className="text-slate-300 text-sm flex-shrink-0" />
-              <input
-                className="flex-1 py-3.5 text-sm font-semibold outline-none bg-transparent placeholder-slate-300 text-slate-700"
-                placeholder="Search by name or phone..."
-                value={search}
-                onChange={e => setSearch(e.target.value)}
-              />
-              {search && (
-                <button onClick={() => setSearch("")} className="text-slate-300 hover:text-slate-500 transition-colors">
-                  <FaTimes className="text-sm" />
-                </button>
-              )}
-            </div>
-            <select
-              value={sortBy}
-              onChange={e => setSortBy(e.target.value as typeof sortBy)}
-              className="bg-white rounded-2xl px-3 text-xs font-bold text-slate-600 outline-none border border-slate-100 shadow-lg flex-shrink-0 cursor-pointer"
-              style={{ boxShadow: "0 8px 32px rgba(7,27,74,0.08)" }}>
-              <option value="latest_entry">Latest Entry</option>
-              <option value="newest">Newest Client</option>
-              <option value="name">A → Z</option>
-              <option value="balance_desc">Highest Balance</option>
-              <option value="balance_asc">Lowest Balance</option>
-            </select>
-          </div>
-
-          {/* Filter Tabs */}
-          {clients.length > 0 && (
-            <div className="flex gap-2 mb-5 overflow-x-auto pb-1">
-              {TABS.map(t => (
-                <button key={t.key} onClick={() => setTab(t.key)}
-                  className="flex items-center gap-1.5 px-4 py-2 rounded-2xl font-extrabold text-xs flex-shrink-0 transition-all active:scale-95"
-                  style={tab === t.key
-                    ? { background: t.color, color: "white", boxShadow: `0 4px 14px ${t.color}55` }
-                    : { background: "white", color: "#94a3b8", border: "1.5px solid #f1f5f9" }}>
-                  <FaFilter className="text-[9px]" />
-                  {t.label}
-                  <span className="px-1.5 py-0.5 rounded-full text-[9px] font-black"
-                    style={tab === t.key
-                      ? { background: "rgba(255,255,255,0.25)", color: "white" }
-                      : { background: "#f1f5f9", color: "#64748b" }}>
-                    {t.count}
-                  </span>
-                </button>
-              ))}
-            </div>
-          )}
-
-          {/* Add New Client button — on light bg, always visible */}
-          <button onClick={() => setShowAdd(true)}
-            className="w-full flex items-center justify-center gap-2.5 py-4 rounded-2xl font-extrabold text-sm text-white mb-4 transition-all hover:opacity-90 active:scale-[0.98]"
-            style={{ background: `linear-gradient(135deg, ${NAVY}, #1e40af)`, boxShadow: "0 8px 24px rgba(7,27,74,0.25)" }}>
-            <div className="w-6 h-6 rounded-lg bg-white/20 flex items-center justify-center">
-              <FaPlus className="text-xs" />
-            </div>
-            Add New Client
-          </button>
-
-          {/* Client List */}
-          {loading ? (
-            <div className="space-y-3">
-              {[1,2,3,4].map(i => <div key={i} className="h-[76px] kh-skeleton rounded-3xl" />)}
-            </div>
-          ) : filtered.length === 0 ? (
-            <EmptyState
-              icon={FaUser}
-              title={search ? "No client found" : tab !== "all" ? "No clients in this category" : "No clients yet"}
-              sub={search ? "Check the name or phone number" : "Use 'New Client' button to add one"} />
-          ) : (
-            <div className="space-y-2.5 pb-10">
-              {filtered.map((c, idx) => {
-                const av2 = avatarBg(c.balance);
-                return (
-                  <button key={c.id} onClick={() => setSelected(c)}
-                    className="kh-up w-full bg-white rounded-3xl flex items-center gap-4 text-left transition-all hover:shadow-lg active:scale-[0.98] overflow-hidden"
-                    style={{
-                      border: c.balance > 0 ? "1.5px solid #fecdd3"
-                        : c.balance < 0 ? "1.5px solid #bbf7d0"
-                        : "1.5px solid #f1f5f9",
-                      boxShadow: "0 2px 12px rgba(7,27,74,0.06)",
-                      animationDelay: `${idx * 35}ms`,
-                    }}>
-
-                    {/* Left color strip */}
-                    <div className="w-1.5 self-stretch flex-shrink-0 rounded-l-3xl"
-                      style={{ background: c.balance > 0 ? "#ef4444" : c.balance < 0 ? "#22c55e" : "#e2e8f0" }} />
-
-                    {/* Avatar */}
-                    <div className="w-12 h-12 rounded-2xl flex items-center justify-center text-lg font-black flex-shrink-0 my-4"
-                      style={{ background: av2.bg, color: av2.fg }}>
-                      {initials(c.name)}
+        <div className="relative -mt-1 px-4 pb-12">
+          <div className="max-w-[1180px] mx-auto">
+            <div className="grid grid-cols-1 lg:grid-cols-[1.05fr_1.35fr_.9fr] gap-4">
+              <section className="rounded-2xl p-5"
+                style={{ background: "linear-gradient(145deg, rgba(14,42,91,.98), rgba(8,29,65,.98))", border: "1px solid rgba(120,160,220,.13)", boxShadow: "0 14px 40px rgba(0,0,0,.18)" }}>
+                <div className="flex items-center justify-between mb-5">
+                  <div className="flex items-center gap-2.5">
+                    <span className="w-8 h-8 rounded-xl flex items-center justify-center bg-blue-500/20"><FaPlus className="text-blue-300 text-xs" /></span>
+                    <div>
+                      <h2 className="text-sm font-extrabold">Quick Actions</h2>
+                      <p className="text-[10px] text-white/40 mt-0.5">Everything you need, right here.</p>
                     </div>
-
-                    {/* Info */}
-                    <div className="flex-1 min-w-0 py-4 pr-1">
-                      <p className="font-extrabold text-sm text-slate-800 truncate leading-tight">{c.name}</p>
-                      <p className="text-xs text-slate-400 font-semibold mt-0.5 flex items-center gap-1">
-                        <FaPhone className="text-[9px]" /> {c.phone}
-                      </p>
-                      <span className={`inline-flex items-center gap-1 text-[9px] font-extrabold px-2 py-0.5 rounded-full mt-1.5
-                        ${c.balance > 0 ? "bg-red-50 text-red-500" : c.balance < 0 ? "bg-green-50 text-green-600" : "bg-slate-50 text-slate-400"}`}>
-                        {c.balance > 0 ? "● Outstanding" : c.balance < 0 ? "● Advance" : "✔ Settled"}
-                      </span>
-                    </div>
-
-                    {/* Balance + actions */}
-                    <div className="flex items-center gap-2 pr-4 flex-shrink-0">
-                      <div className="text-right">
-                        <p className={`text-base font-black leading-tight ${c.balance > 0 ? "text-red-600" : c.balance < 0 ? "text-green-600" : "text-slate-300"}`}>
-                          {c.balance === 0 ? "—" : c.balance > 0 ? `−${fmt(c.balance)}` : `+${fmt(Math.abs(c.balance))}`}
-                        </p>
-                      </div>
-                      {c.balance > 0 && (
-                        <a href={waLink(c)} target="_blank" rel="noreferrer"
-                          onClick={e => e.stopPropagation()}
-                          className="w-9 h-9 flex items-center justify-center rounded-2xl flex-shrink-0 transition-all hover:scale-110"
-                          style={{ background: "#dcfce7", color: "#16a34a" }}
-                          title="WhatsApp Reminder">
-                          <FaWhatsapp className="text-sm" />
-                        </a>
-                      )}
-                      <FaChevronRight className="text-slate-200 text-xs" />
-                    </div>
+                  </div>
+                  <span className="text-white/30 tracking-widest">•••</span>
+                </div>
+                <div className="grid grid-cols-2 gap-2.5">
+                  <button onClick={() => setShowAdd(true)} className="rounded-xl p-3 text-left transition-all hover:bg-white/10 active:scale-95" style={{ background: "rgba(255,255,255,.06)" }}>
+                    <span className="w-9 h-9 rounded-xl flex items-center justify-center bg-blue-500/20 text-blue-300 mb-2"><FaUser /></span>
+                    <p className="text-[11px] font-bold">Add Client</p>
+                    <p className="text-[9px] text-white/35 mt-0.5">Create account</p>
                   </button>
-                );
-              })}
+                  <button onClick={() => setTab("baki")} className="rounded-xl p-3 text-left transition-all hover:bg-white/10 active:scale-95" style={{ background: "rgba(255,255,255,.06)" }}>
+                    <span className="w-9 h-9 rounded-xl flex items-center justify-center bg-rose-500/20 text-rose-300 mb-2"><FaMoneyBillWave /></span>
+                    <p className="text-[11px] font-bold">View Pending</p>
+                    <p className="text-[9px] text-white/35 mt-0.5">Outstanding accounts</p>
+                  </button>
+                  <button onClick={() => setTab("advance")} className="rounded-xl p-3 text-left transition-all hover:bg-white/10 active:scale-95" style={{ background: "rgba(255,255,255,.06)" }}>
+                    <span className="w-9 h-9 rounded-xl flex items-center justify-center bg-emerald-500/20 text-emerald-300 mb-2"><FaHandHoldingUsd /></span>
+                    <p className="text-[11px] font-bold">Advances</p>
+                    <p className="text-[9px] text-white/35 mt-0.5">Paid in advance</p>
+                  </button>
+                  <button onClick={() => setTab("clear")} className="rounded-xl p-3 text-left transition-all hover:bg-white/10 active:scale-95" style={{ background: "rgba(255,255,255,.06)" }}>
+                    <span className="w-9 h-9 rounded-xl flex items-center justify-center bg-violet-500/20 text-violet-300 mb-2"><FaChartLine /></span>
+                    <p className="text-[11px] font-bold">Settled</p>
+                    <p className="text-[9px] text-white/35 mt-0.5">Clear accounts</p>
+                  </button>
+                </div>
+              </section>
+
+              <section className="rounded-2xl p-5"
+                style={{ background: "linear-gradient(145deg, rgba(14,42,91,.98), rgba(8,29,65,.98))", border: "1px solid rgba(120,160,220,.13)", boxShadow: "0 14px 40px rgba(0,0,0,.18)" }}>
+                <div className="flex items-center justify-between mb-4">
+                  <div className="flex items-center gap-2.5">
+                    <span className="w-8 h-8 rounded-xl flex items-center justify-center bg-indigo-500/20"><FaClock className="text-indigo-300 text-xs" /></span>
+                    <div>
+                      <h2 className="text-sm font-extrabold">Recent Activity</h2>
+                      <p className="text-[10px] text-white/40 mt-0.5">Your latest transactions and updates.</p>
+                    </div>
+                  </div>
+                  <button onClick={() => setTab("all")} className="text-[10px] font-bold text-blue-300 hover:text-blue-200">View All →</button>
+                </div>
+                <div className="space-y-2">
+                  {recentClients.length === 0 ? (
+                    <p className="py-7 text-center text-xs text-white/35">No recent activity yet.</p>
+                  ) : recentClients.map(client => (
+                    <button key={client.id} onClick={() => setSelected(client)}
+                      className="w-full flex items-center gap-3 rounded-xl px-2 py-2 text-left transition-colors hover:bg-white/5">
+                      <span className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-black ${
+                        client.balance > 0 ? "bg-rose-500/20 text-rose-300" : client.balance < 0 ? "bg-emerald-500/20 text-emerald-300" : "bg-violet-500/20 text-violet-300"
+                      }`}>
+                        {client.balance > 0 ? "↓" : client.balance < 0 ? "↑" : "✓"}
+                      </span>
+                      <span className="min-w-0 flex-1">
+                        <span className="block text-xs font-bold truncate">
+                          {client.balance > 0 ? "Payment Pending" : client.balance < 0 ? "Advance Received" : "Account Settled"}
+                        </span>
+                        <span className="block text-[10px] text-white/40 truncate">{client.name}</span>
+                      </span>
+                      <span className={`text-xs font-black ${client.balance > 0 ? "text-rose-300" : client.balance < 0 ? "text-emerald-300" : "text-violet-300"}`}>
+                        {client.balance === 0 ? "Clear" : fmt(Math.abs(client.balance))}
+                      </span>
+                      <span className="hidden sm:block text-[9px] text-white/30 whitespace-nowrap">{fmtDate(client.latestTxnAt ?? client.createdAt)}</span>
+                    </button>
+                  ))}
+                </div>
+              </section>
+
+              <section className="rounded-2xl p-5"
+                style={{ background: "linear-gradient(145deg, rgba(14,42,91,.98), rgba(8,29,65,.98))", border: "1px solid rgba(120,160,220,.13)", boxShadow: "0 14px 40px rgba(0,0,0,.18)" }}>
+                <div className="flex items-center gap-2.5 mb-4">
+                  <span className="w-8 h-8 rounded-xl flex items-center justify-center bg-blue-500/20"><FaChartLine className="text-blue-300 text-xs" /></span>
+                  <div>
+                    <h2 className="text-sm font-extrabold">Business Overview</h2>
+                    <p className="text-[10px] text-white/40 mt-0.5">At a glance</p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-4">
+                  <div className="relative w-28 h-28 rounded-full flex-shrink-0"
+                    style={{ background: `conic-gradient(#f43f72 0 ${pendingShare}%, #16d7a0 ${pendingShare}% ${pendingShare + advanceShare}%, #8b5cf6 ${pendingShare + advanceShare}% ${pendingShare + advanceShare + clearedShare}%, #183567 ${pendingShare + advanceShare + clearedShare}% 100%)` }}>
+                    <div className="absolute inset-[11px] rounded-full flex flex-col items-center justify-center" style={{ background: "#0b234d" }}>
+                      <strong className="text-xl font-black">{clients.length}</strong>
+                      <span className="text-[9px] text-white/45">Clients</span>
+                    </div>
+                  </div>
+                  <div className="space-y-2 text-[10px] font-semibold text-white/65">
+                    <p><i className="inline-block w-2 h-2 rounded-full bg-rose-400 mr-2" />Pending <b className="text-white ml-3">{pending.length}</b></p>
+                    <p><i className="inline-block w-2 h-2 rounded-full bg-emerald-400 mr-2" />Advance <b className="text-white ml-3">{advance.length}</b></p>
+                    <p><i className="inline-block w-2 h-2 rounded-full bg-violet-400 mr-2" />Clear / Settled <b className="text-white ml-3">{cleared.length}</b></p>
+                    <p><i className="inline-block w-2 h-2 rounded-full bg-blue-400 mr-2" />Total Clients <b className="text-white ml-3">{clients.length}</b></p>
+                  </div>
+                </div>
+                <button onClick={() => setTab("all")} className="w-full mt-5 flex items-center justify-between rounded-xl px-3.5 py-2.5 text-[10px] font-bold text-blue-200 transition-colors hover:bg-blue-500/15" style={{ background: "rgba(37,99,235,.14)" }}>
+                  <span><FaChartLine className="inline mr-2" /> View Detailed Records</span><FaChevronRight />
+                </button>
+              </section>
             </div>
-          )}
+
+            <section className="mt-4 rounded-2xl p-4 sm:p-5" style={{ background: "#f7f9fd", color: "#0f172a", boxShadow: "0 20px 50px rgba(0,0,0,.18)" }}>
+              <div className="flex flex-col md:flex-row md:items-center gap-3 mb-4">
+                <div>
+                  <h2 className="text-base font-black text-[#071B4A]">Client Accounts</h2>
+                  <p className="text-xs text-slate-400 mt-0.5">Search, filter and manage every account.</p>
+                </div>
+                <div className="flex flex-1 gap-2.5 md:justify-end">
+                  <div className="flex-1 md:max-w-sm flex items-center gap-3 bg-white rounded-xl px-3.5 border border-slate-200">
+                    <FaSearch className="text-slate-300 text-sm flex-shrink-0" />
+                    <input
+                      className="flex-1 py-3 text-sm font-semibold outline-none bg-transparent placeholder-slate-300 text-slate-700"
+                      placeholder="Search by name or phone..."
+                      value={search}
+                      onChange={e => setSearch(e.target.value)}
+                    />
+                    {search && <button onClick={() => setSearch("")} className="text-slate-300 hover:text-slate-500"><FaTimes /></button>}
+                  </div>
+                  <select value={sortBy} onChange={e => setSortBy(e.target.value as typeof sortBy)}
+                    className="bg-white rounded-xl px-3 text-xs font-bold text-slate-600 outline-none border border-slate-200 cursor-pointer">
+                    <option value="latest_entry">Latest Entry</option>
+                    <option value="newest">Newest Client</option>
+                    <option value="name">A → Z</option>
+                    <option value="balance_desc">Highest Balance</option>
+                    <option value="balance_asc">Lowest Balance</option>
+                  </select>
+                </div>
+              </div>
+
+              {clients.length > 0 && (
+                <div className="flex gap-2 mb-4 overflow-x-auto pb-1">
+                  {TABS.map(t => (
+                    <button key={t.key} onClick={() => setTab(t.key)}
+                      className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl font-extrabold text-xs flex-shrink-0 transition-all active:scale-95"
+                      style={tab === t.key
+                        ? { background: t.color, color: "white", boxShadow: `0 4px 14px ${t.color}55` }
+                        : { background: "#eef2f7", color: "#64748b" }}>
+                      <FaFilter className="text-[9px]" />{t.label}
+                      <span className="px-1.5 py-0.5 rounded-full text-[9px] font-black" style={tab === t.key ? { background: "rgba(255,255,255,.25)" } : { background: "#fff" }}>{t.count}</span>
+                    </button>
+                  ))}
+                </div>
+              )}
+
+              <button onClick={() => setShowAdd(true)}
+                className="w-full flex items-center justify-center gap-2 py-3 rounded-xl font-extrabold text-sm text-white mb-4 transition-all hover:opacity-90 active:scale-[0.98]"
+                style={{ background: "linear-gradient(135deg, #071B4A, #1e40af)" }}>
+                <FaPlus className="text-xs" /> Add New Client
+              </button>
+
+              {loading ? (
+                <div className="space-y-3">{[1,2,3,4].map(i => <div key={i} className="h-[76px] kh-skeleton rounded-2xl" />)}</div>
+              ) : filtered.length === 0 ? (
+                <EmptyState
+                  icon={FaUser}
+                  title={search ? "No client found" : tab !== "all" ? "No clients in this category" : "No clients yet"}
+                  sub={search ? "Check the name or phone number" : "Use 'New Client' button to add one"} />
+              ) : (
+                <div className="space-y-2.5 pb-2">
+                  {filtered.map((c, idx) => {
+                    const av2 = avatarBg(c.balance);
+                    return (
+                      <button key={c.id} onClick={() => setSelected(c)}
+                        className="kh-up w-full bg-white rounded-2xl flex items-center gap-3 sm:gap-4 text-left transition-all hover:shadow-md active:scale-[0.99] overflow-hidden"
+                        style={{
+                          border: c.balance > 0 ? "1.5px solid #fecdd3" : c.balance < 0 ? "1.5px solid #bbf7d0" : "1.5px solid #e5eaf2",
+                          boxShadow: "0 2px 12px rgba(7,27,74,0.05)",
+                          animationDelay: `${idx * 35}ms`,
+                        }}>
+                        <div className="w-1.5 self-stretch flex-shrink-0"
+                          style={{ background: c.balance > 0 ? "#ef4444" : c.balance < 0 ? "#22c55e" : "#cbd5e1" }} />
+                        <div className="w-11 h-11 rounded-xl flex items-center justify-center text-base font-black flex-shrink-0 my-3"
+                          style={{ background: av2.bg, color: av2.fg }}>{initials(c.name)}</div>
+                        <div className="flex-1 min-w-0 py-3">
+                          <p className="font-extrabold text-sm text-slate-800 truncate leading-tight">{c.name}</p>
+                          <p className="text-xs text-slate-400 font-semibold mt-0.5 flex items-center gap-1"><FaPhone className="text-[9px]" /> {c.phone}</p>
+                          <span className={`inline-flex items-center gap-1 text-[9px] font-extrabold px-2 py-0.5 rounded-full mt-1.5 ${c.balance > 0 ? "bg-red-50 text-red-500" : c.balance < 0 ? "bg-green-50 text-green-600" : "bg-slate-50 text-slate-400"}`}>
+                            {c.balance > 0 ? "● Outstanding" : c.balance < 0 ? "● Advance" : "✔ Settled"}
+                          </span>
+                        </div>
+                        <div className="flex items-center gap-2 pr-3 sm:pr-4 flex-shrink-0">
+                          <div className="text-right">
+                            <p className={`text-sm sm:text-base font-black leading-tight ${c.balance > 0 ? "text-red-600" : c.balance < 0 ? "text-green-600" : "text-slate-300"}`}>
+                              {c.balance === 0 ? "—" : c.balance > 0 ? `−${fmt(c.balance)}` : `+${fmt(Math.abs(c.balance))}`}
+                            </p>
+                          </div>
+                          {c.balance > 0 && (
+                            <a href={waLink(c)} target="_blank" rel="noreferrer" onClick={e => e.stopPropagation()}
+                              className="hidden sm:flex w-9 h-9 items-center justify-center rounded-xl flex-shrink-0 transition-all hover:scale-110"
+                              style={{ background: "#dcfce7", color: "#16a34a" }} title="WhatsApp Reminder"><FaWhatsapp className="text-sm" /></a>
+                          )}
+                          <FaChevronRight className="text-slate-200 text-xs" />
+                        </div>
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
+            </section>
+          </div>
         </div>
       </div>
     </Layout>
