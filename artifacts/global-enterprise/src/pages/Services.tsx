@@ -12,7 +12,7 @@ import {
 } from "react-icons/fa";
 import { Button } from "@/components/ui/button";
 import { SERVICE_CATEGORIES } from "@/lib/services";
-import { FaWalking, FaClock } from "react-icons/fa";
+import { FaWalking } from "react-icons/fa";
 import { useT } from "@/i18n";
 
 const WALKIN_SERVICES = new Set([
