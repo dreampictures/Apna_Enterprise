@@ -2,7 +2,11 @@ import { useState } from "react";
 import Seo from "@/components/Seo";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { FaSearch, FaCheckCircle, FaClock, FaTimesCircle, FaClipboardList, FaPhone, FaArrowRight, FaCheck, FaCreditCard } from "react-icons/fa";
+import {
+  FaArrowRight, FaCheck, FaCheckCircle, FaClipboardList, FaClock,
+  FaCreditCard, FaEnvelope, FaHeadset, FaLock, FaPhone, FaSearch,
+  FaShieldAlt, FaTimesCircle,
+} from "react-icons/fa";
 import { Link } from "wouter";
 import { useT } from "@/i18n";
 
@@ -156,66 +160,94 @@ export default function Track() {
   const canPay = isDynamic && result?.pricingStatus === "price_assigned" && paymentStatus !== "paid";
 
   return (
-    <div className="flex flex-col min-h-full">
+    <div className="track-page flex flex-col min-h-full">
       <Seo
         title="Track Your Application — Apna Enterprise"
         description="Track your service application status at Apna Enterprise Firozepur using your tracking number."
         path="/track"
       />
-      {/* Header */}
-      <section className="hero-navy text-white py-16">
-        <div className="container mx-auto px-4 lg:px-8 relative z-10 text-center">
-          <p className="font-semibold uppercase tracking-widest text-xs mb-3" style={{ color: GOLD_LIGHT }}>
-            Application Status
-          </p>
-          <h1 className="text-4xl md:text-5xl font-extrabold mb-4">{t.track_title}</h1>
-          <div className="gold-line w-20 mx-auto mb-5" />
-          <p className="max-w-xl mx-auto text-lg" style={{ color: "rgba(255,255,255,0.75)" }}>
-            {t.track_subtitle}
-          </p>
+      <section className="track-page__hero">
+        <img
+          src="/assets/track/hero-track.png"
+          alt=""
+          aria-hidden="true"
+          className="track-page__hero-image"
+          onError={(event) => { event.currentTarget.style.visibility = "hidden"; }}
+        />
+        <div className="container mx-auto px-4 lg:px-8 relative z-10">
+          <div className="track-page__hero-grid">
+            <div className="track-page__hero-copy">
+              <p className="track-page__eyebrow">TRACK YOUR APPLICATION</p>
+              <h1>Stay Updated<br /><span>Every Step of the Way</span></h1>
+              <p>{t.track_subtitle}</p>
+              <form onSubmit={handleTrack} className="track-page__search-card">
+                <label>Tracking Number</label>
+                <div>
+                  <FaClipboardList />
+                  <Input
+                    value={input}
+                    onChange={(event) => setInput(event.target.value)}
+                    placeholder={t.track_placeholder}
+                    autoCapitalize="characters"
+                    maxLength={20}
+                  />
+                  <Button type="submit" className="btn-gold" disabled={loading || !input.trim()}>
+                    {loading ? (
+                      <span className="flex items-center gap-2">
+                        <svg className="animate-spin w-4 h-4" viewBox="0 0 24 24" fill="none">
+                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z" />
+                        </svg>
+                        {t.track_btn}
+                      </span>
+                    ) : <><FaSearch /> {t.track_btn}</>}
+                  </Button>
+                </div>
+                <small><FaCheckCircle /> Enter the application number you received after submitting your request.</small>
+                {error && <p className="track-page__form-error">{error}</p>}
+              </form>
+            </div>
+            <div className="track-page__hero-slot" aria-hidden="true" />
+          </div>
         </div>
       </section>
 
-      <section className="flex-1 py-16" style={{ background: "#f8fafd" }}>
-        <div className="container mx-auto px-4 max-w-xl">
-          {/* Search Box */}
-          <form onSubmit={handleTrack} className="mb-8">
-            <div className="bg-white rounded-2xl p-6" style={{ border: "1px solid #e8edf5", boxShadow: "0 8px 40px rgba(7,27,74,0.08)" }}>
-              <label className="block text-sm font-bold text-slate-700 mb-2">Tracking Number</label>
-              <div className="flex gap-3">
-                <Input
-                  value={input}
-                  onChange={(e) => setInput(e.target.value)}
-                  placeholder={t.track_placeholder}
-                  className="h-12 rounded-xl font-mono text-base flex-1"
-                  style={{ color: "#071B4A", background: "rgba(7,27,74,0.03)", borderColor: "#d1d9e8" }}
-                  autoCapitalize="characters"
-                  maxLength={20}
-                />
-                <Button
-                  type="submit"
-                  className="btn-gold h-12 px-6 rounded-xl font-bold gap-2"
-                  disabled={loading || !input.trim()}
-                >
-                  {loading ? (
-                    <span className="flex items-center gap-2">
-                      <svg className="animate-spin w-4 h-4" viewBox="0 0 24 24" fill="none">
-                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z" />
-                      </svg>
-                      {t.track_btn}
-                    </span>
-                  ) : (
-                    <>
-                      <FaSearch className="text-sm" />
-                      {t.track_btn}
-                    </>
-                  )}
-                </Button>
-              </div>
-              {error && <p className="text-red-500 text-sm mt-2">{error}</p>}
-            </div>
-          </form>
+      <section className="track-page__benefits">
+        <div className="container mx-auto px-4 lg:px-8">
+          <div className="track-page__benefits-grid">
+            {[
+              [FaShieldAlt, "Real-Time Updates", "Get the latest status instantly"],
+              [FaClock, "Fast & Easy", "Check in seconds"],
+              [FaLock, "Secure & Private", "Your information is always safe"],
+              [FaPhone, "Need Help?", "Our team is here to assist you"],
+            ].map(([Icon, title, text]) => (
+              <div key={String(title)}><span><Icon /></span><p><strong>{String(title)}</strong><small>{String(text)}</small></p></div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      <section className="track-page__main">
+        <div className="container mx-auto px-4 lg:px-8">
+          <div className="track-page__layout">
+            <aside className="track-page__how">
+              <header><span><FaSearch /></span><div><h2>How It Works?</h2><p>Track your application in 3 simple steps.</p></div></header>
+              {[
+                ["1", "Enter Your Tracking Number", "Type the application number you received in the confirmation message."],
+                ["2", "Click on Track", "Hit the track button to view your status."],
+                ["3", "Get Latest Updates", "See your current status and next steps."],
+              ].map(([number, title, text]) => (
+                <div className="track-page__how-step" key={number}>
+                  <span>{number}</span><p><strong>{title}</strong><small>{text}</small></p>
+                </div>
+              ))}
+            </aside>
+
+            <div className="track-page__status-column">
+              <header className="track-page__status-heading">
+                <span><FaClipboardList /></span>
+                <div><h2>Recent Application Status</h2><p>{result ? `Tracking ${result.trackingNumber}` : "Your live status will appear here."}</p></div>
+              </header>
 
           {/* Not Found */}
           {notFound && (
@@ -381,16 +413,30 @@ export default function Track() {
 
           {/* No search yet */}
           {!result && !notFound && !loading && !input && (
-            <div className="text-center py-8 text-slate-400">
-              <FaClipboardList className="text-5xl mx-auto mb-3 text-slate-200" />
-              <p className="text-sm">Enter your tracking number above to check status</p>
-              <div className="mt-4">
-                <Link href="/apply" className="text-sm font-semibold underline" style={{ color: GOLD }}>
-                  Haven't applied yet? Apply here →
-                </Link>
-              </div>
+            <div className="track-page__empty-status">
+              <FaClipboardList />
+              <p>Enter your tracking number above to check your real application status.</p>
             </div>
           )}
+            </div>
+
+            <aside className="track-page__right">
+              <section className="track-page__apply-card">
+                <span>?</span>
+                <div>
+                  <h2>Haven't applied yet?</h2>
+                  <p>Apply now for your required service and get your tracking number instantly.</p>
+                  <Link href="/apply">Apply Now <FaArrowRight /></Link>
+                </div>
+              </section>
+              <section className="track-page__help-card">
+                <header><FaHeadset /><div><h2>Still Facing Issues?</h2><p>Our support team is always here to help you.</p></div></header>
+                <a href="tel:+919876543210"><FaPhone /><span><strong>+91 98765 43210</strong><small>Mon – Sat: 9:00 AM – 7:00 PM</small></span></a>
+                <a href="mailto:info@apnaenterprise.in"><FaEnvelope /><span><strong>info@apnaenterprise.in</strong><small>We reply within 24 hours</small></span></a>
+                <a className="track-page__whatsapp" href="https://wa.me/919876543210" target="_blank" rel="noreferrer">Chat on WhatsApp <FaArrowRight /></a>
+              </section>
+            </aside>
+          </div>
         </div>
       </section>
     </div>
