@@ -188,7 +188,19 @@ export default function Home() {
       />
 
       {/* ── HERO SECTION ── */}
-      <section className="bg-[#030918] relative flex items-center lg:h-[460px] overflow-hidden py-12 lg:py-0">
+      <section
+        className="bg-[#030918] relative flex items-center lg:h-[460px] overflow-hidden py-12 lg:py-0"
+        style={{
+          backgroundImage: "url('/assets/home/hero-office.png')",
+          backgroundPosition: "center",
+          backgroundRepeat: "no-repeat",
+          backgroundSize: "cover",
+        }}
+      >
+        <div
+          aria-hidden="true"
+          className="absolute inset-0 bg-gradient-to-r from-[#030918]/95 via-[#030918]/70 to-[#030918]/20"
+        />
         <div className="container mx-auto px-4 lg:px-8 relative z-10 flex flex-col lg:flex-row h-full">
           
           {/* Left Content */}
@@ -226,13 +238,8 @@ export default function Home() {
             </div>
           </div>
           
-          {/* Right Visuals (Desktop only) */}
+           {/* Right Visuals (Desktop only) */}
           <div className="hidden lg:block w-1/2 relative h-full">
-             {/* Center Hero Image */}
-              <div className="absolute right-[190px] top-1/2 -translate-y-1/2 w-[520px] h-[400px] pointer-events-none">
-                <ImageSlot src="/assets/home/hero-office.png" alt="Office Setup" className="w-full h-full bg-transparent" />
-             </div>
-             
              {/* 6 Vertical Panels on far right */}
               <div className="absolute right-0 top-1/2 -translate-y-1/2 flex flex-col gap-2 w-[190px] z-30">
                 {heroPanels.map((panel, idx) => (
