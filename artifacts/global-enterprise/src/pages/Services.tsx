@@ -104,6 +104,13 @@ const CATEGORY_IMAGES: Record<string, string> = {
   parcel: "/assets/services/parcel.png",
 };
 
+const serviceImagePath = (serviceId: string) =>
+  `/assets/services/${serviceId
+    .toLowerCase()
+    .replace(/&/g, "and")
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-|-$/g, "")}.png`;
+
 export default function Services() {
   const [search, setSearch] = useState("");
   const [activeCategory, setActiveCategory] = useState<string | null>(null);
@@ -161,6 +168,12 @@ export default function Services() {
             </div>
 
             <div className="services-page__hero-visual" aria-hidden="true">
+              <img
+                className="services-page__hero-image"
+                src="/assets/services/hero-services.png"
+                alt=""
+                onError={(event) => { event.currentTarget.style.display = "none"; }}
+              />
               <div className="services-page__hero-script">Simple<br />Reliable<br />Hassle-Free</div>
               <div className="services-page__hero-icons">
                 {[
@@ -232,7 +245,7 @@ export default function Services() {
               const CatIcon = CATEGORY_ICONS[cat.id] ?? FaFileAlt;
               const lightClass = CATEGORY_ICON_LIGHT[cat.id] ?? "bg-primary/10 text-primary";
               return (
-                <article key={cat.id} className="services-page__category-card">
+                <article key={cat.id} className={`services-page__category-card services-page__category-card--${cat.id}`}>
                   <div className={`services-page__category-art services-page__category-art--${cat.id}`} aria-hidden="true">
                     <img
                       src={CATEGORY_IMAGES[cat.id]}
@@ -299,6 +312,14 @@ export default function Services() {
               const lightClass = CATEGORY_ICON_LIGHT[category.id] ?? "bg-primary/10 text-primary";
               return (
                 <article key={service.id} className={`services-page__service-card services-page__service-card--${category.id}`}>
+                  <div className="services-page__service-media" aria-hidden="true">
+                    <img
+                      src={serviceImagePath(service.id)}
+                      alt=""
+                      onError={(event) => { event.currentTarget.style.display = "none"; }}
+                    />
+                    <Icon />
+                  </div>
                   <div className="services-page__service-card-main">
                     <div className={`services-page__service-icon ${lightClass}`}>
                       <Icon />

@@ -1,0 +1,133 @@
+Update the existing SERVICES page based on these corrections only.
+
+1. SERVICES HERO IMAGE PLACEHOLDER
+The hero section currently has no proper image placeholder/asset area.
+
+Add a dedicated hero image placeholder/asset slot inside the Services hero section.
+
+Use this exact future asset path:
+`/assets/services/hero-services.png`
+
+The image should occupy the main visual area of the hero section.
+
+IMPORTANT:
+The Documents, Travel, Finance, Printing and International visual tiles/buttons on the right side are part of the intended Services hero visual composition.
+
+Keep a proper placeholder area so I can later upload the complete `hero-services.png` image containing that visual composition.
+
+Do NOT generate, search, download, or create any image.
+Do NOT add separate random images for those tiles.
+
+2. ALL SERVICE CARDS MUST HAVE THE SAME DESIGN
+
+Currently only the 7 category cards have the proper image-based card design, while the remaining individual service cards are plain cards.
+
+Fix this.
+
+EVERY individual service card must use the SAME visual card design as the 7 main service/category cards.
+
+There must be ONE consistent card style throughout the Services page.
+
+Every card must have:
+- Full image area/background
+- Service image covering the card properly
+- Service name
+- Short description
+- Relevant tags/info where available
+- GOLD "Apply Now →" button
+- Same rounded corners
+- Same spacing
+- Same typography
+- Same premium styling
+- Same card dimensions/aspect ratio
+
+3. IMAGE MUST COVER THE ENTIRE CARD
+
+Do NOT put the image only on the right side of the card.
+
+The image should visually cover the COMPLETE card/background.
+
+Use an image-background/overlay style similar to a premium service card.
+
+The service text and Apply Now button should sit above the image with a suitable dark/gradient overlay so the content remains readable.
+
+Use `object-fit: cover` (or equivalent background-cover implementation).
+
+Do not stretch images unnaturally.
+
+4. CATEGORY CARDS
+
+The existing 7 category cards:
+- Travel Services
+- Document Services
+- Online Form Services
+- Digital & Print Services
+- Financial Services
+- Insurance Services
+- Parcel Services
+
+must also have an "Apply Now →" button if they currently represent selectable/service-entry cards.
+
+Keep their existing functionality.
+
+5. INDIVIDUAL SERVICE IMAGES
+
+Every individual service must have its own image placeholder/asset slot.
+
+I will create and upload these images separately later.
+
+Do NOT generate any images yourself.
+
+If an image is not uploaded yet, keep the card's image area fixed and show a polished placeholder instead of collapsing the layout.
+
+6. HOME PAGE IMAGE CONSISTENCY
+
+For category-level cards, reuse the SAME category image asset already used on the Home page.
+
+Example:
+Travel Services → same Travel image as Home page
+Document Services → same Documents image as Home page
+Online Form Services → same Online Forms image as Home page
+Digital & Print Services → same Digital & Print image as Home page
+Financial Services → same Financial image as Home page
+Insurance Services → same Insurance image as Home page
+Parcel Services → same Parcel image as Home page
+
+Do not create a different image for the same category.
+
+7. DO NOT CHANGE SERVICE DATA
+
+Keep ALL existing services.
+
+Do not remove, rename, or limit services.
+
+All filters must continue to work:
+All → every service
+Travel → all travel services
+Documents → all document services
+Online Forms → all online-form services
+Digital & Print → all digital/print services
+Financial → all financial services
+Insurance → all insurance services
+Parcel → all parcel services
+
+8. NEED HELP CARD
+
+The "Need Help?" card must NOT be treated as a service.
+
+It must ALWAYS remain the final card after all service cards.
+
+If a new service is added later, it must automatically appear before the Need Help card.
+
+9. IMPORTANT SCOPE
+
+Only update the Services page.
+
+Do not modify Home, Updates, Apply Now, Track, PDF Compressor, Contact Us, Khata Book, backend, database, APIs, routes, or global styles.
+
+Do not redesign anything else.
+
+IMAGE GENERATION IS STRICTLY PROHIBITED.
+Use only existing/provided assets and the future local asset paths.
+
+Make only the changes described above.
