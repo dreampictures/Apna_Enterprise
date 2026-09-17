@@ -2301,3 +2301,101 @@
     width: 45%;
   }
 }
+
+/* Services cards: large image-led layout */
+.services-page__category-card,
+.services-page__service-card {
+  min-height: 170px;
+  border-color: #c9dceb;
+  border-radius: 22px;
+  background:
+    radial-gradient(ellipse at 75% 105%, rgba(255,255,255,.98) 0 18%, transparent 42%),
+    linear-gradient(135deg, #ffffff 0%, #eef9ff 55%, #bde9ff 100%);
+}
+
+.services-page__category-card::after,
+.services-page__service-card::after {
+  background: linear-gradient(90deg, #fff 0%, rgba(255,255,255,.97) 43%, rgba(255,255,255,.56) 59%, rgba(255,255,255,.02) 83%);
+}
+
+.services-page__category-art,
+.services-page__service-media {
+  width: 62%;
+  background:
+    radial-gradient(ellipse at 46% 100%, #fff 0 15%, transparent 38%),
+    radial-gradient(ellipse at 78% 105%, rgba(255,255,255,.9) 0 20%, transparent 43%),
+    linear-gradient(145deg, #e8f8ff, #9cddff) !important;
+}
+
+.services-page__category-art img,
+.services-page__service-media img {
+  object-position: 58% center;
+}
+
+.services-page__category-art svg,
+.services-page__service-media > svg {
+  margin-right: 18%;
+  font-size: 3.7rem;
+  color: rgba(17, 112, 210, .55);
+}
+
+.services-page__category-copy {
+  width: 60%;
+  padding: 17px 18px 15px;
+}
+
+.services-page__service-card {
+  padding: 17px 18px 15px;
+}
+
+.services-page__service-card-main {
+  width: 61%;
+}
+
+.services-page__category-heading h2,
+.services-page__service-card h3 {
+  font-size: .82rem;
+  letter-spacing: -.02em;
+}
+
+.services-page__category-description,
+.services-page__service-card-main p {
+  max-width: 245px;
+  font-size: .56rem;
+  line-height: 1.4;
+}
+
+.services-page__category-tags span {
+  padding: 4px 8px;
+  color: #0872d2;
+  background: rgba(232,245,255,.94);
+}
+
+.services-page__view-link {
+  margin-top: 10px;
+  color: #9d7008;
+  font-size: .6rem;
+}
+
+.services-page__service-action {
+  width: 60%;
+}
+
+@media (max-width: 600px) {
+  .services-page__category-card,
+  .services-page__service-card {
+    min-height: 185px;
+    border-radius: 18px;
+  }
+
+  .services-page__category-art,
+  .services-page__service-media {
+    width: 58%;
+  }
+
+  .services-page__category-copy,
+  .services-page__service-card-main,
+  .services-page__service-action {
+    width: 68%;
+  }
+}
