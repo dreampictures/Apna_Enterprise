@@ -1,25 +1,13 @@
-import { useEffect, useState, useRef } from "react";
+import { FormEvent, useEffect, useMemo, useState } from "react";
 import { Link, useLocation } from "wouter";
-import Seo from "@/components/Seo";
 import {
-  FaBriefcase, FaFileAlt, FaCheckCircle, FaHandHoldingUsd,
-  FaBullhorn, FaStar, FaWhatsapp, FaExternalLinkAlt, FaArrowRight,
-  FaCalendarAlt, FaBuilding, FaUsers, FaFire, FaClock, FaSearch, FaTimes,
+  FaArrowRight, FaBookmark, FaBriefcase, FaBullhorn, FaBuilding,
+  FaCalendarAlt, FaCheckCircle, FaClock, FaEnvelope, FaFileAlt,
+  FaHandHoldingUsd, FaList, FaSearch, FaStar, FaThLarge, FaTimes,
+  FaUsers,
 } from "react-icons/fa";
+import Seo from "@/components/Seo";
 import { useT } from "@/i18n";
-
-const NAVY = "#071B4A";
-const GOLD = "#D4A017";
-
-const CAT_COLOR: Record<string, { bg: string; text: string; dot: string }> = {
-  "Government Job":  { bg: "#eff6ff", text: "#1d4ed8", dot: "#3b82f6" },
-  "Admit Card":      { bg: "#f5f3ff", text: "#7c3aed", dot: "#8b5cf6" },
-  "Result":          { bg: "#f0fdf4", text: "#15803d", dot: "#22c55e" },
-  "Govt Scheme":     { bg: "#fffbeb", text: "#b45309", dot: "#f59e0b" },
-  "Govt Notice":     { bg: "#fff1f2", text: "#be123c", dot: "#f43f5e" },
-  "Announcement":    { bg: "#eef2ff", text: "#4338ca", dot: "#6366f1" },
-  "Offer / Update":  { bg: "#fff0f0", text: "#e11d48", dot: "#f43f5e" },
-};
 
 interface Announcement {
   id: number;
@@ -33,102 +21,145 @@ interface Announcement {
   lastDate?: string;
   vacancyCount?: number;
   applyUrl?: string;
-  officialWebsite?: string;
-  officialNotificationUrl?: string;
   isUrgent: boolean;
   isFeatured: boolean;
   isExpired: boolean;
 }
 
-function fmtDate(d?: string) {
-  if (!d) return null;
-  return new Date(d).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" });
+type StatusFilter = "All" | "Active" | "Closing Soon" | "Closed";
+type ViewMode = "grid" | "list";
+
+const CATEGORIES = [
+  { id: "All", label: "All Updates", icon: FaThLarge },
+  { id: "Government Job", label: "Govt Jobs", icon: FaBriefcase },
+  { id: "Admit Card", label: "Admit Card", icon: FaFileAlt },
+  { id: "Result", label: "Result", icon: FaCheckCircle },
+  { id: "Govt Scheme", label: "Schemes", icon: FaHandHoldingUsd },
+  { id: "Govt Notice", label: "Notices", icon: FaFileAlt },
+  { id: "Announcement", label: "Announcements", icon: FaBullhorn },
+  { id: "Offer / Update", label: "Offers", icon: FaStar },
+] as const;
+
+const CATEGORY_STYLE: Record<string, { className: string; label: string }> = {
+  "Government Job": { className: "is-blue", label: "Government Job" },
+  "Admit Card": { className: "is-green", label: "Admit Card" },
+  Result: { className: "is-purple", label: "Result" },
+  "Govt Scheme": { className: "is-gold", label: "Govt Scheme" },
+  "Govt Notice": { className: "is-cyan", label: "Notice" },
+  Announcement: { className: "is-red", label: "Announcement" },
+  "Offer / Update": { className: "is-pink", label: "Offer" },
+};
+
+function fmtDate(date?: string) {
+  if (!date) return null;
+  return new Date(date).toLocaleDateString("en-IN", {
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+  });
+}
+
+function statusOf(item: Announcement): Exclude<StatusFilter, "All"> {
+  if (item.isExpired) return "Closed";
+  if (item.lastDate) {
+    const remaining = new Date(item.lastDate).getTime() - Date.now();
+    if (remaining >= 0 && remaining <= 14 * 24 * 60 * 60 * 1000) return "Closing Soon";
+  }
+  return "Active";
 }
 
 function SkeletonCard() {
   return (
-    <div className="bg-white rounded-2xl overflow-hidden animate-pulse" style={{ border: "1px solid #e2e8f0", boxShadow: "0 2px 12px rgba(7,27,74,0.05)" }}>
-      <div className="h-1 bg-slate-200" />
-      <div className="p-5">
-        <div className="flex gap-2 mb-3">
-          <div className="h-5 w-20 bg-slate-200 rounded-full" />
-          <div className="h-5 w-14 bg-slate-200 rounded-full" />
-        </div>
-        <div className="h-5 bg-slate-200 rounded mb-2 w-full" />
-        <div className="h-5 bg-slate-200 rounded mb-4 w-4/5" />
-        <div className="space-y-2">
-          <div className="h-3.5 bg-slate-100 rounded w-3/5" />
-          <div className="h-3.5 bg-slate-100 rounded w-2/5" />
-        </div>
-      </div>
-      <div className="px-4 pb-4 pt-3 border-t border-slate-50 flex gap-2">
-        <div className="flex-1 h-9 bg-slate-200 rounded-xl" />
-        <div className="h-9 w-9 bg-slate-100 rounded-xl" />
-      </div>
+    <div className="updates-page__card updates-page__skeleton" aria-hidden="true">
+      <span /><span /><span /><span />
     </div>
   );
 }
 
 export default function Updates() {
   const [, navigate] = useLocation();
-  const [activeCategory, setActiveCategory] = useState("All");
+  const { t } = useT();
   const [items, setItems] = useState<Announcement[]>([]);
-  const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(true);
-  const [page, setPage] = useState(0);
+  const [activeCategory, setActiveCategory] = useState("All");
+  const [activeStatus, setActiveStatus] = useState<StatusFilter>("All");
   const [searchInput, setSearchInput] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
-  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [sort, setSort] = useState("latest");
+  const [view, setView] = useState<ViewMode>("grid");
+  const [page, setPage] = useState(0);
+  const [saved, setSaved] = useState<number[]>(() => {
+    try { return JSON.parse(localStorage.getItem("saved-updates") || "[]"); }
+    catch { return []; }
+  });
+  const [email, setEmail] = useState("");
+  const [subscribed, setSubscribed] = useState(false);
   const limit = 12;
-  const { t } = useT();
-
-  function handleSearchChange(val: string) {
-    setSearchInput(val);
-    if (debounceRef.current) clearTimeout(debounceRef.current);
-    debounceRef.current = setTimeout(() => {
-      setSearchQuery(val.trim());
-      setPage(0);
-    }, 400);
-  }
-
-  function clearSearch() {
-    setSearchInput("");
-    setSearchQuery("");
-    setPage(0);
-  }
-
-  const CATEGORIES = [
-    { id: "All", label: t.updates_cat_all, icon: FaBullhorn },
-    { id: "Government Job", label: t.updates_cat_jobs, icon: FaBriefcase },
-    { id: "Admit Card", label: t.updates_cat_admit, icon: FaFileAlt },
-    { id: "Result", label: t.updates_cat_result, icon: FaCheckCircle },
-    { id: "Govt Scheme", label: t.updates_cat_scheme, icon: FaHandHoldingUsd },
-    { id: "Govt Notice", label: t.updates_cat_notice, icon: FaFileAlt },
-    { id: "Announcement", label: t.updates_cat_announcement, icon: FaBullhorn },
-    { id: "Offer / Update", label: t.updates_cat_offer, icon: FaStar },
-  ];
-
-  useEffect(() => {
-    setPage(0);
-  }, [activeCategory, searchQuery]);
 
   useEffect(() => {
     setLoading(true);
-    const params = new URLSearchParams({ limit: String(limit), offset: String(page * limit), published: "1" });
-    if (activeCategory !== "All") params.set("category", activeCategory);
-    if (searchQuery) params.set("q", searchQuery);
-    fetch(`/api/announcements?${params}`)
-      .then((r) => r.json())
-      .then((data) => {
-        setItems(data.announcements || []);
-        setTotal(data.total || 0);
-      })
+    fetch("/api/announcements?limit=500&offset=0&published=1")
+      .then((response) => response.json())
+      .then((data) => setItems(data.announcements || []))
       .catch(() => setItems([]))
       .finally(() => setLoading(false));
-  }, [activeCategory, page, searchQuery]);
+  }, []);
+
+  useEffect(() => setPage(0), [activeCategory, activeStatus, searchQuery, sort]);
+
+  const categoryCounts = useMemo(() => Object.fromEntries(
+    CATEGORIES.map(({ id }) => [
+      id,
+      id === "All" ? items.length : items.filter((item) => item.category === id).length,
+    ]),
+  ), [items]);
+
+  const statusCounts = useMemo(() => ({
+    All: items.length,
+    Active: items.filter((item) => statusOf(item) === "Active").length,
+    "Closing Soon": items.filter((item) => statusOf(item) === "Closing Soon").length,
+    Closed: items.filter((item) => statusOf(item) === "Closed").length,
+  }), [items]);
+
+  const filtered = useMemo(() => {
+    const query = searchQuery.toLowerCase();
+    return items
+      .filter((item) => activeCategory === "All" || item.category === activeCategory)
+      .filter((item) => activeStatus === "All" || statusOf(item) === activeStatus)
+      .filter((item) => !query || [item.title, item.shortDesc, item.department, item.category]
+        .some((value) => value?.toLowerCase().includes(query)))
+      .sort((a, b) => {
+        const aDate = new Date(a.publishDate || a.startDate || 0).getTime();
+        const bDate = new Date(b.publishDate || b.startDate || 0).getTime();
+        return sort === "oldest" ? aDate - bDate : bDate - aDate;
+      });
+  }, [items, activeCategory, activeStatus, searchQuery, sort]);
+
+  const visibleItems = filtered.slice(page * limit, (page + 1) * limit);
+  const pageCount = Math.max(1, Math.ceil(filtered.length / limit));
+
+  function submitSearch(event: FormEvent) {
+    event.preventDefault();
+    setSearchQuery(searchInput.trim());
+  }
+
+  function toggleSaved(id: number) {
+    setSaved((current) => {
+      const next = current.includes(id) ? current.filter((item) => item !== id) : [...current, id];
+      localStorage.setItem("saved-updates", JSON.stringify(next));
+      return next;
+    });
+  }
+
+  function subscribe(event: FormEvent) {
+    event.preventDefault();
+    if (!email.trim()) return;
+    setSubscribed(true);
+    setEmail("");
+  }
 
   return (
-    <div className="flex flex-col min-h-full">
+    <div className="updates-page">
       <Seo
         title="Updates & Announcements — Govt Jobs, Results, Schemes"
         description="Latest government job notifications, admit cards, results, schemes and announcements. Stay updated with Apna Enterprise."
@@ -136,280 +167,189 @@ export default function Updates() {
         path="/updates"
       />
 
-      {/* Hero */}
-      <section className="hero-navy text-white py-14">
-        <div className="container mx-auto px-4 lg:px-8 text-center">
-          <p className="font-bold uppercase tracking-widest text-xs mb-3" style={{ color: GOLD, letterSpacing: "0.18em" }}>
-            {t.updates_stay_informed}
-          </p>
-          <h1 className="text-4xl md:text-5xl font-extrabold mb-4 tracking-tight">{t.updates_title}</h1>
-          <div className="w-16 h-1 rounded-full mx-auto mb-5" style={{ background: GOLD }} />
-          <p className="max-w-xl mx-auto text-base md:text-lg leading-relaxed mb-8" style={{ color: "rgba(255,255,255,0.7)" }}>
-            {t.updates_subtitle}
-          </p>
-
-          {/* Search Bar */}
-          <div className="max-w-xl mx-auto relative">
-            <div className="flex items-center rounded-2xl overflow-hidden" style={{ background: "rgba(255,255,255,0.12)", border: "1.5px solid rgba(255,255,255,0.25)", backdropFilter: "blur(8px)" }}>
-              <FaSearch className="ml-4 flex-shrink-0 text-sm" style={{ color: "rgba(255,255,255,0.6)" }} />
-              <input
-                type="text"
-                value={searchInput}
-                onChange={(e) => handleSearchChange(e.target.value)}
-                placeholder="Search jobs, schemes, results..."
-                className="flex-1 bg-transparent px-3 py-3.5 text-sm font-medium outline-none placeholder:font-normal"
-                style={{ color: "#fff", caretColor: GOLD }}
-              />
-              {searchInput && (
-                <button
-                  onClick={clearSearch}
-                  className="mr-3 flex-shrink-0 w-6 h-6 rounded-full flex items-center justify-center transition-opacity hover:opacity-80"
-                  style={{ background: "rgba(255,255,255,0.2)" }}
-                >
-                  <FaTimes className="text-xs text-white" />
-                </button>
-              )}
+      <section className="updates-page__hero">
+        <img
+          src="/assets/updates/hero-updates.png"
+          alt=""
+          aria-hidden="true"
+          className="updates-page__hero-image"
+          onError={(event) => { event.currentTarget.style.visibility = "hidden"; }}
+        />
+        <div className="container mx-auto px-4 lg:px-8">
+          <div className="updates-page__hero-grid">
+            <div className="updates-page__hero-copy">
+              <p className="updates-page__eyebrow">{t.updates_stay_informed}</p>
+              <h1>Updates &amp; <span>Announcements</span></h1>
+              <p>{t.updates_subtitle}</p>
+              <form className="updates-page__search" onSubmit={submitSearch}>
+                <FaSearch />
+                <input
+                  value={searchInput}
+                  onChange={(event) => setSearchInput(event.target.value)}
+                  placeholder="Search jobs, schemes, results, notices..."
+                  aria-label="Search updates"
+                />
+                {searchInput && (
+                  <button type="button" className="updates-page__search-clear" onClick={() => {
+                    setSearchInput("");
+                    setSearchQuery("");
+                  }} aria-label="Clear search"><FaTimes /></button>
+                )}
+                <button type="submit" className="updates-page__search-submit">Search</button>
+              </form>
             </div>
-            {searchQuery && (
-              <p className="mt-2 text-xs font-medium" style={{ color: "rgba(255,255,255,0.6)" }}>
-                Showing results for "<span style={{ color: GOLD }}>{searchQuery}</span>"
-              </p>
-            )}
+            <div className="updates-page__hero-slot" aria-hidden="true" />
           </div>
         </div>
       </section>
 
-      {/* Category Filter Bar */}
-      <div className="sticky top-[80px] z-30 bg-white border-b border-slate-100" style={{ boxShadow: "0 2px 8px rgba(7,27,74,0.06)" }}>
+      <nav className="updates-page__category-nav" aria-label="Update categories">
         <div className="container mx-auto px-4 lg:px-8">
-          <div className="flex gap-1.5 overflow-x-auto py-3 no-scrollbar">
-            {CATEGORIES.map(({ id, label, icon: Icon }) => {
-              const active = activeCategory === id;
-              return (
-                <button
-                  key={id}
-                  onClick={() => setActiveCategory(id)}
-                  className="flex items-center gap-1.5 px-4 py-2 rounded-full text-xs font-bold whitespace-nowrap transition-all duration-200 flex-shrink-0"
-                  style={
-                    active
-                      ? { background: NAVY, color: "#fff", boxShadow: "0 4px 12px rgba(7,27,74,0.25)" }
-                      : { background: "#f8fafd", color: "#475569", border: "1.5px solid #e2e8f0" }
-                  }
-                >
-                  <Icon className="text-xs" />
-                  {label}
-                </button>
-              );
-            })}
+          <div className="updates-page__category-nav-inner">
+            {CATEGORIES.map(({ id, label, icon: Icon }) => (
+              <button
+                key={id}
+                className={activeCategory === id ? "is-active" : ""}
+                onClick={() => setActiveCategory(id)}
+              >
+                <Icon /> {label}
+              </button>
+            ))}
           </div>
         </div>
-      </div>
+      </nav>
 
-      {/* Grid */}
-      <section className="flex-1 py-10" style={{ background: "#f4f7fc" }}>
+      <main className="updates-page__main">
         <div className="container mx-auto px-4 lg:px-8">
-          {loading ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {[...Array(6)].map((_, i) => <SkeletonCard key={i} />)}
-            </div>
-          ) : !items.length ? (
-            <div className="text-center py-24">
-              <div className="w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-5" style={{ background: "#e8edf5" }}>
-                <FaBullhorn className="text-2xl" style={{ color: NAVY }} />
-              </div>
-              <p className="text-slate-700 font-bold text-lg mb-1">{t.updates_no_items}</p>
-              <p className="text-slate-400 text-sm">{t.updates_no_items_sub}</p>
-            </div>
-          ) : (
-            <>
-              <div className="flex items-center justify-between mb-6">
-                <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider">
-                  {t.updates_count(total)}
-                </p>
-              </div>
+          <div className="updates-page__layout">
+            <aside className="updates-page__sidebar">
+              <div className="updates-page__filter-title"><FaSearch /> Filter Updates</div>
+              <fieldset>
+                <legend>Categories</legend>
+                {CATEGORIES.map(({ id, label }) => (
+                  <label key={id}>
+                    <input
+                      type="radio"
+                      name="update-category"
+                      checked={activeCategory === id}
+                      onChange={() => setActiveCategory(id)}
+                    />
+                    <span>{label}</span><b>{categoryCounts[id] || 0}</b>
+                  </label>
+                ))}
+              </fieldset>
+              <fieldset>
+                <legend>Status</legend>
+                {(["All", "Active", "Closing Soon", "Closed"] as StatusFilter[]).map((status) => (
+                  <label key={status}>
+                    <input
+                      type="radio"
+                      name="update-status"
+                      checked={activeStatus === status}
+                      onChange={() => setActiveStatus(status)}
+                    />
+                    <i className={`updates-page__status-dot is-${status.toLowerCase().replace(" ", "-")}`} />
+                    <span>{status}</span><b>{statusCounts[status]}</b>
+                  </label>
+                ))}
+              </fieldset>
+            </aside>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {items.map((item) => {
-                  const cat = CAT_COLOR[item.category] ?? { bg: "#f8fafd", text: "#475569", dot: "#94a3b8" };
-                  const waText = encodeURIComponent(`${item.title} — Check details at apnaenterprise.in/updates/${item.slug}`);
-                  const isActive = !item.isExpired;
+            <section className="updates-page__results">
+              <header className="updates-page__results-head">
+                <strong>{filtered.length} Updates Found</strong>
+                <div>
+                  <label>Sort by:
+                    <select value={sort} onChange={(event) => setSort(event.target.value)}>
+                      <option value="latest">Latest First</option>
+                      <option value="oldest">Oldest First</option>
+                    </select>
+                  </label>
+                  <button className={view === "grid" ? "is-active" : ""} onClick={() => setView("grid")} aria-label="Grid view"><FaThLarge /></button>
+                  <button className={view === "list" ? "is-active" : ""} onClick={() => setView("list")} aria-label="List view"><FaList /></button>
+                </div>
+              </header>
 
-                  return (
-                    <div
-                      key={item.id}
-                      onClick={() => navigate(`/updates/${item.slug}`)}
-                      className="bg-white rounded-2xl flex flex-col overflow-hidden transition-all duration-200 hover:-translate-y-1 cursor-pointer"
-                      style={{
-                        border: item.isUrgent ? "2px solid #ef4444" : "1px solid #e2e8f0",
-                        boxShadow: item.isUrgent
-                          ? "0 4px 20px rgba(239,68,68,0.12)"
-                          : "0 2px 12px rgba(7,27,74,0.06)",
-                      }}
-                    >
-                      {/* Colored top accent bar */}
-                      <div
-                        className="h-1 w-full flex-shrink-0"
-                        style={{ background: item.isUrgent ? "#ef4444" : cat.dot }}
-                      />
-
-                      {/* Card Body */}
-                      <div className="p-5 flex-1">
-                        {/* Tags */}
-                        <div className="flex items-start justify-between gap-2 mb-3">
-                          <div className="flex flex-wrap gap-1.5">
-                            <span
-                              className="inline-flex items-center gap-1 text-xs font-bold px-2.5 py-1 rounded-full"
-                              style={{ background: cat.bg, color: cat.text }}
-                            >
-                              <span className="w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ background: cat.dot }} />
-                              {item.category}
-                            </span>
-                            {item.isUrgent && (
-                              <span className="inline-flex items-center gap-1 text-xs font-bold px-2.5 py-1 rounded-full bg-red-100 text-red-600">
-                                <FaFire className="text-xs" /> {t.updates_apply === "Apply" ? "URGENT" : "ਜ਼ਰੂਰੀ"}
-                              </span>
-                            )}
-                            {item.isFeatured && (
-                              <span className="inline-flex items-center gap-1 text-xs font-bold px-2.5 py-1 rounded-full bg-amber-100 text-amber-700">
-                                <FaStar className="text-xs" /> {t.detail_featured}
-                              </span>
-                            )}
-                          </div>
-                          <span
-                            className="text-xs font-bold px-2.5 py-1 rounded-full flex-shrink-0 whitespace-nowrap"
-                            style={
-                              isActive
-                                ? { background: "#dcfce7", color: "#15803d" }
-                                : { background: "#fee2e2", color: "#b91c1c" }
-                            }
-                          >
-                            {isActive ? t.updates_active : t.updates_closed}
-                          </span>
-                        </div>
-
-                        {/* Title */}
-                        <h3 className="text-sm font-extrabold text-slate-900 mb-2 leading-snug line-clamp-2" style={{ letterSpacing: "-0.01em" }}>
-                          {item.title}
-                        </h3>
-
-                        {item.shortDesc && (
-                          <p className="text-xs text-slate-500 mb-3 line-clamp-2 leading-relaxed">{item.shortDesc}</p>
-                        )}
-
-                        {/* Meta */}
-                        <div className="space-y-1.5 text-xs text-slate-500">
-                          {item.department && (
-                            <div className="flex items-center gap-2">
-                              <FaBuilding className="flex-shrink-0 opacity-60" style={{ color: NAVY }} />
-                              <span className="font-medium truncate">{item.department}</span>
-                            </div>
-                          )}
-                          {item.vacancyCount ? (
-                            <div className="flex items-center gap-2">
-                              <FaUsers className="flex-shrink-0" style={{ color: GOLD }} />
-                              <span><strong className="text-slate-700">{item.vacancyCount.toLocaleString()}</strong> {t.updates_vacancies}</span>
-                            </div>
-                          ) : null}
-                          {item.lastDate && (
-                            <div className="flex items-center gap-2">
-                              <FaClock className={`flex-shrink-0 ${item.isExpired ? "text-red-400" : "text-green-500"}`} />
-                              <span>
-                                {t.updates_last_date}{" "}
-                                <strong className={item.isExpired ? "text-red-500" : "text-slate-700"}>
-                                  {fmtDate(item.lastDate)}
-                                </strong>
-                                {item.isExpired && <span className="ml-1 text-red-400">{t.updates_expired}</span>}
-                              </span>
-                            </div>
-                          )}
-                          {item.startDate && !item.lastDate && (
-                            <div className="flex items-center gap-2">
-                              <FaCalendarAlt className="flex-shrink-0 text-green-500" />
-                              <span>{t.updates_start} <strong className="text-slate-700">{fmtDate(item.startDate)}</strong></span>
-                            </div>
-                          )}
-                        </div>
-                      </div>
-
-                      {/* Action Buttons */}
-                      <div
-                        className="px-4 pb-4 pt-3 border-t border-slate-50 flex gap-2 items-center"
-                        onClick={(e) => e.stopPropagation()}
+              {loading ? (
+                <div className="updates-page__cards">
+                  {Array.from({ length: 6 }, (_, index) => <SkeletonCard key={index} />)}
+                </div>
+              ) : visibleItems.length === 0 ? (
+                <div className="updates-page__empty">
+                  <FaBullhorn />
+                  <strong>{t.updates_no_items}</strong>
+                  <p>{t.updates_no_items_sub}</p>
+                </div>
+              ) : (
+                <div className={`updates-page__cards${view === "list" ? " is-list" : ""}`}>
+                  {visibleItems.map((item) => {
+                    const category = CATEGORY_STYLE[item.category] || { className: "is-blue", label: item.category };
+                    const status = statusOf(item);
+                    return (
+                      <article
+                        key={item.id}
+                        className={`updates-page__card${item.isUrgent ? " is-urgent" : ""}`}
+                        onClick={() => navigate(`/updates/${item.slug}`)}
                       >
-                        <Link
-                          href={`/updates/${item.slug}`}
-                          className="flex-1 flex items-center justify-center gap-1.5 text-xs font-bold py-2.5 px-3 rounded-xl transition-all duration-200 hover:opacity-90 hover:-translate-y-0.5"
-                          style={{
-                            background: `linear-gradient(135deg, ${NAVY}, #0d2069)`,
-                            color: "#fff",
-                            boxShadow: "0 3px 10px rgba(7,27,74,0.25)",
-                            letterSpacing: "0.01em",
-                          }}
-                        >
-                          {t.updates_know_more} <FaArrowRight className="text-xs" />
-                        </Link>
-
-                        {item.applyUrl && isActive && (
-                          <a
-                            href={item.applyUrl}
-                            target="_blank"
-                            rel="noreferrer"
-                            className="flex-1 flex items-center justify-center gap-1.5 text-xs font-bold py-2.5 px-3 rounded-xl transition-all duration-200 hover:opacity-90 hover:-translate-y-0.5"
-                            style={{
-                              background: `linear-gradient(135deg, ${GOLD}, #b8860b)`,
-                              color: "#fff",
-                              boxShadow: "0 3px 10px rgba(212,160,23,0.3)",
-                              letterSpacing: "0.01em",
-                            }}
-                          >
-                            {t.updates_apply} <FaExternalLinkAlt className="text-xs" />
-                          </a>
-                        )}
-
-                        <a
-                          href={`https://wa.me/?text=${waText}`}
-                          target="_blank"
-                          rel="noreferrer"
-                          className="flex-shrink-0 flex items-center justify-center w-9 h-9 rounded-xl transition-all duration-200 hover:opacity-90"
-                          style={{ background: "#dcfce7", color: "#16a34a" }}
-                          title="Share on WhatsApp"
-                        >
-                          <FaWhatsapp className="text-base" />
-                        </a>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-
-              {/* Pagination */}
-              {total > limit && (
-                <div className="flex justify-center items-center gap-3 mt-12">
-                  <button
-                    disabled={page === 0}
-                    onClick={() => setPage((p) => p - 1)}
-                    className="px-6 py-2.5 rounded-xl text-sm font-bold border-2 disabled:opacity-40 transition-all duration-200 hover:border-slate-400"
-                    style={{ borderColor: "#e2e8f0", color: "#475569", background: "#fff" }}
-                  >
-                    {t.updates_prev}
-                  </button>
-                  <span className="px-5 py-2.5 rounded-xl text-sm font-bold text-white" style={{ background: NAVY }}>
-                    {page + 1} / {Math.ceil(total / limit)}
-                  </span>
-                  <button
-                    disabled={(page + 1) * limit >= total}
-                    onClick={() => setPage((p) => p + 1)}
-                    className="px-6 py-2.5 rounded-xl text-sm font-bold border-2 disabled:opacity-40 transition-all duration-200 hover:border-slate-400"
-                    style={{ borderColor: "#e2e8f0", color: "#475569", background: "#fff" }}
-                  >
-                    {t.updates_next}
-                  </button>
+                        <div className="updates-page__badges">
+                          <div>
+                            <span className={`updates-page__category-badge ${category.className}`}>{category.label}</span>
+                            {item.isUrgent && <span className="updates-page__urgent">Urgent</span>}
+                          </div>
+                          <span className={`updates-page__status is-${status.toLowerCase().replace(" ", "-")}`}>{status}</span>
+                        </div>
+                        <h2>{item.title}</h2>
+                        {item.shortDesc && <p className="updates-page__description">{item.shortDesc}</p>}
+                        <div className="updates-page__meta">
+                          {item.department && <span><FaBuilding /> {item.department}</span>}
+                          {item.vacancyCount ? <span><FaUsers /> {item.vacancyCount.toLocaleString()} {t.updates_vacancies}</span> : null}
+                          <span><FaCalendarAlt /> {fmtDate(item.publishDate || item.startDate) || "Recently updated"}</span>
+                          {item.lastDate && (
+                            <span className={status === "Closed" || status === "Closing Soon" ? "is-important" : ""}>
+                              <FaClock /> {t.updates_last_date} {fmtDate(item.lastDate)}
+                            </span>
+                          )}
+                        </div>
+                        <footer onClick={(event) => event.stopPropagation()}>
+                          <Link href={`/updates/${item.slug}`}>Read More <FaArrowRight /></Link>
+                          <button
+                            className={saved.includes(item.id) ? "is-saved" : ""}
+                            onClick={() => toggleSaved(item.id)}
+                            aria-label={saved.includes(item.id) ? "Remove bookmark" : "Save update"}
+                            title="Save update"
+                          ><FaBookmark /></button>
+                        </footer>
+                      </article>
+                    );
+                  })}
                 </div>
               )}
-            </>
-          )}
+
+              {!loading && filtered.length > limit && (
+                <div className="updates-page__pagination">
+                  <button disabled={page === 0} onClick={() => setPage((current) => current - 1)}>{t.updates_prev}</button>
+                  <span>{page + 1} / {pageCount}</span>
+                  <button disabled={page + 1 >= pageCount} onClick={() => setPage((current) => current + 1)}>{t.updates_next}</button>
+                </div>
+              )}
+            </section>
+          </div>
+
+          <section className="updates-page__subscribe">
+            <div className="updates-page__subscribe-icon"><FaEnvelope /></div>
+            <div className="updates-page__subscribe-copy">
+              <span>GET INSTANT UPDATES</span>
+              <h2>Subscribe for Latest Updates</h2>
+              <p>Be the first to know about new jobs, admit cards, results and important notices.</p>
+            </div>
+            <form onSubmit={subscribe}>
+              <div><FaEnvelope /><input type="email" required value={email} onChange={(event) => setEmail(event.target.value)} placeholder="Enter your email address..." /></div>
+              <button type="submit">Subscribe</button>
+            </form>
+            <small>{subscribed ? "Thank you for subscribing." : "No spam. Only important updates."}</small>
+          </section>
         </div>
-      </section>
+      </main>
     </div>
   );
 }

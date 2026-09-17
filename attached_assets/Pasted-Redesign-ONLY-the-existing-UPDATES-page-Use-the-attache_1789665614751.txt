@@ -1,0 +1,178 @@
+Redesign ONLY the existing UPDATES page.
+
+Use the attached reference screenshot as the PRIMARY VISUAL REFERENCE for the Updates page design.
+
+IMPORTANT:
+The screenshot is a DESIGN reference. Do not copy its sample update data or limit the page to the number of cards shown in the screenshot.
+
+PAGE STRUCTURE:
+
+1. HERO SECTION
+Create the Updates hero section matching the reference:
+- Dark navy/blue premium background
+- "STAY INFORMED" label
+- "Updates & Announcements" main heading
+- Gold highlight on "Announcements"
+- Existing Updates page description
+- Large search bar
+- Search button
+- Dedicated hero-image placeholder/asset slot on the right
+
+IMPORTANT:
+The hero image will be created and provided separately later.
+Do NOT generate, search, download, or choose a hero image yourself.
+
+Use this future asset path:
+`/assets/updates/hero-updates.png`
+
+Keep the hero image area fixed so the layout does not break before the image is uploaded.
+
+2. UPDATE CATEGORY NAVIGATION
+
+Below the hero, create the category filter/navigation exactly in the style of the reference.
+
+Categories:
+- All Updates
+- Govt Jobs
+- Admit Card
+- Result
+- Schemes
+- Notices
+- Announcements
+- Offers
+
+Clicking a category must show ONLY updates belonging to that category.
+
+"All Updates" must show ALL existing updates.
+
+Use the existing update data/category structure dynamically.
+
+3. UPDATE LISTING
+
+Create a clean premium update-card grid similar to the reference.
+
+Every update card should contain:
+- Category badge
+- Status badge
+- Update title
+- Short description
+- Organization/source
+- Date
+- Important/expiry information when available
+- "Read More →" button
+- Bookmark/save control if already supported
+
+Do NOT hard-code only the updates visible in the screenshot.
+
+The page must automatically display all existing updates from the existing data source.
+
+4. FILTER SIDEBAR
+
+Keep the reference-style filter area with:
+
+Categories
+- All Updates
+- Govt Jobs
+- Admit Card
+- Result
+- Schemes
+- Notices
+- Announcements
+- Offers
+
+Status:
+- All
+- Active
+- Closing Soon
+- Closed
+
+Category and status filters should work with the existing update data.
+
+5. SEARCH
+
+The existing Updates search must search across all existing updates.
+
+Search should work together with category and status filters.
+
+6. SORT / VIEW CONTROLS
+
+Keep a professional sorting control similar to the reference, such as:
+- Latest First
+
+Keep grid/list view controls if they already exist.
+
+Do not remove existing functionality.
+
+7. SUBSCRIBE SECTION
+
+At the bottom, create the premium navy subscription section shown in the reference:
+
+- "GET INSTANT UPDATES"
+- "Subscribe for Latest Updates"
+- Short supporting text
+- Email input
+- Subscribe button
+- Supporting privacy/no-spam text
+
+Keep the existing subscription functionality if already implemented.
+
+IMPORTANT DATA/FUNCTIONALITY:
+Preserve all existing:
+- Update data
+- Categories
+- Statuses
+- Dates
+- Search
+- Filters
+- Sorting
+- Read More links
+- Bookmark functionality
+- Subscription functionality
+- APIs
+- Backend
+- Database
+- Admin-created updates
+
+Do not remove or rename existing update fields.
+
+PAGE ISOLATION:
+This redesign is ONLY for the Updates page.
+
+Do NOT modify:
+- Home
+- Services
+- Apply Now
+- Track
+- PDF Compressor
+- Contact Us
+- Khata Book
+- Backend
+- Database
+- APIs
+- Other routes
+
+If shared components/styles need modification, use Updates-page-specific components/classes so other pages remain unchanged.
+
+IMAGE REQUIREMENT:
+Image generation is STRICTLY PROHIBITED for this task.
+
+Do not generate images.
+Do not search for stock images.
+Do not download images.
+Do not choose replacement images.
+
+The Updates hero image will be provided separately later at:
+
+`/assets/updates/hero-updates.png`
+
+For now, create the proper fixed hero image placeholder/asset slot.
+
+Do not generate any other new images.
+
+Before editing, inspect the existing Updates page and existing update data structure.
+
+Make the minimum required changes needed to implement this redesign.
+
+Keep desktop, tablet and mobile fully responsive.
+
+Do not invent a completely different layout. Follow the attached reference closely while preserving the website's real data and functionality.
