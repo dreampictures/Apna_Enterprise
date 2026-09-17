@@ -64,16 +64,6 @@ const CATEGORY_ICONS: Record<string, React.ElementType> = {
   parcel: FaShippingFast,
 };
 
-const CATEGORY_GRADIENT: Record<string, string> = {
-  travel:    "linear-gradient(135deg, #1e40af, #3b82f6)",
-  documents: "linear-gradient(135deg, #065f46, #10b981)",
-  forms:     "linear-gradient(135deg, #5b21b6, #8b5cf6)",
-  digital:   "linear-gradient(135deg, #92400e, #f59e0b)",
-  financial: "linear-gradient(135deg, #9f1239, #f43f5e)",
-  insurance: "linear-gradient(135deg, #3730a3, #6366f1)",
-  parcel:    "linear-gradient(135deg, #164e63, #06b6d4)",
-};
-
 const CATEGORY_ICON_LIGHT: Record<string, string> = {
   travel:    "bg-blue-50 text-blue-600",
   documents: "bg-emerald-50 text-emerald-600",
@@ -104,6 +94,16 @@ const CATEGORY_SHORT_NAMES: Record<string, string[]> = {
   parcel: ["International Parcel Booking"],
 };
 
+const CATEGORY_IMAGES: Record<string, string> = {
+  travel: "/assets/services/travel.png",
+  documents: "/assets/services/documents.png",
+  forms: "/assets/services/online-forms.png",
+  digital: "/assets/services/digital-print.png",
+  financial: "/assets/services/financial.png",
+  insurance: "/assets/services/insurance.png",
+  parcel: "/assets/services/parcel.png",
+};
+
 export default function Services() {
   const [search, setSearch] = useState("");
   const [activeCategory, setActiveCategory] = useState<string | null>(null);
@@ -127,6 +127,9 @@ export default function Services() {
   }, [search, activeCategory]);
 
   const totalServices = SERVICE_CATEGORIES.reduce((total, category) => total + category.services.length, 0);
+  const visibleServices = filtered.flatMap((category) =>
+    category.services.map((service) => ({ service, category }))
+  );
 
   return (
     <div className="services-page flex flex-col min-h-full">
@@ -227,11 +230,15 @@ export default function Services() {
           <div className="services-page__category-grid">
             {SERVICE_CATEGORIES.map((cat) => {
               const CatIcon = CATEGORY_ICONS[cat.id] ?? FaFileAlt;
-              const catGradient = CATEGORY_GRADIENT[cat.id] ?? "linear-gradient(135deg, #071B4A, #1a3a8a)";
               const lightClass = CATEGORY_ICON_LIGHT[cat.id] ?? "bg-primary/10 text-primary";
               return (
                 <article key={cat.id} className="services-page__category-card">
-                  <div className="services-page__category-art" style={{ background: catGradient }} aria-hidden="true">
+                  <div className={`services-page__category-art services-page__category-art--${cat.id}`} aria-hidden="true">
+                    <img
+                      src={CATEGORY_IMAGES[cat.id]}
+                      alt=""
+                      onError={(event) => { event.currentTarget.style.display = "none"; }}
+                    />
                     <CatIcon />
                   </div>
                   <div className="services-page__category-copy">
@@ -263,22 +270,6 @@ export default function Services() {
                 </article>
               );
             })}
-
-            <article className="services-page__category-card services-page__category-card--help">
-              <div className="services-page__help-icon"><FaHeadset /></div>
-              <div className="services-page__category-copy">
-                <div className="services-page__category-heading">
-                  <div>
-                    <h2>Need Help?</h2>
-                    <p>Not sure which service you need?</p>
-                  </div>
-                </div>
-                <p className="services-page__category-description">Our team is here to guide you to the right service.</p>
-                <Link href="/contact" className="services-page__help-button">
-                  Contact Us <FaArrowRight />
-                </Link>
-              </div>
-            </article>
           </div>
 
           {/* ── Complete Services List ── */}
@@ -291,7 +282,7 @@ export default function Services() {
             <span>{search ? `${filtered.reduce((total, cat) => total + cat.services.length, 0)} matching` : "Browse all"}</span>
           </div>
 
-          {filtered.length === 0 ? (
+          {visibleServices.length === 0 && (
             <div className="services-page__empty">
               <FaSearch />
               <p>{t.services_not_found}</p>
@@ -300,78 +291,59 @@ export default function Services() {
                 {t.services_clear}
               </button>
             </div>
-          ) : (
-            <div className="services-page__service-sections">
-              {filtered.map((cat) => {
-                const CatIcon = CATEGORY_ICONS[cat.id] ?? FaFileAlt;
-                const catGradient = CATEGORY_GRADIENT[cat.id] ?? "linear-gradient(135deg, #071B4A, #1a3a8a)";
-                const lightClass = CATEGORY_ICON_LIGHT[cat.id] ?? "bg-primary/10 text-primary";
-                return (
-                  <div key={cat.id} className="services-page__service-section">
-                    {/* Category Header */}
-                    <div className="services-page__service-section-heading">
-                      <div
-                        className="services-page__service-section-icon"
-                        style={{ background: catGradient, boxShadow: "0 3px 12px rgba(0,0,0,0.15)" }}
-                      >
-                        <CatIcon />
-                      </div>
-                      <div>
-                        <h3>{cat.name}</h3>
-                        <span>
-                          {t.services_available(cat.services.length)}
-                        </span>
-                      </div>
-                    </div>
+          )}
 
-                    {/* Service Cards Grid */}
-                    <div className="services-page__service-grid">
-                      {cat.services.map((service) => {
-                        const Icon = SERVICE_ICONS[service.id] ?? FaFileAlt;
-                        return (
-                          <div key={service.id} className="services-page__service-card">
-                            <div className="services-page__service-card-main">
-                              <div className={`services-page__service-icon ${lightClass}`}>
-                                <Icon />
-                              </div>
-                              <div className="min-w-0">
-                                <h4>
-                                  {service.name}
-                                </h4>
-                                <p>
-                                  {service.description}
-                                </p>
-                              </div>
-                            </div>
-                            <div className="services-page__service-action">
-                              {COMING_SOON_SERVICES.has(service.id) ? (
-                                <div className="services-page__status services-page__status--gold">
-                                  <FaClock />
-                                  {t.services_coming_soon}
-                                </div>
-                              ) : WALKIN_SERVICES.has(service.id) ? (
-                                <div className="services-page__status">
-                                  <FaWalking />
-                                  {t.services_walkin}
-                                </div>
-                              ) : (
-                                <Button asChild size="sm" className="btn-gold services-page__apply-button group">
-                                  <Link href={`/apply?service=${encodeURIComponent(service.id)}`}>
-                                    {t.services_apply}
-                                    <FaArrowRight className="group-hover:translate-x-0.5 transition-transform" />
-                                  </Link>
-                                </Button>
-                              )}
-                            </div>
-                          </div>
-                        );
-                      })}
+          <div className="services-page__service-grid services-page__service-grid--directory">
+            {visibleServices.map(({ service, category }) => {
+              const Icon = SERVICE_ICONS[service.id] ?? FaFileAlt;
+              const lightClass = CATEGORY_ICON_LIGHT[category.id] ?? "bg-primary/10 text-primary";
+              return (
+                <article key={service.id} className={`services-page__service-card services-page__service-card--${category.id}`}>
+                  <div className="services-page__service-card-main">
+                    <div className={`services-page__service-icon ${lightClass}`}>
+                      <Icon />
+                    </div>
+                    <div className="min-w-0">
+                      <span className="services-page__service-category">{category.name}</span>
+                      <h3>{service.name}</h3>
+                      <p>{service.description}</p>
                     </div>
                   </div>
-                );
-              })}
-            </div>
-          )}
+                  <div className="services-page__service-action">
+                    {COMING_SOON_SERVICES.has(service.id) ? (
+                      <div className="services-page__status services-page__status--gold">
+                        <FaClock />
+                        {t.services_coming_soon}
+                      </div>
+                    ) : WALKIN_SERVICES.has(service.id) ? (
+                      <div className="services-page__status">
+                        <FaWalking />
+                        {t.services_walkin}
+                      </div>
+                    ) : (
+                      <Button asChild size="sm" className="btn-gold services-page__apply-button group">
+                        <Link href={`/apply?service=${encodeURIComponent(service.id)}`}>
+                          {t.services_apply} <FaArrowRight className="group-hover:translate-x-0.5 transition-transform" />
+                        </Link>
+                      </Button>
+                    )}
+                  </div>
+                </article>
+              );
+            })}
+
+            <article className="services-page__service-card services-page__service-card--help">
+              <div className="services-page__help-icon"><FaHeadset /></div>
+              <div className="services-page__help-copy">
+                <span>PERSONAL SUPPORT</span>
+                <h3>Need Help?</h3>
+                <p>Not sure which service you need? Our team is here to guide you.</p>
+                <Link href="/contact" className="services-page__help-button">
+                  Contact Us <FaArrowRight />
+                </Link>
+              </div>
+            </article>
+          </div>
         </div>
       </section>
 

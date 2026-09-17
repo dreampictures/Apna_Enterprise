@@ -1,0 +1,155 @@
+Update ONLY the existing SERVICES page.
+
+Use the attached Services page reference design as the visual direction. Rebuild the Services page properly instead of keeping the current plain directory-style service cards.
+
+IMPORTANT — HERO SECTION:
+The current Services page hero is not matching the intended design.
+
+Create a proper premium dark navy/gold Services hero section matching the provided reference design.
+
+The hero should contain:
+- "OUR SERVICES"
+- "All Your Essential Services in One Place"
+- Existing Services page description
+- Premium navy/gold background
+- Service-focused decorative visuals
+- "Simple Reliable Hassle-Free" decorative text
+- Floating service category visual tiles
+- Proper spacing and responsive layout
+
+Do NOT use a laptop in the Services hero unless an already-provided Services-page asset specifically contains one.
+Use the Services-page visual assets provided by the user.
+
+IMPORTANT — SERVICE IMAGES:
+Do NOT generate, search for, download, or choose any images yourself.
+
+The service cards on the Services page must use the SAME service images that are used for the corresponding service categories on the Home page.
+
+For example:
+- Travel Services → use the exact same Travel image/asset used on the Home page
+- Document Services → use the exact same Documents image/asset used on the Home page
+- Online Form Services → use the exact same Online Forms image/asset used on the Home page
+- Digital & Print Services → use the exact same Digital & Print image/asset used on the Home page
+- Financial Services → use the exact same Financial image/asset used on the Home page
+- Insurance Services → use the exact same Insurance image/asset used on the Home page
+- Parcel Services → use the exact same Parcel image/asset used on the Home page
+
+Do NOT create a second/different image for the same category.
+
+The Home page and Services page should share the same category image assets so the visual identity remains consistent.
+
+IMPORTANT — CATEGORY CARDS:
+Keep the 7 main category cards:
+- Travel Services
+- Document Services
+- Online Form Services
+- Digital & Print Services
+- Financial Services
+- Insurance Services
+- Parcel Services
+
+These category cards should use the premium visual style shown in the reference.
+
+IMPORTANT — ALL SERVICES:
+The Services page must display EVERY existing service from the existing service data.
+
+Do NOT limit the page to the 7 category cards.
+
+The 7 category cards are category overview cards only.
+
+When "All" is selected:
+→ Show ALL individual services from the existing service data.
+
+When a category is selected:
+→ Show ALL individual services belonging to that category.
+
+Filters:
+- All
+- Travel Services
+- Document Services
+- Online Form Services
+- Digital & Print Services
+- Financial Services
+- Insurance Services
+- Parcel Services
+
+IMPORTANT — INDIVIDUAL SERVICE CARDS:
+Every individual service must be displayed using a polished card design consistent with the premium Services page style.
+
+Each individual service card must contain:
+- Service icon/image
+- Service name
+- Short description
+- Relevant information/tags where available
+- Prominent GOLD "Apply Now →" button
+
+Every individual service must have its own Apply Now button connected to its existing application flow.
+
+Do NOT use the current basic/plain directory card design.
+
+IMPORTANT — NEED HELP:
+The "Need Help?" card is NOT a service.
+
+It must ALWAYS remain the final/last card in the service listing.
+
+Example:
+
+[Service 1]
+[Service 2]
+[Service 3]
+...
+[ALL SERVICES]
+[Need Help? — LAST]
+
+When a new service is added in the future:
+→ New service automatically appears before the Need Help card.
+→ Need Help always remains the final card.
+
+Do NOT hard-code the Need Help card at a fixed grid position.
+
+SEARCH:
+The search bar must search across ALL existing individual services.
+
+CATEGORY FILTER:
+All = every service
+Travel = every travel service
+Documents = every document service
+Online Forms = every online-form service
+Digital & Print = every digital/print service
+Financial = every financial service
+Insurance = every insurance service
+Parcel = every parcel service
+
+Use the existing service data/category structure dynamically. Do not hard-code only the services visible in the reference.
+
+DO NOT CHANGE:
+- Home page
+- Updates page
+- Apply Now page
+- Track page
+- PDF Compressor
+- Contact Us
+- Khata Book
+- Backend
+- Database
+- APIs
+- Existing service data
+- Existing routes
+- Existing application functionality
+
+If shared components/styles need modification, use Services-page-specific components/classes so other pages remain unchanged.
+
+IMAGE GENERATION IS STRICTLY PROHIBITED FOR THIS TASK.
+Do not create any new images.
+Do not download images.
+Do not search for stock images.
+Use only the image assets already provided by the user.
+
+The reference screenshot controls the visual DESIGN only.
+The existing website service data controls the actual service list.
+
+Before editing, inspect the existing Services page, existing service data, and Home page service-image asset paths.
+
+Make the minimum required changes to properly implement this Services page redesign.
+
+Keep desktop, tablet and mobile responsive.
