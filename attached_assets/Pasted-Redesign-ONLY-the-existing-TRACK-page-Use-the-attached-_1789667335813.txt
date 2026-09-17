@@ -1,0 +1,157 @@
+Redesign ONLY the existing TRACK page.
+
+Use the attached reference screenshot as the PRIMARY VISUAL REFERENCE for the Track page.
+
+IMPORTANT:
+Recreate the reference's overall layout, visual hierarchy, spacing and premium style. Do not invent a completely different design.
+
+1. HERO SECTION
+
+Create a premium dark navy/blue + gold Track hero section containing:
+
+- "TRACK YOUR APPLICATION"
+- "Stay Updated"
+- "Every Step of the Way" with gold emphasis
+- Existing tracking description
+- Tracking Number input
+- "Track Now →" button
+- Supporting instruction text
+- Dedicated hero visual/image area on the right
+
+Use this future asset path:
+
+`/assets/track/hero-track.png`
+
+IMPORTANT:
+The hero image will be created and provided separately later.
+
+Do NOT generate, search, download, or choose any image yourself.
+
+For now, create a fixed hero image placeholder/asset slot so the layout remains stable.
+
+2. HERO VISUAL
+
+The future hero image should occupy the right-side visual area similar to the reference.
+
+Do not replace it with a random laptop, stock photo, or unrelated illustration.
+
+3. TRACKING FORM
+
+Keep the existing tracking functionality completely unchanged.
+
+Preserve:
+- Tracking number input
+- Track Now action
+- Existing API call
+- Existing tracking logic
+- Existing validation
+- Existing status retrieval
+- Existing error/success handling
+
+The user must be able to enter their existing application tracking number and check its status exactly as before.
+
+4. BENEFITS STRIP
+
+Recreate the four-item strip below the hero:
+
+- Real-Time Updates
+- Fast & Easy
+- Secure & Private
+- Need Help?
+
+Use the existing functionality/content where applicable.
+
+5. MAIN CONTENT
+
+Create the three-column layout shown in the reference.
+
+LEFT:
+"How It Works?" card with the 3 simple steps:
+
+1. Enter Your Tracking Number
+2. Click on Track
+3. Get Latest Updates
+
+CENTER:
+"Recent Application Status" card showing the application's tracking timeline/status.
+
+Use REAL existing tracking data when available.
+
+Do NOT use hard-coded sample status data as the actual application result.
+
+RIGHT:
+- "Haven't applied yet?" card with Apply Now button
+- "Still Facing Issues?" support card
+
+Keep all existing links and contact/WhatsApp functionality working.
+
+6. TRACKING STATUS
+
+Preserve the existing status/timeline system.
+
+Display actual status information returned by the existing backend/API.
+
+Do not invent fake application dates, organizations, statuses, or tracking numbers.
+
+If there is no tracking result yet, show an appropriate empty/instruction state instead of fake data.
+
+7. FOOTER
+
+Recreate the premium footer structure shown in the reference:
+- Apna Enterprise branding
+- Description
+- Quick Links
+- Contact Information
+- Location/service visual
+- Copyright
+
+Do not break existing footer links.
+
+8. IMAGE REQUIREMENT
+
+IMAGE GENERATION IS STRICTLY PROHIBITED FOR THIS TASK.
+
+Do NOT:
+- generate images
+- search for images
+- download images
+- choose stock images
+- create replacement images
+
+The Track hero image will be provided separately later at:
+
+`/assets/track/hero-track.png`
+
+For now, only create the fixed placeholder/asset slot.
+
+9. PAGE ISOLATION
+
+This redesign is ONLY for the Track page.
+
+Do NOT modify:
+- Home
+- Services
+- Updates
+- Apply Now
+- PDF Compressor
+- Contact Us
+- Khata Book
+- Backend
+- Database
+- APIs
+- Other routes
+- Global styles that could affect other pages
+
+If shared components/styles need changes, use Track-page-specific components/classes.
+
+10. IMPORTANT
+
+Preserve all existing tracking data, APIs, routes and functionality.
+
+Before editing, inspect the existing Track page and tracking implementation first.
+
+Make the minimum required changes needed for this UI redesign.
+
+Keep desktop, tablet and mobile fully responsive.
+
+Do not change the actual tracking workflow; redesign the UI around the existing functionality only.

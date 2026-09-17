@@ -529,6 +529,13 @@ export default function Apply() {
                   <p><strong>{String(title)}</strong><small>{String(text)}</small></p>
                 </div>
               ))}
+              <img
+                src="/assets/apply/why-apply.png"
+                alt=""
+                aria-hidden="true"
+                className="apply-page__why-image"
+                onError={(event) => { event.currentTarget.style.visibility = "hidden"; }}
+              />
               <p className="apply-page__why-note">Making<br />Services<br />Simpler</p>
             </aside>
 
