@@ -1,0 +1,361 @@
+Redesign ONLY the existing PDF TOOLS page and its 4 tool tabs.
+
+The attached reference screenshots are the PRIMARY VISUAL REFERENCES.
+
+The 4 tabs are:
+
+1. PDF Compress
+2. Image Compress
+3. Images → PDF
+4. Merge / Edit PDF
+
+IMPORTANT:
+Keep the existing functionality and processing logic exactly as it is.
+This is a UI/UX redesign only.
+
+==================================================
+1. GLOBAL PDF TOOLS DESIGN
+==================================================
+
+Create a premium, clean Apna Enterprise design using:
+
+- Deep navy / dark blue
+- White
+- Gold/yellow accent
+- Light blue supporting accents
+- Clean white/light backgrounds for tool panels
+- Rounded cards
+- Clear spacing
+- Professional icons
+- Strong visual hierarchy
+
+Keep the existing top navbar and announcement ticker working.
+
+The PDF Tools page must remain completely separate from the designs of:
+- Home
+- Services
+- Updates
+- Apply Now
+- Track
+- Contact Us
+- Khata Book
+
+Do not modify those pages.
+
+If shared components/styles need changes, create PDF-tools-specific styling/components so other pages are not affected.
+
+==================================================
+2. HERO SECTIONS
+==================================================
+
+Each of the 4 tabs should have its OWN appropriate hero section.
+
+PDF Compress:
+"Reduce PDF Size Easily"
+
+Image Compress:
+"Compress Images Easily"
+
+Images → PDF:
+"Convert Images to PDF"
+
+Merge / Edit PDF:
+"Combine, Edit & Organize PDFs"
+
+Follow the corresponding attached reference design for each hero.
+
+IMPORTANT IMAGE RULE:
+
+DO NOT generate, search, download, or select any images.
+
+All hero visual artwork will be created separately by us later.
+
+Create fixed hero image/asset placeholders only.
+
+Use these future asset paths:
+
+`/assets/pdf-tools/hero-pdf-compress.png`
+`/assets/pdf-tools/hero-image-compress.png`
+`/assets/pdf-tools/hero-images-to-pdf.png`
+`/assets/pdf-tools/hero-merge-edit.png`
+
+The layout must remain stable when these files are not yet available.
+
+Do not replace the future artwork with random stock images or generated illustrations.
+
+==================================================
+3. TAB NAVIGATION
+==================================================
+
+Keep the 4-tab navigation:
+
+PDF Compress
+Image Compress
+Images → PDF
+Merge / Edit PDF
+
+The active tab should have the gold/cream highlighted state similar to the reference.
+
+Clicking a tab must open that tool without breaking its existing functionality.
+
+==================================================
+4. PDF COMPRESS
+==================================================
+
+Redesign the PDF Compressor interface based on the attached reference.
+
+Keep:
+
+- Upload / drag & drop area
+- Selected PDF files
+- Add More Files
+- Clear All
+- File name
+- File size
+- Ready/status indicator
+- Compression settings
+- Compression slider
+- Target file size input
+- Unit selector
+- Estimated output size
+- Output settings
+- Compress PDF button
+
+IMPORTANT:
+
+The compression slider and manual target-size input must BOTH remain.
+
+Slider:
+Low → Balanced → High → Maximum
+
+Manual target:
+Allow the user to enter an exact target size.
+
+Keep the existing compression calculation/processing logic.
+
+Do not remove functionality just to simplify the design.
+
+==================================================
+5. IMAGE COMPRESS
+==================================================
+
+Redesign the Image Compressor based on the attached reference.
+
+Keep:
+
+- Drag & Drop upload
+- Choose Images
+- Selected image list
+- Image thumbnails
+- Original size
+- Estimated/output size
+- Target size input
+- Unit selector
+- Compression slider
+- Estimated output size
+- Preview/view control if already supported
+- Delete individual image
+- Clear All
+- Add More Images
+- Compress Images button
+
+Preserve all existing image compression functionality.
+
+==================================================
+6. IMAGES → PDF
+==================================================
+
+Redesign this tab based on the attached reference.
+
+Keep:
+
+- Upload images
+- Drag & Drop
+- Choose Images
+- Selected image list
+- Image thumbnails
+- Image filename
+- Image dimensions/file size
+- Clear All
+- Add More Images
+- PDF settings
+- Page size
+- Image fit
+- Page orientation
+- Create & Download PDF
+
+VERY IMPORTANT:
+
+The UP/DOWN arrows in each image row are for REORDERING images.
+
+They are NOT rotate buttons.
+
+The arrows must move the image earlier/later in the PDF order.
+
+Do not label or design these controls as rotation controls.
+
+The PDF must be generated in the exact order currently shown in the list.
+
+==================================================
+7. MERGE / EDIT PDF
+==================================================
+
+Redesign this tab based on the attached reference.
+
+Keep:
+
+- Add PDF Files
+- Add Image Pages
+- PDF/image page thumbnails
+- Page numbering
+- Clear All
+- Add More Files
+- Grid View
+- List View
+- Page reordering
+- Delete page
+- PDF settings
+- Page size
+- Page orientation
+- Image fit
+- Create Merged PDF
+
+IMPORTANT:
+
+The UP/DOWN controls are for changing page order.
+
+They are NOT rotate controls.
+
+Preserve the existing page ordering logic exactly.
+
+==================================================
+8. FILE LISTS / UPLOAD STATES
+==================================================
+
+Make upload and selected-file states visually polished.
+
+When files are selected:
+
+- Do not collapse the upload area unexpectedly
+- Keep clear file hierarchy
+- Use fixed thumbnail dimensions
+- Keep filenames readable
+- Show file size clearly
+- Show status clearly
+- Keep delete controls easy to find
+- Keep Add More / Clear All controls visible
+
+The interface should remain usable with many files.
+
+==================================================
+9. RESPONSIVE DESIGN
+==================================================
+
+Make all 4 tools fully responsive.
+
+Desktop:
+Use wide professional layouts similar to references.
+
+Tablet:
+Adapt columns and spacing intelligently.
+
+Mobile:
+Stack sections cleanly.
+Keep buttons and controls easy to tap.
+Do not allow horizontal overflow.
+
+==================================================
+10. FUNCTIONALITY PRESERVATION
+==================================================
+
+DO NOT change or break:
+
+- Existing PDF compression logic
+- Existing image compression logic
+- Existing image-to-PDF conversion
+- Existing PDF merging/editing
+- File upload handling
+- Drag & drop
+- Reordering
+- Delete
+- Clear All
+- Add More Files
+- Settings
+- Download functionality
+- Error handling
+- Validation
+- APIs
+- Backend
+- Existing routes
+
+Inspect the existing implementation BEFORE editing.
+
+Reuse existing logic wherever possible.
+
+This must be a targeted UI redesign, NOT a rewrite of the PDF tools.
+
+==================================================
+11. IMAGE GENERATION PROHIBITION
+==================================================
+
+STRICT RULE:
+
+DO NOT generate any image.
+
+DO NOT search for images.
+
+DO NOT download images.
+
+DO NOT use stock images.
+
+DO NOT invent replacement hero artwork.
+
+Only create the UI placeholders/asset slots for the future hero images.
+
+Future assets:
+
+`/assets/pdf-tools/hero-pdf-compress.png`
+`/assets/pdf-tools/hero-image-compress.png`
+`/assets/pdf-tools/hero-images-to-pdf.png`
+`/assets/pdf-tools/hero-merge-edit.png`
+
+We will create these images separately and upload them later.
+
+==================================================
+12. PAGE ISOLATION
+==================================================
+
+ONLY modify the PDF Tools page.
+
+Do NOT redesign or modify:
+
+Home
+Services
+Updates
+Apply Now
+Track
+Contact Us
+Khata Book
+
+Do not modify backend/database/API architecture.
+
+If a shared component must be changed, use page-scoped styling or a PDF-tools-specific component.
+
+==================================================
+13. FINAL REQUIREMENT
+==================================================
+
+Before editing:
+
+1. Inspect the existing PDF Tools implementation.
+2. Identify the existing functionality for all 4 tabs.
+3. Preserve the existing logic.
+4. Implement the visual redesign around the existing functionality.
+5. Do not remove working features.
+6. Do not invent new functionality unnecessarily.
+7. Do not generate any images.
+8. Keep the four tools visually consistent but individually structured according to their respective reference screenshots.
+
+The attached screenshots are visual references for the four tools.
+
+Recreate the professional visual direction closely rather than inventing a completely different UI.
