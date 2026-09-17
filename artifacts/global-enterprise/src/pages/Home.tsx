@@ -1,299 +1,389 @@
-import type { ElementType } from "react";
+import { useMemo, useState } from "react";
 import { Link } from "wouter";
 import {
-  FaArrowRight,
-  FaBolt,
-  FaBoxOpen,
-  FaClock,
-  FaDesktop,
-  FaFileAlt,
-  FaHeadset,
-  FaIdCard,
-  FaPlane,
-  FaPrint,
-  FaRocket,
-  FaShieldAlt,
-  FaUniversity,
-  FaUsers,
+  FaArrowRight, FaBox, FaClipboardList, FaClock,
+  FaFileAlt, FaHeadset, FaLandmark, FaPlane, FaPrint,
+  FaShieldAlt, FaUsers, FaChevronRight, FaRupeeSign, FaCheckCircle,
+  FaSearch
 } from "react-icons/fa";
 import { Button } from "@/components/ui/button";
-import { SERVICE_CATEGORIES } from "@/lib/services";
 import Seo from "@/components/Seo";
+import { SERVICE_CATEGORIES } from "@/lib/services";
 import { useT } from "@/i18n";
 
-const CATEGORY_ICONS: Record<string, ElementType> = {
-  travel: FaPlane,
-  documents: FaIdCard,
-  forms: FaFileAlt,
-  digital: FaPrint,
-  financial: FaUniversity,
-  insurance: FaShieldAlt,
-  parcel: FaBoxOpen,
-};
-
-const CATEGORY_COLORS: Record<string, { icon: string; tag: string }> = {
-  travel: { icon: "linear-gradient(135deg, #0f5ed7, #3c9df6)", tag: "blue" },
-  documents: { icon: "linear-gradient(135deg, #0f9c78, #39c49a)", tag: "green" },
-  forms: { icon: "linear-gradient(135deg, #7135d2, #a16df4)", tag: "purple" },
-  digital: { icon: "linear-gradient(135deg, #df7915, #f6b63f)", tag: "orange" },
-  financial: { icon: "linear-gradient(135deg, #dc245c, #f47793)", tag: "pink" },
-  insurance: { icon: "linear-gradient(135deg, #235ac5, #67a8f8)", tag: "indigo" },
-  parcel: { icon: "linear-gradient(135deg, #d59b08, #f5cc4f)", tag: "yellow" },
-};
-
-const TAG_COLORS: Record<string, string> = {
-  blue: "home-service-tag--blue",
-  green: "home-service-tag--green",
-  purple: "home-service-tag--purple",
-  orange: "home-service-tag--orange",
-  pink: "home-service-tag--pink",
-  indigo: "home-service-tag--indigo",
-  yellow: "home-service-tag--yellow",
+// Reusable fixed image slot to handle missing images cleanly
+const ImageSlot = ({ src, alt, className }: { src: string, alt: string, className?: string }) => {
+  return (
+    <div className={`relative overflow-hidden flex items-center justify-center bg-black/5 dark:bg-white/5 ${className}`}>
+      <img
+        src={src}
+        alt={alt}
+        className="w-full h-full object-contain z-10 relative"
+        onError={(e) => {
+          e.currentTarget.style.display = 'none';
+          e.currentTarget.parentElement?.classList.add('fallback-visible');
+        }}
+      />
+      <div className="absolute inset-0 flex items-center justify-center border border-dashed border-white/10 opacity-0 [.fallback-visible_&]:opacity-100">
+        <img src="/logo.png" alt="" className="h-14 w-14 object-contain opacity-15 grayscale" />
+      </div>
+    </div>
+  );
 };
 
 export default function Home() {
-  const totalServices = SERVICE_CATEGORIES.reduce((acc, category) => acc + category.services.length, 0);
-  const { t } = useT();
-  const bullets = [t.home_bullet1, t.home_bullet2, t.home_bullet3, t.home_bullet4];
-
-  const proofPoints = [
-    { icon: FaUsers, value: "10,000+", label: t.home_happy_customers, tone: "yellow" },
-    { icon: FaBolt, value: `${totalServices}+`, label: t.home_services_available, tone: "blue" },
-    { icon: FaShieldAlt, value: "5+ Years", label: t.home_trusted_since, tone: "green" },
-    { icon: FaClock, value: "Quick & Easy", label: "Online Process", tone: "yellow" },
+  const { t, lang } = useT();
+  const [serviceSearch, setServiceSearch] = useState("");
+  const totalServices = SERVICE_CATEGORIES.reduce((total, category) => total + category.services.length, 0);
+  const heroPanels = [
+    { title: "Government\nDocuments", icon: FaFileAlt, bg: "bg-[#0b1b36]", iconBg: "bg-[#2563eb]" },
+    { title: "Travel &\nTicketing", icon: FaPlane, bg: "bg-[#0b1b36]", iconBg: "bg-[#2563eb]" },
+    { title: "Online\nApplications", icon: FaClipboardList, bg: "bg-[#0b1b36]", iconBg: "bg-[#10b981]" },
+    { title: "Printing &\nDigital Work", icon: FaPrint, bg: "bg-[#0b1b36]", iconBg: "bg-[#a855f7]" },
+    { title: "Financial\nServices", icon: FaRupeeSign, bg: "bg-[#0b1b36]", iconBg: "bg-[#f59e0b]" },
+    { title: "International\nParcels", icon: FaBox, bg: "bg-[#0b1b36]", iconBg: "bg-[#ea580c]" },
   ];
 
-  const heroChips = [
-    { icon: FaFileAlt, title: "Government", subtitle: "Documents", side: "left", position: "one", tone: "orange" },
-    { icon: FaDesktop, title: "Online", subtitle: "Applications", side: "left", position: "two", tone: "blue" },
-    { icon: FaPlane, title: "Travel &", subtitle: "Ticketing", side: "left", position: "three", tone: "blue" },
-    { icon: FaPrint, title: "Printing &", subtitle: "Digital Work", side: "right", position: "four", tone: "blue" },
-    { icon: FaUniversity, title: "Financial", subtitle: "Services", side: "right", position: "five", tone: "green" },
-    { icon: FaBoxOpen, title: "International", subtitle: "Parcels", side: "right", position: "six", tone: "orange" },
+  const stats = [
+    { value: "10,000+", label: "Happy Customers", icon: FaUsers },
+    { value: `${totalServices}+`, label: t.home_services_available, icon: FaBox },
+    { value: "5+ Years", label: "Trusted Since", icon: FaCheckCircle },
+    { value: "Quick & Easy", label: "Online Process", icon: FaClock },
   ];
+
+  const servicesConfig = [
+    {
+      id: "travel",
+      title: "Travel Services",
+      count: "3 services available",
+      chips: ["Air Ticket", "Train Ticket", "Bus Ticket"],
+      bgClass: "bg-[#eef5fc]",
+      iconBg: "bg-[#3b82f6]",
+      iconColor: "text-white",
+      textColor: "text-[#2563eb]",
+      chipBg: "bg-white",
+      chipText: "text-[#1d4ed8]",
+      img: "/assets/services/travel.png",
+      icon: FaPlane,
+    },
+    {
+      id: "documents",
+      title: "Document Services",
+      count: "13 services available",
+      chips: ["PAN Card", "Aadhaar Update", "Voter Card"],
+      bgClass: "bg-[#f0fdf4]",
+      iconBg: "bg-[#10b981]",
+      iconColor: "text-white",
+      textColor: "text-[#059669]",
+      chipBg: "bg-white",
+      chipText: "text-[#047857]",
+      img: "/assets/services/documents.png",
+      icon: FaFileAlt,
+    },
+    {
+      id: "forms",
+      title: "Online Form Services",
+      count: "6 services available",
+      chips: ["Job Forms", "College Admission", "School Forms"],
+      bgClass: "bg-[#faf5ff]",
+      iconBg: "bg-[#a855f7]",
+      iconColor: "text-white",
+      textColor: "text-[#7e22ce]",
+      chipBg: "bg-white",
+      chipText: "text-[#6b21a8]",
+      img: "/assets/services/online-forms.png",
+      icon: FaClipboardList,
+    },
+    {
+      id: "digital",
+      title: "Digital & Print Services",
+      count: "3 services available",
+      chips: ["Document Scanning", "Printing", "Website Design"],
+      bgClass: "bg-[#fff7ed]",
+      iconBg: "bg-[#f97316]",
+      iconColor: "text-white",
+      textColor: "text-[#c2410c]",
+      chipBg: "bg-white",
+      chipText: "text-[#9a3412]",
+      img: "/assets/services/digital-print.png",
+      icon: FaPrint,
+    },
+    {
+      id: "financial",
+      title: "Financial Services",
+      count: "2 services available",
+      chips: ["AEPS Payment", "Online Payments"],
+      bgClass: "bg-[#fff1f2]",
+      iconBg: "bg-[#f43f5e]",
+      iconColor: "text-white",
+      textColor: "text-[#be123c]",
+      chipBg: "bg-white",
+      chipText: "text-[#9f1239]",
+      img: "/assets/services/financial.png",
+      icon: FaLandmark,
+    },
+    {
+      id: "insurance",
+      title: "Insurance Services",
+      count: "1 service available",
+      chips: ["Life Insurance", "Bike Insurance"],
+      bgClass: "bg-[#ecfeff]",
+      iconBg: "bg-[#0ea5e9]",
+      iconColor: "text-white",
+      textColor: "text-[#0369a1]",
+      chipBg: "bg-white",
+      chipText: "text-[#075985]",
+      img: "/assets/services/insurance.png",
+      icon: FaShieldAlt,
+    },
+    {
+      id: "parcel",
+      title: "Parcel Services",
+      count: "1 service available",
+      chips: ["International Parcel Booking"],
+      bgClass: "bg-[#fefce8]",
+      iconBg: "bg-[#eab308]",
+      iconColor: "text-white",
+      textColor: "text-[#a16207]",
+      chipBg: "bg-white",
+      chipText: "text-[#854d0e]",
+      img: "/assets/services/parcel.png",
+      icon: FaBox,
+    },
+  ];
+
+  const serviceCards = useMemo(() => SERVICE_CATEGORIES.map((category) => {
+    const visual = servicesConfig.find((item) => item.id === category.id) ?? servicesConfig[0];
+    return {
+      ...visual,
+      title: category.name,
+      count: `${category.services.length} ${category.services.length === 1 ? "service" : "services"} available`,
+      chips: category.services.slice(0, 3).map((service) =>
+        service.name.replace(/\s*\(.*\)/, "").replace(" Services", "")
+      ),
+    };
+  }), []);
+
+  const visibleServiceCards = serviceCards.filter((card) => {
+    const query = serviceSearch.trim().toLowerCase();
+    return !query || card.title.toLowerCase().includes(query) ||
+      card.chips.some((chip) => chip.toLowerCase().includes(query));
+  });
 
   return (
-    <div className="home-page flex flex-col min-h-full">
+    <div className="home-page-redesign font-sans">
       <Seo
-        title="Professional Services in Firozepur, Punjab"
-        description="Apna Enterprise — Firozepur's trusted multi-service centre for travel ticketing, PAN card, Aadhaar, passport, government forms, printing, finance & international parcels."
-        keywords="Apna Enterprise, Firozepur services, PAN card apply, Aadhaar services, passport apply, train ticket booking, air ticket booking, government forms, printing Firozepur, financial services Punjab"
-        path="/"
-        jsonLd={[
-          {
-            "@context": "https://schema.org",
-            "@type": "LocalBusiness",
-            "name": "Apna Enterprise",
-            "image": "https://apnaenterprise.in/logo.png",
-            "url": "https://apnaenterprise.in",
-            "telephone": "+918437566186",
-            "address": {
-              "@type": "PostalAddress",
-              "streetAddress": "Dharamkot Road Jogewala",
-              "addressLocality": "Firozepur",
-              "addressRegion": "Punjab",
-              "postalCode": "142044",
-              "addressCountry": "IN"
-            },
-            "geo": {
-              "@type": "GeoCoordinates",
-              "latitude": 30.9279,
-              "longitude": 74.6143
-            },
-            "openingHoursSpecification": [
-              {
-                "@type": "OpeningHoursSpecification",
-                "dayOfWeek": ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"],
-                "opens": "09:00",
-                "closes": "20:00"
-              }
-            ],
-            "priceRange": "₹",
-            "description": "Firozepur's trusted multi-service centre for travel ticketing, PAN card, Aadhaar, passport, government forms, printing, financial services and international parcels.",
-            "hasOfferCatalog": {
-              "@type": "OfferCatalog",
-              "name": "Services",
-              "itemListElement": [
-                { "@type": "Offer", "itemOffered": { "@type": "Service", "name": "Air Ticket Booking" } },
-                { "@type": "Offer", "itemOffered": { "@type": "Service", "name": "Train Ticket Booking" } },
-                { "@type": "Offer", "itemOffered": { "@type": "Service", "name": "PAN Card Apply" } },
-                { "@type": "Offer", "itemOffered": { "@type": "Service", "name": "Aadhaar Card Services" } },
-                { "@type": "Offer", "itemOffered": { "@type": "Service", "name": "Passport Apply" } },
-                { "@type": "Offer", "itemOffered": { "@type": "Service", "name": "Voter Card Apply" } },
-                { "@type": "Offer", "itemOffered": { "@type": "Service", "name": "International Parcel Booking" } },
-                { "@type": "Offer", "itemOffered": { "@type": "Service", "name": "Money Transfer (AEPS)" } }
-              ]
-            },
-            "sameAs": []
-          },
-          {
-            "@context": "https://schema.org",
-            "@type": "WebSite",
-            "name": "Apna Enterprise",
-            "url": "https://apnaenterprise.in",
-            "potentialAction": {
-              "@type": "SearchAction",
-              "target": "https://apnaenterprise.in/services?q={search_term_string}",
-              "query-input": "required name=search_term_string"
-            }
-          }
-        ]}
+        title="Apna Enterprise | Professional Services"
+        description="Firozepur's trusted multi-service centre for travel ticketing, PAN card, Aadhaar, passport, government forms, printing, financial services and international parcels."
       />
 
-      <section className="home-hero text-white">
-        <div className="home-hero__grid" />
-        <div className="home-hero__glow home-hero__glow--left" />
-        <div className="home-hero__glow home-hero__glow--right" />
-
-        <div className="container mx-auto px-4 lg:px-8 relative z-10">
-          <div className="home-hero__content">
-            <div className="home-hero__copy">
-              <p className="home-eyebrow">Your trusted local partner</p>
-              <h1 className="home-hero__title">
-                Professional Services
-                <span>Made Simple</span>
-              </h1>
-              <p className="home-hero__description">{t.home_hero_desc}</p>
-
-              <div className="home-hero__proof">
-                <div className="home-hero__proof-item">
-                  <span className="home-hero__proof-icon"><FaBolt /></span>
-                  <span><strong>Fast Processing</strong><small>Save your time</small></span>
-                </div>
-                <div className="home-hero__proof-item">
-                  <span className="home-hero__proof-icon home-hero__proof-icon--green"><FaShieldAlt /></span>
-                  <span><strong>Reliable Support</strong><small>Always here to help</small></span>
-                </div>
-                <div className="home-hero__proof-item">
-                  <span className="home-hero__proof-icon home-hero__proof-icon--blue"><FaUsers /></span>
-                  <span><strong>Thousands</strong><small>of Happy Customers</small></span>
-                </div>
-              </div>
-
-              <div className="home-hero__actions">
-                <Button asChild className="btn-gold home-hero__primary">
-                  <Link href="/services">Explore Services <FaArrowRight /></Link>
-                </Button>
-                <Button asChild className="home-hero__secondary">
-                  <Link href="/contact"><FaHeadset /> Contact Us</Link>
-                </Button>
-              </div>
+      {/* ── HERO SECTION ── */}
+      <section className="bg-[#030918] relative flex items-center lg:h-[460px] overflow-hidden py-12 lg:py-0">
+        <div className="container mx-auto px-4 lg:px-8 relative z-10 flex flex-col lg:flex-row h-full">
+          
+          {/* Left Content */}
+          <div className="w-full lg:w-1/2 flex flex-col justify-center h-full relative z-20">
+            <div className="flex items-center gap-3 mb-4">
+               <img src="/logo.png" className="w-10 h-10 object-contain drop-shadow-[0_0_8px_rgba(255,215,0,0.5)]" alt="Apna Enterprise Logo" />
+               <div>
+                 <div className="text-[10px] text-[#FFD700] tracking-widest uppercase font-bold mb-0.5">Welcome To</div>
+                 <div className="text-xl font-bold text-white leading-none">Apna Enterprise</div>
+               </div>
             </div>
-
-            <div className="home-hero__visual" aria-label="Apna Enterprise service workspace illustration">
-              <div className="home-hero__halo" />
-              <div className="home-hero__scribble home-hero__scribble--one">Documents<br />Travel<br />Finance<br /><span>And More...</span></div>
-              <div className="home-hero__desk-glow" />
-
-              <div className="home-laptop">
-                <div className="home-laptop__screen">
-                  <div className="home-laptop__screen-top"><span /><span /><span /></div>
-                  <div className="home-laptop__screen-content">
-                    <img src="/logo.png" alt="" />
-                    <strong>Apna Enterprise</strong>
-                    <small>Professional Services</small>
+            
+            <h1 className="text-4xl md:text-5xl lg:text-[52px] font-extrabold text-white leading-[1.08] mb-4 tracking-tight">
+              Your Everyday<br />
+              <span className="text-[#FFD700]">Service Partner</span>
+            </h1>
+            
+            <div className="hidden md:block absolute top-8 right-20 lg:right-[8%] text-3xl font-cursive text-white/80 -rotate-6 whitespace-nowrap">
+               Simple Services<br/>Real Support
+            </div>
+            
+            <p className="text-gray-300 text-sm mb-6 max-w-lg leading-relaxed">{t.home_hero_desc}</p>
+            
+            <div className="flex flex-col sm:flex-row gap-4">
+              <Link href="/services">
+                <Button className="bg-[#FFD700] hover:bg-[#F2C14E] text-black font-bold px-6 py-5 rounded-md text-sm w-full sm:w-auto transition-transform hover:-translate-y-1">
+                  {t.home_explore} <FaArrowRight className="ml-2" />
+                </Button>
+              </Link>
+              <Link href="/contact">
+                <Button variant="outline" className="border-white/30 text-white hover:bg-white/10 px-6 py-5 rounded-md text-sm w-full sm:w-auto transition-colors">
+                  {t.home_contact}
+                </Button>
+              </Link>
+            </div>
+          </div>
+          
+          {/* Right Visuals (Desktop only) */}
+          <div className="hidden lg:block w-1/2 relative h-full">
+             {/* Center Hero Image */}
+              <div className="absolute right-[190px] top-1/2 -translate-y-1/2 w-[520px] h-[400px] pointer-events-none">
+                <ImageSlot src="/assets/home/hero-office.png" alt="Office Setup" className="w-full h-full bg-transparent" />
+             </div>
+             
+             {/* 6 Vertical Panels on far right */}
+              <div className="absolute right-0 top-1/2 -translate-y-1/2 flex flex-col gap-2 w-[190px] z-30">
+                {heroPanels.map((panel, idx) => (
+                  <div key={idx} className="flex items-center gap-3 bg-[#0c1a36]/90 border border-white/5 rounded-md py-1.5 px-2.5 hover:bg-[#12264c] transition cursor-pointer shadow-lg relative overflow-hidden group">
+                     <div className="absolute left-0 top-0 bottom-0 w-1 bg-[#FFD700] opacity-0 group-hover:opacity-100 transition-opacity"></div>
+                      <div className={`w-8 h-8 rounded-md flex items-center justify-center text-white ${panel.iconBg} shadow-sm`}>
+                       <panel.icon className="text-[16px]" />
+                     </div>
+                     <div className="text-white text-[11px] font-bold leading-tight whitespace-pre-line tracking-wide">{panel.title}</div>
+                     <FaChevronRight className="ml-auto text-white/30 text-[10px]" />
                   </div>
-                </div>
-                <div className="home-laptop__base">
-                  <div className="home-laptop__trackpad" />
-                </div>
-              </div>
-              <div className="home-desk-cup"><span /><i /><i /><i /></div>
-              <div className="home-desk-mouse" />
-
-              {heroChips.map(({ icon: Icon, title, subtitle, side, position, tone }) => (
-                <div key={title} className={`home-float-chip home-float-chip--${side} home-float-chip--${position} home-float-chip--${tone}`}>
-                  <span className="home-float-chip__icon"><Icon /></span>
-                  <span><strong>{title}</strong><small>{subtitle}</small></span>
-                </div>
-              ))}
-            </div>
+                ))}
+             </div>
           </div>
         </div>
       </section>
 
-      <section className="home-proof-strip">
-        <div className="container mx-auto px-4 lg:px-8">
-          <div className="home-proof-grid">
-            {proofPoints.map(({ icon: Icon, value, label, tone }, index) => (
-              <div className="home-proof-block" key={label}>
-                <span className={`home-proof-block__icon home-proof-block__icon--${tone}`}><Icon /></span>
-                <span><strong>{value}</strong><small>{label}</small></span>
-                {index < proofPoints.length - 1 && <i className="home-proof-divider" />}
-              </div>
-            ))}
+      {/* ── STATS STRIP ── */}
+      <section className="bg-[#050D24] border-y border-white/10 relative z-20">
+        <div className="container mx-auto px-4 lg:px-8 py-3.5">
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-6 lg:divide-x divide-white/10">
+             {stats.map((stat, idx) => (
+               <div key={idx} className="flex items-center justify-center lg:justify-start gap-4 lg:px-8">
+                  <stat.icon className="text-[#FFD700] text-2xl shrink-0 drop-shadow-[0_0_6px_rgba(255,215,0,0.4)]" />
+                 <div>
+                    <div className="text-white font-extrabold text-sm leading-none mb-1">{stat.value}</div>
+                   <div className="text-gray-400 text-[10px] md:text-xs uppercase tracking-wider font-semibold">{stat.label}</div>
+                 </div>
+               </div>
+             ))}
           </div>
         </div>
       </section>
 
-      <section className="home-services">
+      {/* ── SERVICES SECTION ── */}
+      <section className="bg-white py-9 relative">
         <div className="container mx-auto px-4 lg:px-8">
-          <div className="home-section-heading">
-            <div>
-              <p className="home-eyebrow home-eyebrow--gold">Our services</p>
-              <h2>A Complete Solution for Your Everyday Needs</h2>
-              <p>We offer {totalServices}+ services across {SERVICE_CATEGORIES.length + 1} categories to make your work easier, faster and hassle-free.</p>
-            </div>
-            <Link href="/services" className="home-section-link">View All Services <FaArrowRight /></Link>
+          
+          <div className="flex flex-col lg:flex-row lg:items-end justify-between mb-6 gap-5">
+             <div>
+                <div className="text-[#c18b0a] font-bold text-[10px] tracking-widest uppercase mb-1 flex items-center gap-3">
+                  <span className="w-10 h-[2px] bg-[#FFD700]"></span> SERVICES
+               </div>
+               <h2 className="text-3xl font-extrabold text-[#050D24] mb-1 tracking-tight">Explore Our Services</h2>
+               <p className="text-gray-500 text-xs">Choose from {totalServices}+ services across {SERVICE_CATEGORIES.length + 1} categories — all under one roof.</p>
+             </div>
+             <div className="flex items-center bg-white rounded-lg border border-gray-200 overflow-hidden w-full lg:w-96 shadow-[0_2px_10px_rgba(0,0,0,0.05)]">
+               <FaSearch className="text-gray-400 ml-5 text-lg" />
+               <input
+                 type="search"
+                 value={serviceSearch}
+                 onChange={(event) => setServiceSearch(event.target.value)}
+                 placeholder="Search services..."
+                 aria-label="Search services"
+                 className="flex-1 bg-transparent border-none outline-none px-3 py-2.5 text-xs text-gray-800"
+               />
+               <button type="button" aria-label="Search services" className="bg-[#FFD700] hover:bg-[#F2C14E] px-4 py-2.5 transition flex items-center justify-center border-l border-gray-200">
+                 <FaSearch className="text-black text-lg" />
+               </button>
+             </div>
           </div>
 
-          <div className="home-service-grid">
-            {SERVICE_CATEGORIES.map((category) => {
-              const Icon = CATEGORY_ICONS[category.id] ?? FaIdCard;
-              const colors = CATEGORY_COLORS[category.id] ?? CATEGORY_COLORS.documents;
-              return (
-                <div key={category.id} className="home-service-card">
-                  <div className="home-service-card__top">
-                    <span className="home-service-card__icon" style={{ background: colors.icon }}><Icon /></span>
-                    <div>
-                      <h3>{category.name}</h3>
-                      <p>{category.services.length} services available</p>
-                    </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
+             {visibleServiceCards.map((card) => (
+               <div key={card.id} className={`${card.bgClass} rounded-xl p-4 flex flex-col relative h-[190px] overflow-hidden group hover:shadow-[0_10px_30px_rgba(0,0,0,0.08)] transition-all duration-300 border border-black/5`}>
+                  {/* Icon */}
+                  <div className={`w-10 h-10 rounded-lg ${card.iconBg} ${card.iconColor} flex items-center justify-center mb-2 relative z-10 shadow-sm`}>
+                    <card.icon className="text-lg" />
                   </div>
-                  <div className="home-service-tags">
-                    {category.services.slice(0, 3).map((service) => (
-                      <span key={service.id} className={TAG_COLORS[colors.tag] ?? "home-service-tag--blue"}>
-                        {service.name.replace(/\s*\(.*\)/, "").replace(" Services", "")}
+                  
+                  {/* Text */}
+                  <h3 className="text-sm font-bold text-[#050D24] relative z-10">{card.title}</h3>
+                  <p className="text-[10px] text-gray-500 mb-2 relative z-10 font-medium">{card.count}</p>
+                  
+                  {/* Chips */}
+                  <div className="flex flex-wrap gap-1 mb-2 relative z-10 max-w-[90%]">
+                    {card.chips.map(chip => (
+                      <span key={chip} className={`text-[8px] font-bold ${card.chipBg} ${card.chipText} px-1.5 py-1 rounded shadow-sm border border-black/5 whitespace-nowrap`}>
+                        {chip}
                       </span>
                     ))}
                   </div>
-                  <Link href="/services" className="home-service-card__link">View Services <FaArrowRight /></Link>
+
+                  {/* Actions */}
+                  <div className="mt-auto relative z-10 flex items-center justify-between">
+                    <Link href="/services" className={`inline-flex items-center text-[10px] font-extrabold ${card.textColor} transition group-hover:underline underline-offset-4 decoration-2`}>
+                      View Services <FaArrowRight className="ml-2" />
+                    </Link>
+                    <Link href="/services" className={`w-8 h-8 rounded-full ${card.iconBg} text-white flex items-center justify-center shadow-md transform group-hover:scale-110 transition`}>
+                      <FaArrowRight className="text-xs" />
+                    </Link>
+                  </div>
+
+                  {/* Image Background */}
+                  <div className="absolute -right-2 bottom-10 w-28 h-28 pointer-events-none transition-transform duration-500 group-hover:scale-105 z-0">
+                    <ImageSlot src={card.img} alt={card.title} className="w-full h-full bg-transparent" />
+                  </div>
+               </div>
+             ))}
+
+             {/* 8th Card: Need Help */}
+              <div className="bg-[#f0f9ff] rounded-xl p-4 flex flex-col relative h-[190px] border border-blue-100 shadow-sm">
+                <div className="w-10 h-10 rounded-lg bg-[#0a1c40] flex items-center justify-center text-white mb-2">
+                  <FaHeadset className="text-lg" />
                 </div>
-              );
-            })}
+                <h3 className="text-sm font-bold text-[#050D24] mb-1">Need Help?</h3>
+                <p className="text-[10px] text-gray-600 mb-2 leading-relaxed">
+                  Not sure which service you need?<br/>Our team is here to guide you.
+                </p>
+                <div className="mt-auto relative z-10">
+                  <Link href="/contact" className="inline-flex items-center justify-center bg-[#050D24] text-white font-bold px-4 py-2 rounded-md text-[10px] hover:bg-[#0a1c40] transition w-full shadow-md">
+                    Contact Us <FaArrowRight className="ml-2" />
+                  </Link>
+                </div>
+             </div>
+          </div>
+        </div>
+      </section>
 
-            <div className="home-service-card home-service-card--help">
-              <div className="home-service-card__top">
-                <span className="home-service-card__icon home-service-card__icon--help"><FaHeadset /></span>
-                <div><h3>Need Help?</h3><p>Not sure which service you need?</p></div>
+      {/* ── CTA SECTION ── */}
+      <section className="bg-white pb-4 pt-0">
+        <div className="container mx-auto px-4 lg:px-8">
+          <div className="bg-[#050D24] rounded-xl p-6 relative overflow-hidden flex flex-col lg:flex-row items-center justify-between gap-6">
+            
+            {/* Pattern overlay */}
+            <div className="absolute inset-0 opacity-[0.03] pointer-events-none" style={{ backgroundImage: 'radial-gradient(circle at 2px 2px, white 1px, transparent 0)', backgroundSize: '24px 24px' }}></div>
+            
+            <div className="flex flex-col md:flex-row items-center md:items-start text-center md:text-left gap-6 relative z-10 w-full lg:w-auto">
+              <div className="w-12 h-12 rounded-full border border-[#FFD700]/30 bg-[#FFD700]/10 flex items-center justify-center flex-shrink-0 shadow-[0_0_15px_rgba(255,215,0,0.15)]">
+                 <FaFileAlt className="text-[#FFD700] text-2xl" />
               </div>
-              <p className="home-service-card__help-copy">Our team is here to guide you.</p>
-              <Button asChild className="btn-gold home-service-card__help-button">
-                <Link href="/contact">Contact Us <FaArrowRight /></Link>
-              </Button>
+              <div>
+                <div className="text-[#FFD700] font-bold text-xs tracking-widest uppercase mb-3">{t.home_cta_label}</div>
+                <h2 className="text-xl md:text-2xl font-extrabold text-white mb-1 tracking-tight">
+                  {lang === "en" ? <>Let Us Handle <span className="text-[#FFD700]">the Paperwork</span></> : t.home_cta_title}
+                </h2>
+                <p className="text-gray-300 text-xs max-w-md">{t.home_cta_desc}</p>
+              </div>
+            </div>
+
+            <div className="flex flex-col sm:flex-row items-center gap-4 relative z-10 w-full sm:w-auto">
+               <Link href="/apply" className="w-full sm:w-auto">
+                  <Button className="bg-[#FFD700] hover:bg-[#F2C14E] text-black font-bold px-6 py-5 rounded-md text-xs w-full shadow-lg transition-transform hover:-translate-y-1">
+                    {t.home_apply_now} <FaArrowRight className="ml-2" />
+                 </Button>
+               </Link>
+               <Link href="/contact" className="w-full sm:w-auto">
+                  <Button variant="outline" className="border-white/20 text-white hover:bg-white/10 px-6 py-5 rounded-md text-xs w-full transition-colors">
+                    <FaHeadset className="mr-2" /> {t.home_contact}
+                 </Button>
+               </Link>
+            </div>
+
+            {/* Handwriting text */}
+            <div className="hidden xl:block absolute right-16 top-10 font-cursive text-[32px] text-white/80 -rotate-6">
+              Your Needs<br/>Our Priority
             </div>
           </div>
         </div>
       </section>
 
-      <section className="home-cta">
-        <div className="home-cta__pattern" />
-        <div className="container mx-auto px-4 lg:px-8 relative z-10">
-          <div className="home-cta__inner">
-            <span className="home-cta__icon"><FaRocket /></span>
-            <div className="home-cta__copy">
-              <p className="home-eyebrow home-eyebrow--gold">Ready to get started?</p>
-              <h2>Let Us Handle the Paperwork</h2>
-              <p>Walk in or apply online — our team will guide you through every step.</p>
-            </div>
-            <div className="home-cta__actions">
-              <Button asChild className="btn-gold"><Link href="/apply">Apply Now <FaArrowRight /></Link></Button>
-              <Button asChild className="home-hero__secondary"><Link href="/contact"><FaHeadset /> Contact Us</Link></Button>
-            </div>
-            <div className="home-cta__note">Your Needs<br /><span>Our Support</span></div>
-          </div>
-        </div>
-      </section>
     </div>
   );
 }
