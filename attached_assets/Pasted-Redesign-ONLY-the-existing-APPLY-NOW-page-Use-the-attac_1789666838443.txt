@@ -1,0 +1,167 @@
+Redesign ONLY the existing APPLY NOW page.
+
+Use the attached reference screenshot as the PRIMARY VISUAL REFERENCE for the Apply Now page design.
+
+IMPORTANT:
+Recreate the overall layout, spacing, visual hierarchy and premium style of the reference. Do not invent a completely different design.
+
+PAGE STRUCTURE:
+
+1. HERO SECTION
+Create a premium dark navy/gold hero section with:
+- "SIMPLE STEPS, BIG SOLUTIONS"
+- "Apply for a Service"
+- Gold highlight on "Service"
+- Existing Apply Now description
+- Trust/benefit highlights:
+  Quick & Easy
+  100% Secure
+  Expert Support
+  Response Within 24 Hours
+- Dedicated hero image/visual area on the right
+
+Use this future asset path for the hero visual:
+`/assets/apply/hero-apply.png`
+
+IMPORTANT:
+The hero image will be created and provided separately.
+Do NOT generate, search, download, or choose any image yourself.
+For now, create a fixed placeholder/asset slot for the hero image.
+
+2. MAIN APPLICATION AREA
+
+Create the main three-column layout matching the reference:
+
+LEFT:
+A dark navy "Why Apply With Apna Enterprise?" panel with the existing benefits.
+
+CENTER:
+The main application form inside a premium white card.
+
+Keep the existing form functionality and fields.
+
+Use the step indicator:
+1. Your Details
+2. Service Details
+3. Review & Submit
+
+Organize the form into clear sections such as:
+- Personal Information
+- Service Details
+- Additional Options
+
+Keep all existing validation, form submission, service selection and application logic unchanged.
+
+RIGHT:
+Create the supporting sidebar similar to the reference:
+- Popular Services
+- Track Your Application
+- Need Help?
+
+Keep all existing links/actions/functionality.
+
+3. FORM
+
+Do NOT remove or rename existing form fields.
+
+Preserve:
+- Existing service selection
+- Existing application submission
+- Existing validation
+- Existing API calls
+- Existing tracking/application logic
+- Existing success/error handling
+
+The "Submit Application →" button should remain prominent and premium gold.
+
+4. POPULAR SERVICES
+
+Use the existing service data.
+
+Do not hard-code a small unrelated list if the existing data already provides the services.
+
+Keep the existing service links/actions functional.
+
+5. TRACK APPLICATION
+
+Keep the Track Application CTA connected to the existing tracking route/functionality.
+
+6. NEED HELP
+
+Keep the existing support information and WhatsApp/contact functionality.
+
+7. SUBSCRIBE SECTION
+
+Add/recreate the premium navy/gold subscription section shown near the bottom of the reference.
+
+Preserve existing subscription functionality if already implemented.
+
+8. STATS STRIP
+
+Recreate the statistics strip shown in the reference:
+- Happy Customers
+- Services Available
+- Trusted Since
+- Quick & Reliable Support
+
+Use the existing website values/data.
+
+9. FOOTER
+
+Recreate the premium footer structure shown in the reference:
+- Apna Enterprise branding
+- Description
+- Social links
+- Quick Links
+- Contact Information
+- Location/service visual
+- Copyright
+
+Do not break existing footer links.
+
+IMAGE REQUIREMENT:
+
+IMAGE GENERATION IS STRICTLY PROHIBITED FOR THIS TASK.
+
+Do NOT:
+- generate images
+- search for images
+- download images
+- choose stock images
+- create replacement images
+
+The Apply Now hero image will be provided separately later at:
+
+`/assets/apply/hero-apply.png`
+
+For now, only create the fixed placeholder/asset slot.
+
+PAGE ISOLATION:
+
+This redesign is ONLY for the Apply Now page.
+
+Do NOT modify:
+- Home
+- Services
+- Updates
+- Track
+- PDF Compressor
+- Contact Us
+- Khata Book
+- Backend
+- Database
+- APIs
+- Other routes
+- Global styling that could affect other pages
+
+If shared components need changes, use Apply-Now-page-specific components/classes.
+
+Before editing, inspect the existing Apply Now page, form logic, service data and API connections.
+
+Preserve all existing functionality.
+
+Make the minimum required changes to implement this redesign.
+
+Keep desktop, tablet and mobile fully responsive.
+
+Do not change the actual application workflow; redesign the UI around the existing functionality only.

@@ -11,7 +11,12 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { PDFDocument, StandardFonts, rgb } from "pdf-lib";
-import { FaCheckCircle, FaEnvelope, FaFileAlt, FaPhone, FaCopy, FaCheck, FaSearch, FaCreditCard, FaDownload } from "react-icons/fa";
+import {
+  FaArrowRight, FaBolt, FaCheck, FaCheckCircle, FaClock, FaCopy,
+  FaCreditCard, FaDownload, FaEnvelope, FaFileAlt, FaHeadset,
+  FaLaptop, FaPhone, FaSearch, FaShieldAlt, FaStar, FaThLarge,
+  FaUser, FaUsers,
+} from "react-icons/fa";
 import { SERVICE_CATEGORIES, ALL_SERVICE_IDS } from "@/lib/services";
 import { getServiceFormConfig, type ServiceField } from "@/lib/service-application-fields";
 import { useT } from "@/i18n";
@@ -452,8 +457,13 @@ export default function Apply() {
     );
   }
 
+  const totalServices = SERVICE_CATEGORIES.reduce((sum, category) => sum + category.services.length, 0);
+  const popularServices = SERVICE_CATEGORIES.flatMap((category) =>
+    category.services.slice(0, 1).map((service) => ({ ...service, category: category.name }))
+  );
+
   return (
-    <div className="flex flex-col min-h-full">
+    <div className="apply-page flex flex-col min-h-full">
       <Seo
         title="Apply for a Service — Quick & Easy Application"
         description="Apply online for any service at Apna Enterprise Firozepur. Fill in your details, choose your service, and we'll get back to you on WhatsApp promptly."
@@ -468,240 +478,239 @@ export default function Apply() {
           ]
         }}
       />
-      {/* ── Header ── */}
-      <section className="hero-navy text-white py-16">
-        <div className="container mx-auto px-4 lg:px-8 relative z-10 text-center">
-          <p className="font-semibold uppercase tracking-widest text-xs mb-3" style={{ color: GOLD_LIGHT }}>
-            {t.apply_online_label}
-          </p>
-          <h1 className="text-4xl md:text-5xl font-extrabold mb-4">{t.apply_title}</h1>
-          <div className="gold-line w-20 mx-auto mb-5" />
-          <p className="max-w-xl mx-auto text-lg" style={{ color: "rgba(255,255,255,0.75)" }}>
-            {t.apply_subtitle}
-          </p>
+      <section className="apply-page__hero">
+        <img
+          src="/assets/apply/hero-apply.png"
+          alt=""
+          aria-hidden="true"
+          className="apply-page__hero-image"
+          onError={(event) => { event.currentTarget.style.visibility = "hidden"; }}
+        />
+        <div className="container mx-auto px-4 lg:px-8 relative z-10">
+          <div className="apply-page__hero-grid">
+            <div className="apply-page__hero-copy">
+              <p className="apply-page__eyebrow">SIMPLE STEPS, BIG SOLUTIONS</p>
+              <h1>Apply for a <span>Service</span></h1>
+              <p>{t.apply_subtitle}</p>
+              <div className="apply-page__hero-benefits">
+                {[
+                  [FaBolt, "Quick & Easy", "Application"],
+                  [FaShieldAlt, "100% Secure", "Your data is safe"],
+                  [FaHeadset, "Expert Support", "We're here to help"],
+                  [FaClock, "Response", "Within 24 Hours"],
+                ].map(([Icon, title, subtitle]) => (
+                  <div key={String(title)}>
+                    <span><Icon /></span>
+                    <p><strong>{String(title)}</strong><small>{String(subtitle)}</small></p>
+                  </div>
+                ))}
+              </div>
+            </div>
+            <div className="apply-page__hero-slot" aria-hidden="true" />
+          </div>
         </div>
       </section>
 
-      <section className="flex-1 py-16" style={{ background: "#f8fafd" }}>
-         <div className="container mx-auto px-4 max-w-2xl">
-          <div className="bg-white rounded-2xl" style={{ border: "1px solid #e8edf5", boxShadow: "0 8px 40px rgba(7,27,74,0.08)" }}>
-            {/* Form Header */}
-            <div
-              className="px-8 py-5 rounded-t-2xl flex items-center gap-3"
-              style={{ background: "linear-gradient(135deg, #071B4A, #0d2069)", borderBottom: "1px solid rgba(255,255,255,0.08)" }}
-            >
-              <div
-                className="w-10 h-10 rounded-xl flex items-center justify-center"
-                style={{ background: "rgba(212,160,23,0.15)" }}
-              >
-                <FaFileAlt style={{ color: GOLD_LIGHT }} />
-              </div>
-              <div>
-                <h2 className="text-white font-bold text-lg">{t.apply_form_title}</h2>
-                <p className="text-xs" style={{ color: "rgba(255,255,255,0.55)" }}>{t.apply_form_subtitle}</p>
-              </div>
-            </div>
+      <section className="apply-page__main">
+        <div className="container mx-auto px-4 lg:px-8">
+          <div className="apply-page__layout">
+            <aside className="apply-page__why">
+              <h2>Why Apply With<br />Apna Enterprise?</h2>
+              <div className="apply-page__gold-line" />
+              {[
+                [FaThLarge, "Wide Range of Services", "All government and professional services under one roof."],
+                [FaUser, "Expert Guidance", "Our team will guide you at every step."],
+                [FaBolt, "Fast Processing", "Get your work done quickly."],
+                [FaCheckCircle, "Transparent Process", "No hidden charges."],
+                [FaShieldAlt, "Dedicated Support", "We are always here to help."],
+              ].map(([Icon, title, text]) => (
+                <div className="apply-page__why-item" key={String(title)}>
+                  <span><Icon /></span>
+                  <p><strong>{String(title)}</strong><small>{String(text)}</small></p>
+                </div>
+              ))}
+              <p className="apply-page__why-note">Making<br />Services<br />Simpler</p>
+            </aside>
 
-            <div className="p-8">
-              <Form {...form}>
-                <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-5">
-                  {paymentFailed && (
-                    <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
-                      {t.apply_payment_failed}
+            <div className="apply-page__form-column">
+              <div className="apply-page__form-card">
+                <div className="apply-page__steps">
+                  {[
+                    ["1", "Your Details"],
+                    ["2", "Service Details"],
+                    ["3", "Review & Submit"],
+                  ].map(([number, label], index) => (
+                    <div className={index === 0 ? "is-active" : ""} key={number}>
+                      <span>{number}</span><small>{label}</small>
                     </div>
-                  )}
-                  <FormField
-                    control={form.control}
-                    name="name"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel className="text-sm font-semibold text-slate-700">{t.apply_name}</FormLabel>
-                        <FormControl>
-                          <Input
-                            placeholder={t.apply_name_placeholder}
-                            className="h-11 rounded-xl"
-                            style={{ color: "#071B4A", background: "rgba(7,27,74,0.03)", borderColor: "#d1d9e8" }}
-                            {...field}
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
+                  ))}
+                </div>
 
-                  <FormField
-                    control={form.control}
-                    name="phone"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel className="text-sm font-semibold text-slate-700">{t.apply_phone}</FormLabel>
-                        <FormControl>
-                          <Input
-                            placeholder={t.apply_phone_placeholder}
-                            className="h-11 rounded-xl"
-                            style={{ color: "#071B4A", background: "rgba(7,27,74,0.03)", borderColor: "#d1d9e8" }}
-                            {...field}
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
+                <div className="apply-page__form-body">
+                  <div className="apply-page__section-heading">
+                    <span>1</span><h2>Personal Information</h2><small>All fields are required</small>
+                  </div>
+                  <Form {...form}>
+                    <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-5">
+                      {paymentFailed && (
+                        <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+                          {t.apply_payment_failed}
+                        </div>
+                      )}
+                      <div className="apply-page__field-grid">
+                        <FormField
+                          control={form.control}
+                          name="name"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>{t.apply_name}</FormLabel>
+                              <FormControl><Input placeholder={t.apply_name_placeholder} {...field} /></FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                        <FormField
+                          control={form.control}
+                          name="phone"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>{t.apply_phone}</FormLabel>
+                              <FormControl><Input placeholder={t.apply_phone_placeholder} {...field} /></FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                        <FormField
+                          control={form.control}
+                          name="email"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>{t.apply_email}</FormLabel>
+                              <FormControl><Input type="email" placeholder={t.apply_email_placeholder} {...field} /></FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                      </div>
 
-                  <FormField
-                    control={form.control}
-                    name="email"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel className="text-sm font-semibold text-slate-700">{t.apply_email}</FormLabel>
-                        <FormControl>
-                          <Input
-                            type="email"
-                            placeholder={t.apply_email_placeholder}
-                            className="h-11 rounded-xl"
-                            style={{ color: "#071B4A", background: "rgba(7,27,74,0.03)", borderColor: "#d1d9e8" }}
-                            {...field}
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
-                  <FormField
-                    control={form.control}
-                    name="service"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel className="text-sm font-semibold text-slate-700">{t.apply_service}</FormLabel>
-                        <Select
-                          onValueChange={(value) => {
-                            field.onChange(value);
-                            form.setValue("details", {}, { shouldValidate: true });
-                          }}
-                          value={field.value ?? ""}
-                        >
-                          <FormControl>
-                            <SelectTrigger className="h-11 rounded-xl" style={{ color: "#071B4A", background: "rgba(7,27,74,0.03)", borderColor: "#d1d9e8" }}>
-                              <SelectValue placeholder={t.apply_service_placeholder} />
-                            </SelectTrigger>
-                          </FormControl>
-                          <SelectContent className="max-h-72">
-                            {SERVICE_CATEGORIES.map((cat) => (
-                              <div key={cat.id}>
-                                <div className="px-3 py-1.5 text-xs font-bold text-slate-400 uppercase tracking-wider bg-slate-50 sticky top-0">
-                                  {cat.name}
-                                </div>
-                                {cat.services.map((s) => (
-                                  <SelectItem key={s.id} value={s.id} className="pl-5">
-                                    {s.name}
-                                  </SelectItem>
-                                ))}
-                              </div>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
-                  {/* Service-specific details */}
-                  {form.watch("service") && (
-                    <ServiceDetailsFields
-                      service={form.watch("service")}
-                      form={form}
-                    />
-                  )}
-
-                  <FormField
-                    control={form.control}
-                    name="message"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel className="text-sm font-semibold text-slate-700">{t.apply_message}</FormLabel>
-                        <FormControl>
-                          <Textarea
-                            placeholder={t.apply_message_placeholder}
-                            className="resize-none rounded-xl"
-                            style={{ color: "#071B4A", background: "rgba(7,27,74,0.03)", borderColor: "#d1d9e8" }}
-                            rows={4}
-                            {...field}
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
-                  {/* Callback Checkbox */}
-                  <FormField
-                    control={form.control}
-                    name="callbackRequested"
-                    render={({ field }) => (
-                      <FormItem>
-                        <label
-                          className="flex items-start gap-3 cursor-pointer rounded-xl p-4 transition-colors"
-                          style={{ background: field.value ? "rgba(212,160,23,0.07)" : "rgba(7,27,74,0.03)", border: `1.5px solid ${field.value ? "rgba(212,160,23,0.4)" : "#d1d9e8"}` }}
-                        >
-                          <div className="mt-0.5 flex-shrink-0">
-                            <input
-                              type="checkbox"
-                              checked={field.value ?? false}
-                              onChange={field.onChange}
-                              className="sr-only"
-                            />
-                            <div
-                              className="w-5 h-5 rounded-md border-2 flex items-center justify-center transition-all"
-                              style={{
-                                background: field.value ? GOLD : "white",
-                                borderColor: field.value ? GOLD : "#d1d9e8",
+                      <div className="apply-page__section-heading">
+                        <span>2</span><h2>Service Details</h2>
+                      </div>
+                      <FormField
+                        control={form.control}
+                        name="service"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>{t.apply_service}</FormLabel>
+                            <Select
+                              onValueChange={(value) => {
+                                field.onChange(value);
+                                form.setValue("details", {}, { shouldValidate: true });
                               }}
+                              value={field.value ?? ""}
                             >
-                              {field.value && <FaCheck className="text-white text-xs" />}
-                            </div>
-                          </div>
-                          <div>
-                            <p className="font-semibold text-slate-800 text-sm flex items-center gap-2">
-                              <FaPhone className="text-xs" style={{ color: GOLD }} />
-                              {t.apply_callback_label}
-                            </p>
-                            <p className="text-xs text-slate-500 mt-0.5 leading-relaxed">{t.apply_callback_desc}</p>
-                          </div>
-                        </label>
-                      </FormItem>
-                    )}
-                  />
+                              <FormControl>
+                                <SelectTrigger><SelectValue placeholder={t.apply_service_placeholder} /></SelectTrigger>
+                              </FormControl>
+                              <SelectContent className="max-h-72">
+                                {SERVICE_CATEGORIES.map((category) => (
+                                  <div key={category.id}>
+                                    <div className="px-3 py-1.5 text-xs font-bold text-slate-400 uppercase tracking-wider bg-slate-50 sticky top-0">{category.name}</div>
+                                    {category.services.map((service) => (
+                                      <SelectItem key={service.id} value={service.id} className="pl-5">{service.name}</SelectItem>
+                                    ))}
+                                  </div>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
 
-                  <Button
-                    type="submit"
-                    className="btn-gold w-full h-12 text-base rounded-xl mt-2"
-                    disabled={createApplication.isPending}
-                  >
-                    {createApplication.isPending ? t.apply_submitting : t.apply_submit}
-                  </Button>
+                      {form.watch("service") && <ServiceDetailsFields service={form.watch("service")} form={form} />}
 
-                  {createApplication.isError && (
-                    <p className="text-destructive text-sm text-center">
-                      {paymentFailed ? t.apply_payment_failed : t.apply_error}
-                    </p>
-                  )}
-                </form>
-              </Form>
+                      <FormField
+                        control={form.control}
+                        name="message"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>{t.apply_message}</FormLabel>
+                            <FormControl><Textarea placeholder={t.apply_message_placeholder} rows={4} {...field} /></FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+
+                      <div className="apply-page__section-heading">
+                        <span>3</span><h2>Additional Options</h2>
+                      </div>
+                      <FormField
+                        control={form.control}
+                        name="callbackRequested"
+                        render={({ field }) => (
+                          <FormItem>
+                            <label className={`apply-page__option${field.value ? " is-selected" : ""}`}>
+                              <input type="checkbox" checked={field.value ?? false} onChange={field.onChange} />
+                              <FaPhone />
+                              <p><strong>{t.apply_callback_label}</strong><small>{t.apply_callback_desc}</small></p>
+                            </label>
+                          </FormItem>
+                        )}
+                      />
+
+                      <Button type="submit" className="btn-gold apply-page__submit" disabled={createApplication.isPending}>
+                        {createApplication.isPending ? t.apply_submitting : t.apply_submit} <FaArrowRight />
+                      </Button>
+                      {createApplication.isError && (
+                        <p className="text-destructive text-sm text-center">{paymentFailed ? t.apply_payment_failed : t.apply_error}</p>
+                      )}
+                      <p className="apply-page__secure-note"><FaShieldAlt /> Your information is safe with us. We never share your details with third parties.</p>
+                    </form>
+                  </Form>
+                </div>
+              </div>
             </div>
+
+            <aside className="apply-page__right">
+              <section className="apply-page__side-card">
+                <header><strong><FaStar /> Popular Services</strong><Link href="/services">View All <FaArrowRight /></Link></header>
+                <div className="apply-page__popular">
+                  {popularServices.map((service, index) => (
+                    <button key={service.id} onClick={() => form.setValue("service", service.id as FormValues["service"])}>
+                      <span className={`is-${index % 7}`}><FaFileAlt /></span>{service.name}
+                    </button>
+                  ))}
+                </div>
+              </section>
+              <section className="apply-page__track-card">
+                <FaSearch /><div><h3>Track Your Application</h3><p>Already applied? Check your application status anytime.</p><Link href="/track">Track Application <FaArrowRight /></Link></div>
+              </section>
+              <section className="apply-page__help-card">
+                <header><FaHeadset /><div><h3>Need Help?</h3><p>Our support team is always here to help you.</p></div></header>
+                <a href="tel:+919876543210"><FaPhone /> <span><strong>+91 98765 43210</strong><small>Mon – Sat: 9:00 AM – 7:00 PM</small></span></a>
+                <a href="mailto:info@apnaenterprise.in"><FaEnvelope /> <span><strong>info@apnaenterprise.in</strong><small>We reply within 24 hours</small></span></a>
+                <a className="apply-page__whatsapp" href="https://wa.me/919876543210" target="_blank" rel="noreferrer">Chat on WhatsApp <FaArrowRight /></a>
+              </section>
+            </aside>
           </div>
 
-          {/* Track link below form */}
-          <div className="mt-5 text-center">
-            <Link
-              href="/track"
-              className="inline-flex items-center gap-2 text-sm font-semibold transition-colors hover:opacity-80"
-              style={{ color: GOLD }}
-            >
-              <FaSearch className="text-xs" />
-              Already applied? Track your application
-            </Link>
-          </div>
+          <section className="apply-page__subscribe">
+            <div className="apply-page__subscribe-icon"><FaEnvelope /></div>
+            <div><span>STAY UPDATED</span><h2>Get Latest Updates &amp; New Services</h2><p>Subscribe to our newsletter and never miss important updates.</p></div>
+            <form onSubmit={(event) => event.preventDefault()}><label><FaEnvelope /><input type="email" required placeholder="Enter your email address..." /></label><button>Subscribe</button></form>
+          </section>
+
+          <section className="apply-page__stats">
+            {[
+              [FaUsers, "10,000+", "Happy Customers"],
+              [FaThLarge, `${totalServices}+`, "Services Available"],
+              [FaShieldAlt, "5+ Years", "Trusted Since"],
+              [FaClock, "Quick & Reliable", "Support"],
+            ].map(([Icon, value, label]) => (
+              <div key={String(label)}><Icon /><p><strong>{String(value)}</strong><small>{String(label)}</small></p></div>
+            ))}
+          </section>
         </div>
       </section>
     </div>
