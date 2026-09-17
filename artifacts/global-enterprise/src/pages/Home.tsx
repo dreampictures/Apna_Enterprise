@@ -317,7 +317,7 @@ export default function Home() {
                   </div>
 
                   {/* Image Background */}
-                  <div className="absolute -right-2 bottom-10 w-28 h-28 pointer-events-none transition-transform duration-500 group-hover:scale-105 z-0">
+                  <div className="absolute right-2 bottom-10 w-28 h-28 pointer-events-none transition-transform duration-500 group-hover:scale-105 z-0">
                     <ImageSlot src={card.img} alt={card.title} className="w-full h-full bg-transparent" />
                   </div>
                </div>
