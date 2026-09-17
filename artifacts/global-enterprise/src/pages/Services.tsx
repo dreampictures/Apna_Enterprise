@@ -164,6 +164,13 @@ export default function Services() {
       />
       {/* ── Services Hero ── */}
       <section className="services-page__hero text-white">
+        <img
+          className="services-page__hero-background-image"
+          src="/assets/services/hero-service.png"
+          alt=""
+          aria-hidden="true"
+          onError={(event) => { event.currentTarget.style.display = "none"; }}
+        />
         <div className="container mx-auto px-4 lg:px-8 relative z-10">
           <div className="services-page__hero-grid">
             <div className="max-w-xl">
@@ -176,27 +183,7 @@ export default function Services() {
             </div>
 
             <div className="services-page__hero-visual" aria-hidden="true">
-              <img
-                className="services-page__hero-image"
-                src="/assets/services/hero-services.png"
-                alt=""
-                onError={(event) => { event.currentTarget.style.display = "none"; }}
-              />
               <div className="services-page__hero-script">Simple<br />Reliable<br />Hassle-Free</div>
-              <div className="services-page__hero-icons">
-                {[
-                  { label: "Documents", icon: FaFileAlt, tone: "blue" },
-                  { label: "Travel", icon: FaPlane, tone: "sky" },
-                  { label: "Finance", icon: FaCreditCard, tone: "green" },
-                  { label: "Printing", icon: FaPrint, tone: "purple" },
-                  { label: "International", icon: FaGlobe, tone: "violet" },
-                ].map(({ label, icon: Icon, tone }) => (
-                  <div key={label} className={`services-page__hero-icon services-page__hero-icon--${tone}`}>
-                    <Icon />
-                    <span>{label}</span>
-                  </div>
-                ))}
-              </div>
             </div>
           </div>
         </div>
