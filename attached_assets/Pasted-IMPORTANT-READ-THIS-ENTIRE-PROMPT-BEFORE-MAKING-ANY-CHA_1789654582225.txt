@@ -1,0 +1,624 @@
+IMPORTANT — READ THIS ENTIRE PROMPT BEFORE MAKING ANY CHANGES.
+
+I am redesigning ONLY the existing HOME PAGE of my production website.
+
+I have attached a reference screenshot with this prompt.
+
+THE ATTACHED REFERENCE SCREENSHOT IS THE PRIMARY VISUAL SOURCE.
+Your job is to RECREATE THIS DESIGN, NOT TO INVENT A NEW DESIGN.
+
+==================================================
+1. STRICT SCOPE — HOME PAGE ONLY
+==================================================
+
+DO NOT modify the design, layout, styling or functionality of:
+
+- Services page
+- Updates page
+- Apply Now page
+- Track page
+- PDF Compressor page
+- Contact Us page
+- Khata Book page
+- Any other existing page
+
+DO NOT redesign shared components if doing so would change the appearance of other pages.
+
+If a shared component is currently used by multiple pages, create a Home-page-specific version instead of changing the shared component.
+
+DO NOT change:
+- backend
+- database
+- APIs
+- authentication
+- routes
+- existing service data
+- announcement data
+- application logic
+- existing functionality
+
+Only change the Home page UI necessary to reproduce the attached reference.
+
+==================================================
+2. MOST IMPORTANT RULE — DO NOT INVENT A DIFFERENT DESIGN
+==================================================
+
+The attached screenshot is NOT merely inspiration.
+
+It is the PRIMARY VISUAL REFERENCE.
+
+Do NOT:
+- create your own alternative layout
+- simplify the design
+- replace the design with generic cards
+- rearrange major sections
+- change the section order
+- change the overall visual style
+- introduce a different hero
+- introduce a different card layout
+- use a completely different typography hierarchy
+- add unnecessary glassmorphism
+- add excessive animations
+- redesign it according to your own taste
+
+Match the reference screenshot as closely as possible.
+
+Before coding, inspect the screenshot carefully and identify:
+
+- header height
+- ticker height
+- hero height
+- content width
+- left/right proportions
+- heading sizes
+- spacing
+- button dimensions
+- service card dimensions
+- image positions
+- card border radius
+- shadows
+- section spacing
+- footer proportions
+- colors
+- typography hierarchy
+
+The final desktop Home page should visually feel like the attached screenshot.
+
+==================================================
+3. DO NOT USE AI-GENERATED IMAGES
+==================================================
+
+VERY IMPORTANT:
+
+Do NOT generate images.
+
+Do NOT use an AI image-generation service.
+
+Do NOT search for random stock images.
+
+Do NOT substitute random images from the internet.
+
+The screenshot contains specific visual assets that I will provide separately.
+
+For now, create stable image containers/placeholders with fixed dimensions.
+
+==================================================
+4. HERO IMAGE
+==================================================
+
+The large laptop/office visual shown in the reference must NOT be recreated by AI.
+
+Create a fixed image slot:
+
+/assets/home/hero-office.png
+
+The image container must preserve the exact intended size and position even if the file is missing.
+
+If the file does not exist, show a subtle dark premium placeholder.
+
+DO NOT allow the missing image to collapse the layout.
+
+Later I will upload the final image.
+
+==================================================
+5. SERVICE CARD IMAGES
+==================================================
+
+The service section contains 7 visual images.
+
+DO NOT generate these images.
+
+Create fixed local asset slots:
+
+/assets/services/travel.png
+/assets/services/documents.png
+/assets/services/online-forms.png
+/assets/services/digital-print.png
+/assets/services/financial.png
+/assets/services/insurance.png
+/assets/services/parcel.png
+
+These files will be uploaded later.
+
+The image areas must have fixed dimensions.
+
+Use:
+
+object-fit: contain;
+object-position: center;
+
+Do NOT let the image size change the card height.
+
+If an image is missing:
+- keep the same image area
+- show a clean placeholder
+- do not collapse the card
+- do not replace it with a random image
+
+When I later upload the PNG files using the exact filenames above, they should automatically appear without requiring another redesign.
+
+==================================================
+6. HEADER
+==================================================
+
+Recreate the header from the reference screenshot.
+
+Use:
+
+- Apna Enterprise logo on the left
+- HOME
+- SERVICES
+- UPDATES
+- APPLY NOW
+- TRACK
+- PDF COMPRESSOR
+- CONTACT US
+- Punjabi language button
+- Search icon
+- Online Support button
+
+Keep all existing navigation links and functionality.
+
+Do not change the actual routes.
+
+Visual requirements:
+- deep navy background
+- gold active-state styling
+- premium spacing
+- clean typography
+- subtle borders/glow
+- match reference proportions
+
+==================================================
+7. ANNOUNCEMENT TICKER
+==================================================
+
+Keep the EXISTING announcement ticker functionality and existing announcement content.
+
+Do not create fake announcements.
+
+Visual appearance must match the reference:
+
+- dark navy ticker
+- gold LATEST section
+- thin gold accent
+- continuous horizontal scrolling
+- compact professional typography
+
+Do not change the data source.
+
+==================================================
+8. HERO SECTION — MATCH REFERENCE
+==================================================
+
+Recreate the hero section very closely.
+
+Left side:
+
+WELCOME TO
+
+Apna Enterprise
+
+Main heading:
+
+Your Everyday
+Service Partner
+
+"Service Partner" should use the gold accent.
+
+Supporting text should remain based on the existing Home page content.
+
+Buttons:
+
+Explore Services
+Contact Us
+
+Also include the small trust/support visual elements shown in the reference.
+
+Right side:
+
+Large laptop/office visual area.
+
+Far right:
+
+Six vertically stacked floating service-category panels:
+
+- Government Documents
+- Travel & Ticketing
+- Online Applications
+- Printing & Digital Work
+- Financial Services
+- International Parcels
+
+Use icons and existing category information.
+
+Do not replace this structure with a different layout.
+
+==================================================
+9. STATS STRIP
+==================================================
+
+Immediately below the hero, reproduce the reference stats strip.
+
+Four items:
+
+10,000+
+Happy Customers
+
+29+
+Services Available
+
+5+ Years
+Trusted Since
+
+Quick & Easy
+Online Process
+
+Keep the same horizontal structure and visual hierarchy.
+
+==================================================
+10. EXPLORE OUR SERVICES
+==================================================
+
+This section must closely match the attached reference.
+
+Heading:
+
+Explore Our Services
+
+Subtitle:
+
+Choose from 29+ services across 8 categories — all under one roof.
+
+Include the service search field in the same approximate position as the reference.
+
+Use the following categories:
+
+1. Travel Services
+2. Document Services
+3. Online Form Services
+4. Digital & Print Services
+5. Financial Services
+6. Insurance Services
+7. Parcel Services
+8. Need Help?
+
+IMPORTANT:
+
+Do NOT invent new categories.
+
+Do NOT remove existing categories.
+
+Do NOT change existing service names, service counts, chips or links.
+
+Use the existing website/database data.
+
+==================================================
+11. SERVICE CARD VISUAL STRUCTURE
+==================================================
+
+The cards must follow the reference structure.
+
+Each card should contain:
+
+- colored icon area
+- large visual/image area
+- category title
+- service count
+- small service chips
+- View Services link
+- circular arrow button
+
+The 7 service cards must use their corresponding image assets.
+
+The Need Help card should remain a support/contact card and should NOT require a photograph.
+
+Do not turn these cards into generic plain cards.
+
+The images should visually occupy approximately the same area as the reference screenshot.
+
+==================================================
+12. CARD COLORS
+==================================================
+
+Keep the reference's category-based visual identity:
+
+Travel → blue
+Documents → green
+Online Forms → purple
+Digital & Print → orange
+Financial → red/pink
+Insurance → cyan/blue
+Parcel → gold/orange
+Need Help → light blue
+
+Use these as visual accents without making the page overly colorful.
+
+Overall page must still feel like ONE premium Apna Enterprise website.
+
+==================================================
+13. CTA SECTION
+==================================================
+
+Recreate the CTA section shown near the bottom.
+
+Main heading:
+
+Let Us Handle the Paperwork
+
+Supporting text:
+
+Walk in or apply online — our team will guide you through every step.
+
+Buttons:
+
+Apply Now
+Contact Us
+
+Keep existing functionality.
+
+Do not create a different CTA layout.
+
+==================================================
+14. FOOTER
+==================================================
+
+Keep the existing footer information and functionality.
+
+Reproduce the reference visual style:
+
+- dark navy background
+- Apna Enterprise branding
+- Quick Links
+- Contact Information
+- location/support visual
+- social icons
+- bottom copyright area
+
+Do NOT change actual contact details.
+
+Do NOT change actual links.
+
+==================================================
+15. COLORS
+==================================================
+
+Primary visual palette:
+
+Deep Navy
+Dark Blue
+Gold / Warm Yellow
+White
+
+Use subtle supporting colors only where required for service categories.
+
+Do NOT introduce unrelated colors.
+
+The page should feel premium, clean and professional.
+
+==================================================
+16. TYPOGRAPHY
+==================================================
+
+Match the reference typography hierarchy.
+
+Important:
+
+- large bold hero heading
+- strong section headings
+- smaller supporting text
+- compact card text
+- readable navigation
+- gold eyebrow labels
+
+Do not randomly change fonts or typography styles.
+
+Use the existing project font system if it already matches the reference.
+
+Do not install a new font package unless absolutely necessary.
+
+==================================================
+17. RESPONSIVE DESIGN
+==================================================
+
+Desktop is the PRIMARY target because the attached screenshot is desktop.
+
+First reproduce the desktop design accurately.
+
+Then make it responsive for:
+- tablet
+- mobile
+
+On mobile:
+- preserve the same visual identity
+- stack sections intelligently
+- do not break navigation
+- do not remove important content
+- keep cards usable
+
+Do not let responsive changes alter the desktop design.
+
+==================================================
+18. PERFORMANCE / REPLIT COST
+==================================================
+
+I specifically want to minimize Replit Agent usage/cost.
+
+Therefore:
+
+DO NOT regenerate the entire application.
+
+DO NOT rewrite the project.
+
+DO NOT rebuild existing architecture.
+
+DO NOT install unnecessary packages.
+
+DO NOT generate images.
+
+DO NOT add image-generation APIs.
+
+DO NOT refactor unrelated code.
+
+DO NOT modify backend code.
+
+DO NOT modify database code.
+
+DO NOT modify unrelated pages.
+
+Reuse existing:
+- components
+- data
+- routes
+- APIs
+- service information
+- announcement system
+- navigation
+
+Only make the minimum Home-page UI changes necessary.
+
+==================================================
+19. IMPORTANT — INSPECT BEFORE EDITING
+==================================================
+
+Before changing anything:
+
+1. Inspect the existing Home page implementation.
+2. Identify which components belong ONLY to Home.
+3. Identify existing shared components.
+4. Reuse existing data and functionality.
+5. Compare the existing Home page with the attached reference.
+6. Modify only what is necessary.
+
+Do NOT start by rewriting files blindly.
+
+==================================================
+20. DO NOT TOUCH OTHER PAGE DESIGNS
+==================================================
+
+This is extremely important.
+
+The website intentionally has DIFFERENT designs for different pages.
+
+Khata Book has its own design.
+
+Services has its own design.
+
+Updates has its own design.
+
+Apply Now has its own design.
+
+Track has its own design.
+
+PDF Compressor has its own design.
+
+Contact Us has its own design.
+
+KEEP THEM EXACTLY AS THEY ARE.
+
+Do not make global CSS changes that accidentally alter them.
+
+If necessary, scope all Home page styles under a Home-specific wrapper/class.
+
+==================================================
+21. IMAGE ASSET STRUCTURE
+==================================================
+
+Use:
+
+/assets/home/hero-office.png
+
+and:
+
+/assets/services/travel.png
+/assets/services/documents.png
+/assets/services/online-forms.png
+/assets/services/digital-print.png
+/assets/services/financial.png
+/assets/services/insurance.png
+/assets/services/parcel.png
+
+Create the folders if they do not already exist.
+
+Do not create fake AI images.
+
+I will add the final PNGs later.
+
+==================================================
+22. FINAL VALIDATION
+==================================================
+
+After implementation:
+
+1. Run the project.
+2. Check the Home page.
+3. Compare it against the attached screenshot.
+4. Check desktop proportions.
+5. Check spacing.
+6. Check service-card sizes.
+7. Check hero composition.
+8. Check header/ticker.
+9. Check CTA.
+10. Check footer.
+11. Check responsive layout.
+12. Check TypeScript/build/runtime errors.
+
+Fix only issues related to this Home page redesign.
+
+Then verify that these routes still work and their designs have NOT changed:
+
+/services
+/updates
+/apply
+/track
+/pdf-compressor
+/contact
+/khaata
+
+==================================================
+FINAL INSTRUCTION
+==================================================
+
+DO NOT "IMPROVE" THE REFERENCE BY INVENTING YOUR OWN DESIGN.
+
+DO NOT MAKE A DIFFERENT VERSION.
+
+DO NOT SIMPLIFY IT.
+
+DO NOT CHANGE THE SECTION ORDER.
+
+DO NOT REPLACE THE SERVICE IMAGE AREAS WITH OTHER DESIGNS.
+
+DO NOT GENERATE IMAGES.
+
+USE THE ATTACHED REFERENCE SCREENSHOT AS THE PRIMARY VISUAL TARGET.
+
+The goal is:
+
+EXISTING HOME PAGE FUNCTIONALITY
++
+REFERENCE SCREENSHOT'S VISUAL DESIGN
++
+LOCAL IMAGE PLACEHOLDERS FOR THE 7 SERVICE IMAGES
++
+NO CHANGES TO ANY OTHER PAGE.
