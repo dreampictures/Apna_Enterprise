@@ -327,8 +327,8 @@ export default function Home() {
                   </div>
 
                   {/* Image Background */}
-                  <div className="absolute inset-0 pointer-events-none transition-transform duration-500 group-hover:scale-105 z-0">
-                    <ImageSlot src={card.img} alt={card.title} fit="cover" className="w-full h-full bg-transparent opacity-30" />
+                  <div className="absolute inset-0 overflow-hidden rounded-xl pointer-events-none z-0">
+                    <ImageSlot src={card.img} alt={card.title} fit="contain" className="w-full h-full bg-transparent opacity-25" />
                     <div className="absolute inset-0 bg-gradient-to-r from-white/95 via-white/75 to-white/25" />
                   </div>
                </div>
