@@ -11,6 +11,7 @@ import khaataRouter from "./khaata";
 import cametiRouter from "./cameti";
 import uploadRouter from "./upload";
 import excelImportRouter from "./excel-import";
+import contactMessagesRouter from "./contact-messages";
 
 const router: IRouter = Router();
 
@@ -26,5 +27,6 @@ router.use(khaataRouter);
 router.use(cametiRouter);
 router.use(uploadRouter);
 router.use(excelImportRouter);
+router.use(contactMessagesRouter);
 
 export default router;

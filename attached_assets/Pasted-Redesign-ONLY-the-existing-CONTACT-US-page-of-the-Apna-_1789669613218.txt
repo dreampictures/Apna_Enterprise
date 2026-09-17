@@ -1,0 +1,367 @@
+Redesign ONLY the existing CONTACT US page of the Apna Enterprise website.
+
+Use the attached Contact Us screenshot as the PRIMARY VISUAL REFERENCE.
+
+This task has TWO parts:
+1. Redesign the Contact Us page UI.
+2. Make the "Send Us a Message" form fully functional and connected to the Admin Panel Inbox.
+
+Do NOT generate, search, download, or choose any images for this task.
+
+==================================================
+1. CONTACT PAGE HERO
+==================================================
+
+Recreate the premium Contact Us hero section similar to the reference.
+
+Use:
+
+"WE’RE HERE FOR YOU"
+
+"Contact Us"
+
+"Have a question, need support, or want to work with us?
+We’re just a message away."
+
+Include the three supporting feature items:
+
+- Quick Response
+- Dedicated Support
+- Trusted & Secure
+
+Keep the dark navy/blue + gold Apna Enterprise visual identity.
+
+If the hero requires an image/visual asset, create only a fixed placeholder/asset slot.
+We will provide any required image separately later.
+
+==================================================
+2. MAIN CONTACT LAYOUT
+==================================================
+
+Create the three-column layout from the reference.
+
+LEFT:
+"Our Contact Information"
+
+Show existing business contact information:
+
+- Email
+- Phone
+- Address
+- Working Hours
+
+Keep the existing real contact information already configured in the project.
+
+Do not invent or replace existing business details.
+
+Include appropriate copy buttons if the existing functionality supports them.
+
+==================================================
+3. SEND US A MESSAGE — FULLY FUNCTIONAL
+==================================================
+
+The center card must be:
+
+"Send Us a Message"
+
+"Fill out the form below and we'll get back to you as soon as possible."
+
+Fields:
+
+- Full Name *
+- Email Address *
+- Phone Number
+- Subject *
+- Your Message *
+
+Add:
+
+"Send Message →"
+
+The form must NOT be a visual-only form.
+
+When a visitor submits the form:
+
+1. Validate all required fields.
+2. Validate email format.
+3. Validate message length.
+4. Submit the message to the backend.
+5. Save the message in the existing database.
+6. Show a clear success confirmation to the visitor.
+7. Clear/reset the form after successful submission where appropriate.
+8. Handle API/server errors properly.
+9. Prevent duplicate submissions while the request is processing.
+
+Do not use mailto: as the primary implementation.
+
+The message must be stored so the admin can manage it from the Admin Panel.
+
+==================================================
+4. ADMIN PANEL → INBOX
+==================================================
+
+Add a proper "Inbox" section inside the existing Admin Panel.
+
+Do NOT create a separate admin system.
+
+Use the existing admin authentication and admin layout.
+
+The Inbox should display messages submitted from Contact Us.
+
+Each message should contain:
+
+- Sender name
+- Email
+- Phone
+- Subject
+- Message
+- Date/time received
+- Read / Unread status
+- Status if useful
+- View details action
+- Delete action
+
+Admin should be able to:
+
+- Open/read a message
+- Mark as read
+- Mark as unread
+- Delete a message
+- See newest messages first
+
+Show an unread message count/badge in the Admin Panel navigation.
+
+Example:
+
+Inbox  ● 3
+
+The unread count must update from actual database data.
+
+==================================================
+5. DATABASE / BACKEND
+==================================================
+
+Before making changes, inspect the existing backend/database architecture.
+
+Reuse the existing PostgreSQL + Drizzle ORM architecture.
+
+Do NOT create a second database.
+
+If a contact-message table does not already exist, create an appropriate database table using the existing Drizzle schema/migration system.
+
+Suggested fields:
+
+- id
+- fullName
+- email
+- phone
+- subject
+- message
+- isRead
+- createdAt
+
+Use the project's existing conventions and naming style rather than blindly copying these field names if the project already has an established pattern.
+
+Create the necessary API endpoint(s) for:
+
+- submitting a contact message
+- retrieving messages for authenticated admins
+- marking messages read/unread
+- deleting messages
+
+Protect all admin inbox endpoints with the existing admin authentication.
+
+NEVER expose the admin inbox or submitted messages publicly.
+
+==================================================
+6. ADMIN INBOX UI
+==================================================
+
+Create a professional inbox interface matching the existing Admin Panel design.
+
+Include:
+
+- Inbox heading
+- Unread count
+- Message list
+- Sender
+- Subject
+- Short message preview
+- Date/time
+- Read/unread visual state
+- View message
+- Mark read/unread
+- Delete
+
+Unread messages should be visually distinguishable.
+
+Clicking a message should open a clean message detail view/modal/page showing the complete message and sender information.
+
+Keep the interface responsive.
+
+==================================================
+7. RIGHT COLUMN
+==================================================
+
+Recreate the "Find Us Here" card.
+
+Include:
+
+- Location icon
+- Existing business address
+- Existing map/location functionality if already present
+- Map
+- "Get Directions →" button
+
+Do not break the existing map integration.
+
+Do not replace the existing location with invented coordinates.
+
+==================================================
+8. SUPPORT FEATURES
+==================================================
+
+Below the main cards, recreate the four support cards:
+
+- Quick Response
+- Secure Communication
+- Dedicated Support
+- Client Satisfaction
+
+Keep the content professional and concise.
+
+==================================================
+9. IMMEDIATE ASSISTANCE CTA
+==================================================
+
+Recreate the bottom dark navy CTA:
+
+"NEED IMMEDIATE ASSISTANCE?"
+
+"We’re here to help!"
+
+Include:
+
+- Call Now
+- Email Us
+
+Buttons must use the existing configured phone/email information.
+
+==================================================
+10. SUCCESS / ERROR UX
+==================================================
+
+After successful contact form submission show a professional confirmation such as:
+
+"Message Sent Successfully"
+
+"Thank you for contacting Apna Enterprise. Our team will get back to you soon."
+
+Do not use browser alert().
+
+Use the project's existing toast/notification system if available.
+
+For errors, show a clear user-friendly message without exposing backend/database errors.
+
+==================================================
+11. SPAM / DUPLICATE PROTECTION
+==================================================
+
+Use reasonable protection against accidental duplicate submissions.
+
+Disable the Send Message button while submitting.
+
+Do not introduce unnecessary third-party services unless the existing project already uses one.
+
+==================================================
+12. LANGUAGE SUPPORT
+==================================================
+
+Respect the existing English/Punjabi language system.
+
+All Contact Us page text, form labels, validation messages, success messages, error messages, and Inbox UI should follow the currently selected website language where the existing translation architecture supports it.
+
+Do not unnecessarily mix English and Punjabi.
+
+==================================================
+13. IMAGE RULE
+==================================================
+
+STRICT:
+
+DO NOT generate images.
+DO NOT search for images.
+DO NOT download stock images.
+DO NOT use random AI-generated images.
+
+If an image area is needed, create a fixed placeholder/asset slot only.
+
+We will create and provide visual assets separately.
+
+==================================================
+14. PAGE ISOLATION
+==================================================
+
+ONLY redesign/update the Contact Us page and the required Admin Panel Inbox functionality.
+
+Do NOT redesign:
+
+- Home
+- Services
+- Updates
+- Apply Now
+- Track
+- PDF Compressor
+- Khata Book
+
+Do not change their visual designs.
+
+If shared components/styles need modification, use Contact-page-specific or Inbox-specific styles/components wherever possible.
+
+==================================================
+15. IMPORTANT — PRESERVE EXISTING FUNCTIONALITY
+==================================================
+
+Before editing, inspect:
+
+- Existing Contact Us page
+- Existing admin authentication
+- Existing database schema
+- Existing Drizzle setup
+- Existing API architecture
+- Existing map integration
+- Existing contact information
+- Existing notification/toast system
+
+Reuse existing architecture.
+
+Do NOT rewrite the project.
+
+Do NOT replace working APIs unnecessarily.
+
+Do NOT remove existing functionality.
+
+==================================================
+16. FINAL TEST
+==================================================
+
+After implementation test the complete flow:
+
+Visitor:
+Contact Us → Fill form → Send Message → Success confirmation
+
+Admin:
+Admin Login → Inbox → See new message → Open message → Mark read/unread → Delete
+
+Verify:
+
+- Database record is created.
+- New message appears in Admin Inbox.
+- Unread count updates.
+- Admin-only access works.
+- Form validation works.
+- Error handling works.
+- Existing Contact page links/buttons still work.
+- Other website pages remain visually unchanged.
+
+This is a targeted Contact Us redesign + working Contact Inbox implementation, NOT a full-project rewrite.

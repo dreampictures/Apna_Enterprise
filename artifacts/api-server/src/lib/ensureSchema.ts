@@ -208,6 +208,21 @@ export async function ensureSchema() {
 
       ALTER TABLE announcements ADD COLUMN IF NOT EXISTS pdf_url TEXT;
       ALTER TABLE announcements ADD COLUMN IF NOT EXISTS pdf_key TEXT;
+
+       CREATE TABLE IF NOT EXISTS contact_messages (
+         id SERIAL PRIMARY KEY,
+         full_name TEXT NOT NULL,
+         email TEXT NOT NULL,
+         phone TEXT,
+         subject TEXT NOT NULL,
+         message TEXT NOT NULL,
+         is_read BOOLEAN NOT NULL DEFAULT false,
+         created_at TIMESTAMP DEFAULT NOW() NOT NULL
+       );
+       CREATE INDEX IF NOT EXISTS contact_messages_created_at_idx
+         ON contact_messages (created_at DESC);
+       CREATE INDEX IF NOT EXISTS contact_messages_duplicate_idx
+         ON contact_messages (email, subject, message, created_at);
     `);
 
     logger.info("Database schema verified / created successfully");

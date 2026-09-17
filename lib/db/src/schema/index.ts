@@ -149,3 +149,22 @@ export const announcementsTable = pgTable("announcements", {
 });
 
 export type Announcement = typeof announcementsTable.$inferSelect;
+
+export const contactMessagesTable = pgTable("contact_messages", {
+  id: serial("id").primaryKey(),
+  fullName: text("full_name").notNull(),
+  email: text("email").notNull(),
+  phone: text("phone"),
+  subject: text("subject").notNull(),
+  message: text("message").notNull(),
+  isRead: boolean("is_read").default(false).notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+export const insertContactMessageSchema = createInsertSchema(contactMessagesTable).omit({
+  id: true,
+  isRead: true,
+  createdAt: true,
+});
+export type InsertContactMessage = z.infer<typeof insertContactMessageSchema>;
+export type ContactMessage = typeof contactMessagesTable.$inferSelect;

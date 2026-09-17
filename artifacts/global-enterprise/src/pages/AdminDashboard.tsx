@@ -19,10 +19,12 @@ import {
   FaFilter, FaBuilding, FaEye, FaTag, FaWhatsapp,
   FaMobileAlt, FaDesktop, FaChartBar, FaPhoneAlt, FaBullhorn,
   FaCheck, FaHourglassHalf, FaBook, FaMoneyBillWave, FaFileAlt, FaCreditCard,
+  FaEnvelope,
 } from "react-icons/fa";
 import { SERVICE_CATEGORIES, SERVICE_TO_CATEGORY, ALL_SERVICE_IDS } from "@/lib/services";
 import { useT } from "@/i18n";
 import AdminAnnouncements from "./AdminAnnouncements";
+import AdminInbox, { useAdminInbox } from "./AdminInbox";
 
 const CATEGORY_BADGE: Record<string, string> = {
   "Travel Services": "bg-blue-100 text-blue-700",
@@ -110,7 +112,7 @@ function useAdminPayments(token: string | null, enabled: boolean) {
   });
 }
 
-type Tab = "applications" | "leads" | "analytics" | "pricing" | "payments" | "updates";
+type Tab = "applications" | "leads" | "analytics" | "pricing" | "payments" | "updates" | "inbox";
 type ApplicationFolder = "all" | "pending" | "review" | "in_progress" | "completed" | "rejected";
 
 const APPLICATION_FOLDERS: Array<{ id: ApplicationFolder; label: string }> = [
@@ -200,6 +202,7 @@ export default function AdminDashboard() {
   const { data: pricingData, isLoading: pricingLoading } = useServicePricing(token);
   const { data: paymentsData, isLoading: paymentsLoading, isFetching: paymentsFetching, refetch: refetchPayments } =
     useAdminPayments(token, activeTab === "payments");
+  const { data: inboxData } = useAdminInbox(token);
   const [priceDrafts, setPriceDrafts] = useState<Record<string, string>>({});
   const [pricingError, setPricingError] = useState("");
   const [expandedApplication, setExpandedApplication] = useState<number | null>(null);
@@ -504,7 +507,7 @@ export default function AdminDashboard() {
 
         {/* Tab Navigation */}
         <div className="flex gap-1 mb-6 bg-white rounded-xl p-1 shadow-sm border border-slate-100 w-fit flex-wrap">
-           {(["applications", "leads", "analytics", "pricing", "payments", "updates"] as Tab[]).map((tab) => (
+           {(["applications", "leads", "analytics", "pricing", "payments", "updates", "inbox"] as Tab[]).map((tab) => (
             <button
               key={tab}
               onClick={() => setActiveTab(tab)}
@@ -520,7 +523,13 @@ export default function AdminDashboard() {
               {tab === "pricing" && <FaMoneyBillWave className="inline mr-2 text-xs" />}
               {tab === "payments" && <FaCreditCard className="inline mr-2 text-xs" />}
               {tab === "updates" && <FaBullhorn className="inline mr-2 text-xs" />}
+              {tab === "inbox" && <FaEnvelope className="inline mr-2 text-xs" />}
               {tab.charAt(0).toUpperCase() + tab.slice(1)}
+              {tab === "inbox" && (inboxData?.unreadCount ?? 0) > 0 && (
+                <span className="ml-2 inline-flex min-w-5 items-center justify-center rounded-full bg-red-500 px-1.5 py-0.5 text-[10px] leading-none text-white">
+                  {inboxData?.unreadCount}
+                </span>
+              )}
             </button>
           ))}
         </div>
@@ -1275,6 +1284,11 @@ export default function AdminDashboard() {
         {/* ── Updates Tab ── */}
         {activeTab === "updates" && (
           <AdminAnnouncements token={token} />
+        )}
+
+        {/* ── Inbox Tab ── */}
+        {activeTab === "inbox" && (
+          <AdminInbox token={token} />
         )}
       </div>
     </div>

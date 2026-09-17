@@ -3,6 +3,14 @@
 @import "tw-animate-css";
 @plugin "@tailwindcss/typography";
 
+.admin-inbox-card {
+  overflow: hidden;
+  border: 1px solid #e2e8f0;
+  border-radius: 1rem;
+  background: white;
+  box-shadow: 0 6px 18px rgba(30, 62, 105, .06);
+}
+
 @custom-variant dark (&:is(.dark *));
 
 /* ── Updates page: reference-aligned directory ── */
@@ -240,6 +248,7 @@
   --app-font-sans: 'Poppins', sans-serif;
   --app-font-serif: Georgia, serif;
   --app-font-mono: Menlo, monospace;
+  --app-font-cursive: 'Great Vibes', cursive;
   --radius: 0.5rem;
 
   --sidebar-primary-border: hsl(var(--sidebar-primary));
@@ -300,6 +309,156 @@
   body {
     @apply font-sans antialiased bg-background text-foreground;
   }
+}
+
+.font-cursive {
+  font-family: var(--app-font-cursive);
+}
+
+/* ── Contact Page Redesign ── */
+.contact-hero {
+  background: linear-gradient(135deg, #050D24 0%, #071B4A 55%, #0d2069 100%);
+  position: relative;
+  overflow: hidden;
+  border-bottom: 2px solid rgba(212, 160, 23, 0.4);
+}
+.contact-hero::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background-image: 
+    linear-gradient(rgba(255,255,255,.05) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255,255,255,.05) 1px, transparent 1px);
+  background-size: 32px 32px;
+  mask-image: radial-gradient(circle at center, black, transparent 75%);
+  pointer-events: none;
+}
+.contact-hero-feature {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 8px;
+}
+.contact-hero-feature-icon {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: rgba(255,255,255,0.1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-size: 1.1rem;
+}
+.contact-hero-feature-title {
+  color: white;
+  font-size: 0.8rem;
+  font-weight: 700;
+}
+.contact-hero-feature-desc {
+  color: rgba(255,255,255,0.7);
+  font-size: 0.7rem;
+}
+
+.contact-card-white {
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 8px 30px rgba(0,0,0,0.06);
+  border: 1px solid #edf1f7;
+  overflow: hidden;
+}
+
+.contact-info-item {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+}
+.contact-info-icon {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  background: rgba(242,193,78,0.15);
+  color: #d4a017;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.contact-support-card {
+  background: white;
+  border-radius: 10px;
+  padding: 16px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  box-shadow: 0 4px 15px rgba(0,0,0,0.04);
+  border: 1px solid #edf1f7;
+}
+.contact-support-icon {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.1rem;
+}
+
+.contact-input {
+  width: 100%;
+  background: white;
+  border: 1px solid #dce3ec;
+  border-radius: 6px;
+  padding: 10px 14px;
+  font-size: 0.8rem;
+  color: #1a202c;
+  outline: none;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+.contact-input::placeholder {
+  color: #a0aec0;
+}
+.contact-input:focus {
+  border-color: #d4a017;
+  box-shadow: 0 0 0 3px rgba(212,160,23,0.15);
+}
+.contact-label {
+  display: block;
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: #2d3748;
+  margin-bottom: 6px;
+}
+.contact-label span {
+  color: #e53e3e;
+}
+.contact-error {
+  color: #e53e3e;
+  font-size: 0.65rem;
+  margin-top: 4px;
+}
+
+.contact-btn-submit {
+  width: 100%;
+  background: #f4c24b;
+  color: #1a1200;
+  font-weight: 700;
+  border-radius: 6px;
+  padding: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  transition: background 0.2s;
+}
+.contact-btn-submit:hover:not(:disabled) {
+  background: #d4a017;
+}
+.contact-btn-submit:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
 }
 
 /* ── Premium Design Utilities ── */
