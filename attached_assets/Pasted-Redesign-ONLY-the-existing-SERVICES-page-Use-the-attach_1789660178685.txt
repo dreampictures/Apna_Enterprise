@@ -1,0 +1,114 @@
+Redesign ONLY the existing SERVICES page.
+
+Use the attached reference screenshot as the PRIMARY VISUAL REFERENCE for the Services page design.
+
+IMPORTANT — REFERENCE CARD COUNT:
+The reference screenshot shows only a limited number of service cards for visual/layout reference.
+
+Those cards are ONLY examples of the design, styling and card layout.
+
+DO NOT copy the screenshot's number of cards.
+DO NOT limit the Services page to 5, 7, 8, or any fixed number of services.
+
+The website must display EVERY existing service from the existing service data.
+
+If the existing website contains 29+ services, ALL of them must be available on the Services page.
+
+SERVICE FILTERING:
+At the top, provide these category filters:
+
+All
+Travel Services
+Document Services
+Online Form Services
+Digital & Print Services
+Financial Services
+Insurance Services
+Parcel Services
+
+When "All" is selected:
+→ Show EVERY existing service.
+
+When a category is selected:
+→ Show EVERY service belonging to that category only.
+
+Do not hard-code only the services visible in the screenshot.
+Use the existing service data/category structure so future services can also appear automatically.
+
+SEARCH:
+The existing service search bar should search across ALL existing services, including services not currently visible because of the selected category.
+
+DESIGN:
+Recreate the reference screenshot's visual style closely:
+
+- Premium dark navy + gold hero section
+- "OUR SERVICES" heading
+- "All Your Essential Services in One Place" style heading
+- Hero description
+- Decorative service visual/illustrations
+- Large floating search bar
+- Category filter buttons
+- Clean responsive service-card grid
+- Premium rounded cards
+- Soft gradients and subtle shadows
+- Service-specific icons/images
+- "View Services" action on cards
+- Parcel Services and Need Help section
+- Bottom statistics strip
+- Navy, gold, white and subtle category colors
+- Professional, modern and premium Apna Enterprise identity
+
+IMAGE REQUIREMENT:
+Do NOT generate, search for, download, or choose any images yourself.
+
+All visual assets/images for this redesigned page will be provided separately as local assets.
+
+Use the provided local assets when they are available.
+Do not replace them with AI-generated or random images.
+
+FUNCTIONALITY:
+Keep all existing:
+- Service names
+- Service descriptions
+- Categories
+- Service counts
+- Service links
+- Routes
+- Search functionality
+- Existing APIs
+- Existing backend/database
+- Existing service data
+
+Do not remove or rename existing services.
+
+PAGE ISOLATION:
+This redesign is ONLY for the Services page.
+
+Do NOT redesign or modify:
+- Home
+- Updates
+- Apply Now
+- Track
+- PDF Compressor
+- Contact Us
+- Khata Book
+- Backend
+- Database
+- APIs
+- Other routes
+
+Do not change global components/styles if that could affect other pages.
+
+If shared components need changes, create Services-page-specific components/classes so other pages remain visually unchanged.
+
+IMPORTANT:
+The reference screenshot controls the DESIGN, NOT the service count or service data.
+
+Reference screenshot = visual/layout reference.
+Existing website service data = actual complete service list.
+
+Before editing, inspect the existing Services page and service data structure first.
+
+Make the minimum required changes to achieve this redesign.
+Keep desktop, tablet and mobile fully responsive.
+Do not invent a different design.

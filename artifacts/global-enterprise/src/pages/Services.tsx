@@ -8,14 +8,12 @@ import {
   FaTrophy, FaAward, FaClipboardList, FaPrint, FaLaptopCode,
   FaUniversity, FaCreditCard, FaBoxOpen, FaShippingFast,
   FaGlobe, FaSearch, FaTimes, FaArrowRight, FaShieldAlt,
+  FaHeadset, FaUsers, FaCheckCircle, FaClock, FaBox,
 } from "react-icons/fa";
 import { Button } from "@/components/ui/button";
 import { SERVICE_CATEGORIES } from "@/lib/services";
 import { FaWalking, FaClock } from "react-icons/fa";
 import { useT } from "@/i18n";
-
-const GOLD = "#D4A017";
-const GOLD_LIGHT = "#F2C14E";
 
 const WALKIN_SERVICES = new Set([
   "AEPS (Aadhaar Enabled Payment System)",
@@ -86,6 +84,26 @@ const CATEGORY_ICON_LIGHT: Record<string, string> = {
   parcel:    "bg-cyan-50 text-cyan-600",
 };
 
+const CATEGORY_COPY: Record<string, string> = {
+  travel: "Book flights, trains and buses with ease.",
+  documents: "Apply and manage important documents quickly.",
+  forms: "Fill and submit online forms with expert guidance.",
+  digital: "High quality printing, scanning and digital work.",
+  financial: "Secure and easy financial services for your needs.",
+  insurance: "Get protected with reliable insurance solutions.",
+  parcel: "Send your parcels across India and internationally.",
+};
+
+const CATEGORY_SHORT_NAMES: Record<string, string[]> = {
+  travel: ["Air Ticket", "Train Ticket", "Bus Ticket"],
+  documents: ["PAN Card", "Aadhaar Update", "Voter Card"],
+  forms: ["Job Forms", "College Admission", "School Admission"],
+  digital: ["Document Scanning", "Printing", "Website Design"],
+  financial: ["AEPS Payment", "Online Payments"],
+  insurance: ["Life Insurance", "Bike Insurance"],
+  parcel: ["International Parcel Booking"],
+};
+
 export default function Services() {
   const [search, setSearch] = useState("");
   const [activeCategory, setActiveCategory] = useState<string | null>(null);
@@ -93,18 +111,25 @@ export default function Services() {
 
   const filtered = useMemo(() => {
     const q = search.toLowerCase().trim();
-    return SERVICE_CATEGORIES.map((cat) => ({
+    const categories = q
+      ? SERVICE_CATEGORIES
+      : activeCategory
+        ? SERVICE_CATEGORIES.filter((cat) => cat.id === activeCategory)
+        : SERVICE_CATEGORIES;
+
+    return categories.map((cat) => ({
       ...cat,
       services: cat.services.filter(
         (s) =>
-          (!q || s.name.toLowerCase().includes(q) || s.description.toLowerCase().includes(q)) &&
-          (!activeCategory || cat.id === activeCategory)
+          !q || s.name.toLowerCase().includes(q) || s.description.toLowerCase().includes(q)
       ),
     })).filter((cat) => cat.services.length > 0);
   }, [search, activeCategory]);
 
+  const totalServices = SERVICE_CATEGORIES.reduce((total, category) => total + category.services.length, 0);
+
   return (
-    <div className="flex flex-col min-h-full">
+    <div className="services-page flex flex-col min-h-full">
       <Seo
         title="Our Services — Travel, Documents, Finance & More"
         description="Browse 50+ services at Apna Enterprise Firozepur — air & train tickets, PAN card, Aadhaar, passport, voter ID, printing, financial services, international parcels and more."
@@ -119,69 +144,66 @@ export default function Services() {
         }}
         path="/services"
       />
-      {/* ── Page Header ── */}
-      <section className="hero-navy text-white py-16">
-        <div className="container mx-auto px-4 lg:px-8 relative z-10 text-center">
-          <p className="font-semibold uppercase tracking-widest text-xs mb-3" style={{ color: GOLD_LIGHT }}>
-            {t.services_all_label}
-          </p>
-          <h1 className="text-4xl md:text-5xl font-extrabold mb-4">{t.services_title}</h1>
-          <div className="gold-line w-20 mx-auto mb-5" />
-          <p className="max-w-2xl mx-auto text-lg" style={{ color: "rgba(255,255,255,0.75)" }}>
-            {t.services_desc}
-          </p>
+      {/* ── Services Hero ── */}
+      <section className="services-page__hero text-white">
+        <div className="container mx-auto px-4 lg:px-8 relative z-10">
+          <div className="services-page__hero-grid">
+            <div className="max-w-xl">
+              <p className="services-page__eyebrow">{t.services_all_label}</p>
+              <h1 className="services-page__title">
+                All Your Essential Services
+                <span>in One Place</span>
+              </h1>
+              <p className="services-page__hero-copy">{t.services_desc}</p>
+            </div>
+
+            <div className="services-page__hero-visual" aria-hidden="true">
+              <div className="services-page__hero-script">Simple<br />Reliable<br />Hassle-Free</div>
+              <div className="services-page__hero-icons">
+                {[
+                  { label: "Documents", icon: FaFileAlt, tone: "blue" },
+                  { label: "Travel", icon: FaPlane, tone: "sky" },
+                  { label: "Finance", icon: FaCreditCard, tone: "green" },
+                  { label: "Printing", icon: FaPrint, tone: "purple" },
+                  { label: "International", icon: FaGlobe, tone: "violet" },
+                ].map(({ label, icon: Icon, tone }) => (
+                  <div key={label} className={`services-page__hero-icon services-page__hero-icon--${tone}`}>
+                    <Icon />
+                    <span>{label}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
         </div>
       </section>
 
       {/* ── Search + Category Filter ── */}
-      <div
-        className="border-b sticky top-[80px] z-20"
-        style={{ background: "rgba(255,255,255,0.98)", backdropFilter: "blur(8px)", borderColor: "#e8edf5", boxShadow: "0 2px 12px rgba(7,27,74,0.06)" }}
-      >
-        <div className="container mx-auto px-4 lg:px-8 py-4">
-          <div className="flex flex-col sm:flex-row gap-3 items-start sm:items-center">
+      <div className="services-page__filter-wrap">
+        <div className="container mx-auto px-4 lg:px-8">
+          <div className="services-page__filter-bar">
             {/* Search */}
-            <div className="relative flex-1 max-w-md">
-              <FaSearch className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 text-sm" />
+            <div className="services-page__search">
+              <FaSearch />
               <input
                 type="text"
-                placeholder={t.services_search_placeholder}
+                placeholder={`${t.services_search_placeholder} (e.g. PAN Card, Air Ticket, Printing...)`}
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                className="w-full pl-10 pr-9 py-2.5 text-sm rounded-xl focus:outline-none transition-all"
-                style={{
-                  border: "1.5px solid #d1d9e8",
-                  background: "#f8fafd",
-                }}
-                onFocus={(e) => {
-                  e.target.style.borderColor = GOLD;
-                  e.target.style.boxShadow = "0 0 0 3px rgba(212,160,23,0.12)";
-                }}
-                onBlur={(e) => {
-                  e.target.style.borderColor = "#d1d9e8";
-                  e.target.style.boxShadow = "none";
-                }}
+                aria-label="Search all services"
               />
               {search && (
-                <button
-                  onClick={() => setSearch("")}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
-                >
-                  <FaTimes className="text-sm" />
+                <button onClick={() => setSearch("")} aria-label="Clear search">
+                  <FaTimes />
                 </button>
               )}
             </div>
 
             {/* Category chips */}
-            <div className="flex flex-wrap gap-2">
+            <div className="services-page__chips">
               <button
                 onClick={() => setActiveCategory(null)}
-                className="px-3.5 py-1.5 rounded-full text-xs font-semibold border transition-all duration-200"
-                style={
-                  activeCategory === null
-                    ? { background: `linear-gradient(135deg, ${GOLD}, ${GOLD_LIGHT})`, color: "#1a1200", borderColor: "transparent", boxShadow: "0 2px 10px rgba(212,160,23,0.3)" }
-                    : { background: "white", color: "#64748b", borderColor: "#d1d9e8" }
-                }
+                className={`services-page__chip${activeCategory === null ? " is-active" : ""}`}
               >
                 {t.services_all_chip}
               </button>
@@ -189,12 +211,7 @@ export default function Services() {
                 <button
                   key={cat.id}
                   onClick={() => setActiveCategory(activeCategory === cat.id ? null : cat.id)}
-                  className="px-3.5 py-1.5 rounded-full text-xs font-semibold border transition-all duration-200"
-                  style={
-                    activeCategory === cat.id
-                      ? { background: `linear-gradient(135deg, ${GOLD}, ${GOLD_LIGHT})`, color: "#1a1200", borderColor: "transparent", boxShadow: "0 2px 10px rgba(212,160,23,0.3)" }
-                      : { background: "white", color: "#64748b", borderColor: "#d1d9e8" }
-                  }
+                  className={`services-page__chip${activeCategory === cat.id ? " is-active" : ""}`}
                 >
                   {cat.name}
                 </button>
@@ -204,84 +221,144 @@ export default function Services() {
         </div>
       </div>
 
-      {/* ── Services List ── */}
-      <section className="py-12 flex-1" style={{ background: "#f8fafd" }}>
+      {/* ── Category Overview ── */}
+      <section className="services-page__content">
         <div className="container mx-auto px-4 lg:px-8">
+          <div className="services-page__category-grid">
+            {SERVICE_CATEGORIES.map((cat) => {
+              const CatIcon = CATEGORY_ICONS[cat.id] ?? FaFileAlt;
+              const catGradient = CATEGORY_GRADIENT[cat.id] ?? "linear-gradient(135deg, #071B4A, #1a3a8a)";
+              const lightClass = CATEGORY_ICON_LIGHT[cat.id] ?? "bg-primary/10 text-primary";
+              return (
+                <article key={cat.id} className="services-page__category-card">
+                  <div className="services-page__category-art" style={{ background: catGradient }} aria-hidden="true">
+                    <CatIcon />
+                  </div>
+                  <div className="services-page__category-copy">
+                    <div className="services-page__category-heading">
+                      <div className={`services-page__category-icon ${lightClass}`}><CatIcon /></div>
+                      <div>
+                        <h2>{cat.name}</h2>
+                        <p>{t.services_available(cat.services.length)}</p>
+                      </div>
+                    </div>
+                    <p className="services-page__category-description">{CATEGORY_COPY[cat.id]}</p>
+                    <div className="services-page__category-tags">
+                      {(CATEGORY_SHORT_NAMES[cat.id] ?? cat.services.slice(0, 3).map((service) => service.name)).map((name) => (
+                        <span key={name}>{name}</span>
+                      ))}
+                    </div>
+                    <button
+                      type="button"
+                      className="services-page__view-link"
+                      onClick={() => {
+                        setSearch("");
+                        setActiveCategory(cat.id);
+                        window.scrollTo({ top: 0, behavior: "smooth" });
+                      }}
+                    >
+                      View Services <FaArrowRight />
+                    </button>
+                  </div>
+                </article>
+              );
+            })}
+
+            <article className="services-page__category-card services-page__category-card--help">
+              <div className="services-page__help-icon"><FaHeadset /></div>
+              <div className="services-page__category-copy">
+                <div className="services-page__category-heading">
+                  <div>
+                    <h2>Need Help?</h2>
+                    <p>Not sure which service you need?</p>
+                  </div>
+                </div>
+                <p className="services-page__category-description">Our team is here to guide you to the right service.</p>
+                <Link href="/contact" className="services-page__help-button">
+                  Contact Us <FaArrowRight />
+                </Link>
+              </div>
+            </article>
+          </div>
+
+          {/* ── Complete Services List ── */}
+          <div className="services-page__all-heading">
+            <div>
+              <p className="services-page__eyebrow services-page__eyebrow--light">COMPLETE DIRECTORY</p>
+              <h2>All Services</h2>
+              <p>{totalServices} services available across every category.</p>
+            </div>
+            <span>{search ? `${filtered.reduce((total, cat) => total + cat.services.length, 0)} matching` : "Browse all"}</span>
+          </div>
+
           {filtered.length === 0 ? (
-            <div className="text-center py-24 text-slate-500">
-              <FaSearch className="text-4xl mx-auto mb-4 text-slate-300" />
-              <p className="font-semibold text-lg">{t.services_not_found}</p>
-              <p className="text-sm mt-1">{t.services_not_found_sub}</p>
-              <button
-                onClick={() => { setSearch(""); setActiveCategory(null); }}
-                className="mt-4 text-sm font-semibold hover:underline"
-                style={{ color: GOLD }}
-              >
+            <div className="services-page__empty">
+              <FaSearch />
+              <p>{t.services_not_found}</p>
+              <span>{t.services_not_found_sub}</span>
+              <button onClick={() => { setSearch(""); setActiveCategory(null); }}>
                 {t.services_clear}
               </button>
             </div>
           ) : (
-            <div className="space-y-14">
+            <div className="services-page__service-sections">
               {filtered.map((cat) => {
                 const CatIcon = CATEGORY_ICONS[cat.id] ?? FaFileAlt;
                 const catGradient = CATEGORY_GRADIENT[cat.id] ?? "linear-gradient(135deg, #071B4A, #1a3a8a)";
                 const lightClass = CATEGORY_ICON_LIGHT[cat.id] ?? "bg-primary/10 text-primary";
                 return (
-                  <div key={cat.id}>
+                  <div key={cat.id} className="services-page__service-section">
                     {/* Category Header */}
-                    <div className="flex items-center gap-3 mb-6">
+                    <div className="services-page__service-section-heading">
                       <div
-                        className="w-11 h-11 rounded-xl flex items-center justify-center text-white text-lg flex-shrink-0"
+                        className="services-page__service-section-icon"
                         style={{ background: catGradient, boxShadow: "0 3px 12px rgba(0,0,0,0.15)" }}
                       >
                         <CatIcon />
                       </div>
                       <div>
-                        <h2 className="text-xl font-bold text-slate-900">{cat.name}</h2>
-                        <span className="text-xs text-slate-400 font-medium">
+                        <h3>{cat.name}</h3>
+                        <span>
                           {t.services_available(cat.services.length)}
                         </span>
                       </div>
                     </div>
 
                     {/* Service Cards Grid */}
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+                    <div className="services-page__service-grid">
                       {cat.services.map((service) => {
                         const Icon = SERVICE_ICONS[service.id] ?? FaFileAlt;
                         return (
-                          <div key={service.id} className="card-premium p-5 flex flex-col gap-4">
-                            <div className="flex items-start gap-4">
-                              <div className={`w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0 text-xl ${lightClass}`}>
+                          <div key={service.id} className="services-page__service-card">
+                            <div className="services-page__service-card-main">
+                              <div className={`services-page__service-icon ${lightClass}`}>
                                 <Icon />
                               </div>
-                              <div className="flex-1 min-w-0">
-                                <h3 className="font-bold text-slate-900 text-sm leading-snug mb-1">
+                              <div className="min-w-0">
+                                <h4>
                                   {service.name}
-                                </h3>
-                                <p className="text-slate-500 text-xs leading-relaxed">
+                                </h4>
+                                <p>
                                   {service.description}
                                 </p>
                               </div>
                             </div>
-                            <div className="pt-1">
+                            <div className="services-page__service-action">
                               {COMING_SOON_SERVICES.has(service.id) ? (
-                                <div
-                                  className="w-full h-9 flex items-center justify-center gap-2 rounded-xl text-xs font-semibold"
-                                  style={{ background: "rgba(212,160,23,0.08)", border: "1px solid rgba(212,160,23,0.25)", color: GOLD }}
-                                >
-                                  <FaClock className="text-sm" />
+                                <div className="services-page__status services-page__status--gold">
+                                  <FaClock />
                                   {t.services_coming_soon}
                                 </div>
                               ) : WALKIN_SERVICES.has(service.id) ? (
-                                <div className="w-full h-9 flex items-center justify-center gap-2 rounded-xl bg-slate-50 border border-slate-200 text-slate-500 text-xs font-semibold">
-                                  <FaWalking className="text-sm" />
+                                <div className="services-page__status">
+                                  <FaWalking />
                                   {t.services_walkin}
                                 </div>
                               ) : (
-                                <Button asChild size="sm" className="btn-gold w-full h-9 rounded-xl text-xs group">
+                                <Button asChild size="sm" className="btn-gold services-page__apply-button group">
                                   <Link href={`/apply?service=${encodeURIComponent(service.id)}`}>
                                     {t.services_apply}
-                                    <FaArrowRight className="ml-2 group-hover:translate-x-0.5 transition-transform" />
+                                    <FaArrowRight className="group-hover:translate-x-0.5 transition-transform" />
                                   </Link>
                                 </Button>
                               )}
@@ -295,6 +372,24 @@ export default function Services() {
               })}
             </div>
           )}
+        </div>
+      </section>
+
+      <section className="services-page__stats" aria-label="Service highlights">
+        <div className="container mx-auto px-4 lg:px-8">
+          <div className="services-page__stats-grid">
+            {[
+              { value: "10,000+", label: "Happy Customers", icon: FaUsers },
+              { value: `${totalServices}+`, label: "Services Available", icon: FaBox },
+              { value: "5+ Years", label: "Trusted Since", icon: FaCheckCircle },
+              { value: "Quick & Easy", label: "Online Process", icon: FaClock },
+            ].map(({ value, label, icon: Icon }) => (
+              <div key={label} className="services-page__stat">
+                <Icon />
+                <div><strong>{value}</strong><span>{label}</span></div>
+              </div>
+            ))}
+          </div>
         </div>
       </section>
     </div>
