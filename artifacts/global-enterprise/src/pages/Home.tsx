@@ -12,13 +12,23 @@ import { SERVICE_CATEGORIES } from "@/lib/services";
 import { useT } from "@/i18n";
 
 // Reusable fixed image slot to handle missing images cleanly
-const ImageSlot = ({ src, alt, className }: { src: string, alt: string, className?: string }) => {
+const ImageSlot = ({
+  src,
+  alt,
+  className,
+  fit = "contain",
+}: {
+  src: string;
+  alt: string;
+  className?: string;
+  fit?: "contain" | "cover";
+}) => {
   return (
     <div className={`relative overflow-hidden flex items-center justify-center bg-black/5 dark:bg-white/5 ${className}`}>
       <img
         src={src}
         alt={alt}
-        className="w-full h-full object-contain z-10 relative"
+        className={`w-full h-full object-${fit} z-10 relative`}
         onError={(e) => {
           e.currentTarget.style.display = 'none';
           e.currentTarget.parentElement?.classList.add('fallback-visible');
@@ -317,8 +327,9 @@ export default function Home() {
                   </div>
 
                   {/* Image Background */}
-                  <div className="absolute right-2 bottom-10 w-28 h-28 pointer-events-none transition-transform duration-500 group-hover:scale-105 z-0">
-                    <ImageSlot src={card.img} alt={card.title} className="w-full h-full bg-transparent" />
+                  <div className="absolute inset-0 pointer-events-none transition-transform duration-500 group-hover:scale-105 z-0">
+                    <ImageSlot src={card.img} alt={card.title} fit="cover" className="w-full h-full bg-transparent opacity-30" />
+                    <div className="absolute inset-0 bg-gradient-to-r from-white/95 via-white/75 to-white/25" />
                   </div>
                </div>
              ))}
