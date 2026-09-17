@@ -2148,3 +2148,156 @@
   .services-page__stat:nth-child(3),
   .services-page__stat:nth-child(4) { border-top: 1px solid rgba(255,255,255,.1); padding-top: 8px; }
 }
+
+/* Services cards: shared reference style */
+.services-page__category-card,
+.services-page__service-card {
+  min-height: 180px;
+  cursor: pointer;
+  color: #17264a;
+  border: 1px solid #cfe0f2;
+  border-radius: 18px;
+  background: linear-gradient(120deg, #fff 0%, #f7fbff 58%, #d9eeff 100%);
+  box-shadow: 0 7px 20px rgba(31, 82, 135, .1);
+}
+
+.services-page__category-card:focus-visible,
+.services-page__service-card:focus-visible {
+  outline: 3px solid rgba(36, 126, 225, .35);
+  outline-offset: 3px;
+}
+
+.services-page__category-card::after,
+.services-page__service-card::after {
+  z-index: 1;
+  background: linear-gradient(90deg, rgba(255,255,255,.98) 0%, rgba(255,255,255,.94) 52%, rgba(230,244,255,.2) 100%);
+}
+
+.services-page__category-art,
+.services-page__service-media {
+  inset: 0 0 0 auto;
+  width: 48%;
+  height: 100%;
+  color: rgba(26, 110, 205, .72);
+  background: linear-gradient(135deg, #edf7ff, #c9e8ff) !important;
+}
+
+.services-page__category-art img,
+.services-page__service-media img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center;
+}
+
+.services-page__category-art svg,
+.services-page__service-media > svg {
+  margin: 0 13% 0 auto;
+  color: rgba(21, 108, 207, .78);
+  opacity: 1;
+}
+
+.services-page__category-copy {
+  z-index: 2;
+  width: 61%;
+  padding: 17px 18px;
+}
+
+.services-page__category-heading h2,
+.services-page__service-card h3 {
+  color: #17264a;
+  font-size: .78rem;
+  font-weight: 850;
+}
+
+.services-page__category-heading p,
+.services-page__category-description,
+.services-page__service-card-main p {
+  color: #63728e;
+}
+
+.services-page__category-tags span {
+  color: #1670c8;
+  background: #e8f4ff;
+}
+
+.services-page__view-link,
+.services-page__help-button {
+  color: #a86f00;
+  background: transparent;
+  padding: 6px 0;
+  font-size: .58rem;
+}
+
+.services-page__view-link:hover,
+.services-page__help-button:hover {
+  color: #075db2;
+}
+
+.services-page__service-card {
+  padding: 17px 18px;
+}
+
+.services-page__service-card-main {
+  width: 62%;
+}
+
+.services-page__service-icon {
+  color: #fff !important;
+  border: 0;
+  background: linear-gradient(145deg, #1685eb, #075fc2) !important;
+  box-shadow: 0 6px 14px rgba(15, 105, 204, .24);
+}
+
+.services-page__service-category {
+  color: #1c78cf;
+}
+
+.services-page__service-action {
+  width: 58%;
+}
+
+.services-page__apply-button {
+  min-width: 112px;
+}
+
+.services-page__status {
+  color: #61708a;
+  border-color: #d5e2ef;
+  background: rgba(255,255,255,.9);
+  backdrop-filter: none;
+}
+
+.services-page__status--gold {
+  color: #9b6e08;
+  background: #fff8e5;
+}
+
+.services-page__service-card--help {
+  cursor: default;
+  color: #17264a;
+  background:
+    radial-gradient(circle at 88% 28%, rgba(242,193,78,.2), transparent 28%),
+    linear-gradient(135deg, #fff9e8, #fffdf7);
+}
+
+.services-page__service-card--help h3 {
+  color: #17264a;
+}
+
+@media (max-width: 600px) {
+  .services-page__category-card,
+  .services-page__service-card {
+    min-height: 175px;
+  }
+
+  .services-page__category-copy,
+  .services-page__service-card-main {
+    width: 67%;
+  }
+
+  .services-page__category-art,
+  .services-page__service-media {
+    width: 45%;
+  }
+}

@@ -1,5 +1,5 @@
 import { useState, useMemo } from "react";
-import { Link } from "wouter";
+import { Link, useLocation } from "wouter";
 import Seo from "@/components/Seo";
 import {
   FaPlane, FaTrain, FaIdCard, FaFingerprint, FaAddressCard, FaPassport,
@@ -114,6 +114,7 @@ const serviceImagePath = (serviceId: string) =>
 export default function Services() {
   const [search, setSearch] = useState("");
   const [activeCategory, setActiveCategory] = useState<string | null>(null);
+  const [, navigate] = useLocation();
   const { t } = useT();
 
   const filtered = useMemo(() => {
@@ -137,6 +138,13 @@ export default function Services() {
   const visibleServices = filtered.flatMap((category) =>
     category.services.map((service) => ({ service, category }))
   );
+  const showCategory = (categoryId: string) => {
+    setSearch("");
+    setActiveCategory(categoryId);
+    requestAnimationFrame(() => {
+      document.getElementById("all-services")?.scrollIntoView({ behavior: "smooth", block: "start" });
+    });
+  };
 
   return (
     <div className="services-page flex flex-col min-h-full">
@@ -245,7 +253,19 @@ export default function Services() {
               const CatIcon = CATEGORY_ICONS[cat.id] ?? FaFileAlt;
               const lightClass = CATEGORY_ICON_LIGHT[cat.id] ?? "bg-primary/10 text-primary";
               return (
-                <article key={cat.id} className={`services-page__category-card services-page__category-card--${cat.id}`}>
+                <article
+                  key={cat.id}
+                  className={`services-page__category-card services-page__category-card--${cat.id}`}
+                  role="link"
+                  tabIndex={0}
+                  onClick={() => showCategory(cat.id)}
+                  onKeyDown={(event) => {
+                    if (event.key === "Enter" || event.key === " ") {
+                      event.preventDefault();
+                      showCategory(cat.id);
+                    }
+                  }}
+                >
                   <div className={`services-page__category-art services-page__category-art--${cat.id}`} aria-hidden="true">
                     <img
                       src={CATEGORY_IMAGES[cat.id]}
@@ -271,11 +291,7 @@ export default function Services() {
                     <button
                       type="button"
                       className="services-page__view-link"
-                      onClick={() => {
-                        setSearch("");
-                        setActiveCategory(cat.id);
-                        window.scrollTo({ top: 0, behavior: "smooth" });
-                      }}
+                      onClick={() => showCategory(cat.id)}
                     >
                       View Services <FaArrowRight />
                     </button>
@@ -286,7 +302,7 @@ export default function Services() {
           </div>
 
           {/* ── Complete Services List ── */}
-          <div className="services-page__all-heading">
+          <div id="all-services" className="services-page__all-heading">
             <div>
               <p className="services-page__eyebrow services-page__eyebrow--light">COMPLETE DIRECTORY</p>
               <h2>All Services</h2>
@@ -311,7 +327,26 @@ export default function Services() {
               const Icon = SERVICE_ICONS[service.id] ?? FaFileAlt;
               const lightClass = CATEGORY_ICON_LIGHT[category.id] ?? "bg-primary/10 text-primary";
               return (
-                <article key={service.id} className={`services-page__service-card services-page__service-card--${category.id}`}>
+                <article
+                  key={service.id}
+                  className={`services-page__service-card services-page__service-card--${category.id}`}
+                  role={COMING_SOON_SERVICES.has(service.id) ? undefined : "link"}
+                  tabIndex={COMING_SOON_SERVICES.has(service.id) ? undefined : 0}
+                  onClick={() => {
+                    if (!COMING_SOON_SERVICES.has(service.id)) {
+                      navigate(`/apply?service=${encodeURIComponent(service.id)}`);
+                    }
+                  }}
+                  onKeyDown={(event) => {
+                    if (
+                      !COMING_SOON_SERVICES.has(service.id) &&
+                      (event.key === "Enter" || event.key === " ")
+                    ) {
+                      event.preventDefault();
+                      navigate(`/apply?service=${encodeURIComponent(service.id)}`);
+                    }
+                  }}
+                >
                   <div className="services-page__service-media" aria-hidden="true">
                     <img
                       src={serviceImagePath(service.id)}
@@ -343,7 +378,10 @@ export default function Services() {
                       </div>
                     ) : (
                       <Button asChild size="sm" className="btn-gold services-page__apply-button group">
-                        <Link href={`/apply?service=${encodeURIComponent(service.id)}`}>
+                        <Link
+                          href={`/apply?service=${encodeURIComponent(service.id)}`}
+                          onClick={(event) => event.stopPropagation()}
+                        >
                           {t.services_apply} <FaArrowRight className="group-hover:translate-x-0.5 transition-transform" />
                         </Link>
                       </Button>
