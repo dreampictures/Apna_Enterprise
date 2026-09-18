@@ -42,28 +42,9 @@ const ImageSlot = ({
 };
 
 // Leave this empty until the final artwork is provided. Uploading an image later
-// only requires setting this path to a file under /public.
+// only requires setting this path to a file under /public. The artwork fills the
+// complete CTA card rather than appearing in a separate image box.
 const HOME_CTA_IMAGE_SRC = "";
-
-function HomeCtaImageSlot() {
-  return (
-    <div
-      className="hidden h-20 w-32 shrink-0 items-center justify-center rounded-lg border border-dashed border-white/20 bg-white/[0.03] px-3 text-center text-[9px] uppercase tracking-[0.16em] text-white/30 sm:flex"
-      data-image-slot="home-paperwork-cta"
-      aria-label="Home paperwork CTA image slot"
-    >
-      {HOME_CTA_IMAGE_SRC ? (
-        <img
-          src={HOME_CTA_IMAGE_SRC}
-          alt="Apna Enterprise services"
-          className="h-full w-full rounded-md object-cover"
-        />
-      ) : (
-        <span>Image slot</span>
-      )}
-    </div>
-  );
-}
 
 export default function Home() {
   const { t, lang } = useT();
@@ -394,6 +375,17 @@ export default function Home() {
         <div className="container mx-auto px-4 lg:px-8">
           <div className="bg-[#050D24] rounded-xl p-6 relative overflow-hidden flex flex-col lg:flex-row items-center justify-between gap-6">
             
+             {/* Full-card artwork layer; set HOME_CTA_IMAGE_SRC when the final image is uploaded. */}
+             {HOME_CTA_IMAGE_SRC && (
+               <img
+                 src={HOME_CTA_IMAGE_SRC}
+                 alt=""
+                 aria-hidden="true"
+                 className="absolute inset-0 z-0 h-full w-full object-cover opacity-55"
+               />
+             )}
+             <div className="absolute inset-0 z-0 bg-gradient-to-r from-[#050D24]/95 via-[#050D24]/75 to-[#050D24]/45 pointer-events-none" />
+
             {/* Pattern overlay */}
             <div className="absolute inset-0 opacity-[0.03] pointer-events-none" style={{ backgroundImage: 'radial-gradient(circle at 2px 2px, white 1px, transparent 0)', backgroundSize: '24px 24px' }}></div>
             
@@ -423,8 +415,6 @@ export default function Home() {
                </Link>
             </div>
 
-             {/* Reserved slot for artwork supplied later */}
-             <HomeCtaImageSlot />
           </div>
         </div>
       </section>
