@@ -1765,8 +1765,9 @@
   z-index: 0;
   width: 100%;
   height: 100%;
-  object-fit: cover;
+  object-fit: contain;
   object-position: center;
+  background: #071b4a;
 }
 
 .services-page__hero-script {
