@@ -307,12 +307,12 @@ function HomeFooter({ navItems }: { navItems: Array<{ href: string; label: strin
              <div className="text-[10px] text-gray-400 uppercase tracking-widest mb-1">Proudly Serving</div>
              <div className="text-white font-bold mb-6 text-lg">Firozpur & Beyond</div>
              
-             <div className="relative w-36 h-36 mb-6 bg-white/5 rounded-full flex items-center justify-center border border-white/10 shrink-0">
-               {/* Minimalist India Map SVG approximation for the design */}
-               <svg viewBox="0 0 100 100" className="w-20 h-20 text-[#253965]" fill="currentColor">
-                 <path d="M48.5,5.2c-2.4,2.7-3.2,6.5-2.8,10.1c0.3,2.6-0.5,5.5-2.2,7.3c-2,2.2-5.4,3.1-8.1,1.9c-2.1-1-4.7-1-6.6,0.5 c-2.4,1.8-3.4,5.2-2.3,8.1c0.9,2.2-0.1,5.1-2.1,6.5c-2.4,1.6-6,1.4-8.3-0.5c-1.5-1.3-3.8-1.5-5.6-0.3C8,40.7,6.8,44,7.8,47 c0.9,2.6,0.3,5.6-1.5,7.6c-2.2,2.4-5.9,3.2-8.8,1.7v28.8c0,0,13.9,7,21.7,4.8c7.8-2.2,16.5-1.3,22.6,4.3 c5.2,4.8,11.3,6.1,17.4,2.6c5.2-3,11.7-1.3,15.7,3.9c1.7,2.2,5.2,2.6,7.8,0.9c2.6-1.7,5.6-3.5,9.1-4.8c4.3-1.7,8.2-1.3,10.8,0.9 V35.3c-2.6-3.9-7-5.2-11.3-3.5c-3,1.3-6.5,0.4-8.7-2.2c-2.6-2.6-7-3-10.4-0.9c-2.6,1.7-6.1,1.3-8.3-0.9 c-2.2-2.2-5.6-2.6-8.3-0.9c-2.6,1.7-6.1,0.9-8.3-1.7c-2.2-2.6-2.6-6.5-0.9-9.1c1.7-2.6,0.9-6.1-1.7-8.3C40.6,6.1,43.2,2.6,48.5,5.2 z"/>
-               </svg>
-               <FaMapMarkerAlt className="absolute text-[#FFD700] text-2xl drop-shadow-[0_0_8px_rgba(255,215,0,0.8)]" style={{ top: '40%', left: '45%' }} />
+              <div className="relative w-36 h-36 mb-6 overflow-hidden rounded-full border border-[#FFD700]/30 bg-[#071B4A] shadow-[0_0_22px_rgba(255,215,0,0.12)] shrink-0">
+                <img
+                  src="/punjab_logo.png"
+                  alt="Punjab"
+                  className="h-full w-full object-cover"
+                />
              </div>
              
              <div className="font-cursive text-[26px] text-[#FFD700] -rotate-6 lg:mr-4 tracking-wide">
