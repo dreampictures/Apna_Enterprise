@@ -41,6 +41,30 @@ const ImageSlot = ({
   );
 };
 
+// Leave this empty until the final artwork is provided. Uploading an image later
+// only requires setting this path to a file under /public.
+const HOME_CTA_IMAGE_SRC = "";
+
+function HomeCtaImageSlot() {
+  return (
+    <div
+      className="hidden h-20 w-32 shrink-0 items-center justify-center rounded-lg border border-dashed border-white/20 bg-white/[0.03] px-3 text-center text-[9px] uppercase tracking-[0.16em] text-white/30 sm:flex"
+      data-image-slot="home-paperwork-cta"
+      aria-label="Home paperwork CTA image slot"
+    >
+      {HOME_CTA_IMAGE_SRC ? (
+        <img
+          src={HOME_CTA_IMAGE_SRC}
+          alt="Apna Enterprise services"
+          className="h-full w-full rounded-md object-cover"
+        />
+      ) : (
+        <span>Image slot</span>
+      )}
+    </div>
+  );
+}
+
 export default function Home() {
   const { t, lang } = useT();
   const [serviceSearch, setServiceSearch] = useState("");
@@ -399,10 +423,8 @@ export default function Home() {
                </Link>
             </div>
 
-            {/* Handwriting text */}
-            <div className="hidden xl:block absolute right-16 top-10 font-cursive text-[32px] text-white/80 -rotate-6">
-              Your Needs<br/>Our Priority
-            </div>
+             {/* Reserved slot for artwork supplied later */}
+             <HomeCtaImageSlot />
           </div>
         </div>
       </section>
