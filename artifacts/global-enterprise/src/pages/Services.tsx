@@ -2,12 +2,7 @@ import { useState, useMemo } from "react";
 import { Link, useLocation } from "wouter";
 import Seo from "@/components/Seo";
 import {
-  FaPlane, FaTrain, FaIdCard, FaFingerprint, FaAddressCard, FaPassport,
-  FaCar, FaIdBadge, FaFileAlt, FaUserFriends, FaHome, FaMoneyBill,
-  FaStore, FaBuilding, FaBriefcase, FaGraduationCap, FaSchool,
-  FaTrophy, FaAward, FaClipboardList, FaPrint, FaLaptopCode,
-  FaUniversity, FaCreditCard, FaBoxOpen, FaShippingFast,
-  FaGlobe, FaSearch, FaTimes, FaArrowRight, FaShieldAlt,
+  FaSearch, FaTimes, FaArrowRight,
   FaHeadset, FaUsers, FaCheckCircle, FaClock, FaBox,
 } from "react-icons/fa";
 import { Button } from "@/components/ui/button";
@@ -23,56 +18,6 @@ const WALKIN_SERVICES = new Set([
 const COMING_SOON_SERVICES = new Set([
   "GST Registration",
 ]);
-
-const SERVICE_ICONS: Record<string, React.ElementType> = {
-  "Air Ticket Booking": FaPlane,
-  "Train Ticket Booking": FaTrain,
-  "PAN Card Apply": FaIdCard,
-  "Aadhaar Card Services": FaFingerprint,
-  "Voter Card Apply": FaAddressCard,
-  "Passport Apply": FaPassport,
-  "Learning License": FaCar,
-  "Driving License": FaCar,
-  "UDID Certificate Apply": FaIdBadge,
-  "E-Shram Card": FaUserFriends,
-  "Schedule Caste Certificate": FaFileAlt,
-  "Punjab Resident Certificate": FaHome,
-  "Income Certificate": FaMoneyBill,
-  "UDYAM Certificate (MSME)": FaStore,
-  "GST Registration": FaBuilding,
-  "Job Application Forms (Govt Naukri)": FaBriefcase,
-  "College Admission Forms": FaGraduationCap,
-  "School Admission Forms": FaSchool,
-  "Competitive Exam Forms": FaTrophy,
-  "Scholarship Forms": FaAward,
-  "General Online Form Filling": FaClipboardList,
-  "Document Scanning": FaFileAlt,
-  "Printing Services": FaPrint,
-  "Website Design Services": FaLaptopCode,
-  "AEPS (Aadhaar Enabled Payment System)": FaUniversity,
-  "Online Payments": FaCreditCard,
-  "International Parcel Booking": FaBoxOpen,
-};
-
-const CATEGORY_ICONS: Record<string, React.ElementType> = {
-  travel: FaGlobe,
-  documents: FaIdCard,
-  forms: FaClipboardList,
-  digital: FaPrint,
-  financial: FaUniversity,
-  insurance: FaShieldAlt,
-  parcel: FaShippingFast,
-};
-
-const CATEGORY_ICON_LIGHT: Record<string, string> = {
-  travel:    "bg-blue-50 text-blue-600",
-  documents: "bg-emerald-50 text-emerald-600",
-  forms:     "bg-violet-50 text-violet-600",
-  digital:   "bg-amber-50 text-amber-600",
-  financial: "bg-rose-50 text-rose-600",
-  insurance: "bg-indigo-50 text-indigo-600",
-  parcel:    "bg-cyan-50 text-cyan-600",
-};
 
 const CATEGORY_COPY: Record<string, string> = {
   travel: "Book flights, trains and buses with ease.",
@@ -237,8 +182,6 @@ export default function Services() {
         <div className="container mx-auto px-4 lg:px-8">
           <div className="services-page__category-grid">
             {SERVICE_CATEGORIES.map((cat) => {
-              const CatIcon = CATEGORY_ICONS[cat.id] ?? FaFileAlt;
-              const lightClass = CATEGORY_ICON_LIGHT[cat.id] ?? "bg-primary/10 text-primary";
               return (
                 <article
                   key={cat.id}
@@ -259,11 +202,9 @@ export default function Services() {
                       alt=""
                       onError={(event) => { event.currentTarget.style.display = "none"; }}
                     />
-                    <CatIcon />
                   </div>
                   <div className="services-page__category-copy">
                     <div className="services-page__category-heading">
-                      <div className={`services-page__category-icon ${lightClass}`}><CatIcon /></div>
                       <div>
                         <h2>{cat.name}</h2>
                         <p>{t.services_available(cat.services.length)}</p>
@@ -311,8 +252,6 @@ export default function Services() {
 
           <div className="services-page__service-grid services-page__service-grid--directory">
             {visibleServices.map(({ service, category }) => {
-              const Icon = SERVICE_ICONS[service.id] ?? FaFileAlt;
-              const lightClass = CATEGORY_ICON_LIGHT[category.id] ?? "bg-primary/10 text-primary";
               return (
                 <article
                   key={service.id}
@@ -340,12 +279,8 @@ export default function Services() {
                       alt=""
                       onError={(event) => { event.currentTarget.style.display = "none"; }}
                     />
-                    <Icon />
                   </div>
                   <div className="services-page__service-card-main">
-                    <div className={`services-page__service-icon ${lightClass}`}>
-                      <Icon />
-                    </div>
                     <div className="min-w-0">
                       <span className="services-page__service-category">{category.name}</span>
                       <h3>{service.name}</h3>
