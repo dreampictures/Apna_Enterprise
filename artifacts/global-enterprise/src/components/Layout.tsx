@@ -34,7 +34,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
   return (
     <div className="min-h-[100dvh] flex flex-col font-sans">
       {/* ── Premium Navbar ── */}
-      <header className={`navbar-root sticky top-0 z-50${isHome ? " home-navbar border-b border-[#FFD700]/20" : ""}`}>
+      <header className="navbar-root home-navbar sticky top-0 z-50 border-b border-[#FFD700]/20">
 
         {/* Subtle inner gold shimmer across full width */}
         <div
@@ -96,7 +96,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
             </Link>
 
             {/* ── Desktop Nav ── */}
-            <nav className={isHome ? "hidden xl:flex items-center gap-4" : "hidden md:flex items-center gap-7"}>
+            <nav className="hidden xl:flex items-center gap-4">
               {navItems.map((item) => (
                 <Link
                   key={item.href}
@@ -111,7 +111,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
               <button
                 onClick={() => setLang(lang === "en" ? "pa" : "en")}
                 title={lang === "en" ? "Switch to Punjabi" : "Switch to English"}
-                className={`flex items-center gap-1 text-xs font-bold rounded-lg px-2.5 py-1.5 transition-all duration-200 select-none${isHome ? " ml-2" : ""}`}
+                className="flex items-center gap-1 text-xs font-bold rounded-lg px-2.5 py-1.5 transition-all duration-200 select-none ml-2"
                 style={{
                   background: "rgba(212,160,23,0.12)",
                   border: "1px solid rgba(212,160,23,0.3)",
@@ -122,21 +122,18 @@ export default function Layout({ children }: { children: React.ReactNode }) {
                 {lang === "en" ? "ਪੰਜਾਬੀ" : "EN"}
               </button>
 
-              {/* Home specific header controls */}
-              {isHome && (
-                <div className="flex items-center gap-3 ml-1 border-l border-white/10 pl-3 h-8">
-                  <button className="text-white/80 hover:text-[#F2C14E] transition" aria-label="Search">
-                    <FaSearch className="text-lg" />
-                  </button>
-                  <Link href="/contact" className="bg-[#FFD700] hover:bg-[#F2C14E] text-[#1a1200] font-bold flex items-center gap-2 rounded-md px-3 py-2 text-xs transition" style={{ textDecoration: 'none' }}>
-                    <FaHeadset className="text-base" /> Online Support
-                  </Link>
-                </div>
-              )}
+              <div className="flex items-center gap-3 ml-1 border-l border-white/10 pl-3 h-8">
+                <button className="text-white/80 hover:text-[#F2C14E] transition" aria-label="Search">
+                  <FaSearch className="text-lg" />
+                </button>
+                <Link href="/contact" className="bg-[#FFD700] hover:bg-[#F2C14E] text-[#1a1200] font-bold flex items-center gap-2 rounded-md px-3 py-2 text-xs transition" style={{ textDecoration: 'none' }}>
+                  <FaHeadset className="text-base" /> Online Support
+                </Link>
+              </div>
             </nav>
 
             {/* ── Mobile right: lang toggle + hamburger ── */}
-            <div className={`${isHome ? "xl:hidden" : "md:hidden"} flex items-center gap-2`}>
+            <div className="xl:hidden flex items-center gap-2">
               <button
                 onClick={() => setLang(lang === "en" ? "pa" : "en")}
                 className="text-xs font-bold rounded-lg px-2 py-1.5 transition-all duration-200 select-none"
@@ -167,7 +164,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
         {/* ── Mobile Menu ── */}
         {mobileOpen && (
           <div
-            className={isHome ? "xl:hidden" : "md:hidden"}
+            className="xl:hidden"
             style={{
               background: "linear-gradient(180deg, #020A1A 0%, #071B4A 100%)",
               borderTop: "1px solid rgba(212,160,23,0.12)",
@@ -192,15 +189,13 @@ export default function Layout({ children }: { children: React.ReactNode }) {
                   {item.label}
                 </Link>
               ))}
-              {isHome && (
-                <Link
-                  href="/contact"
-                  onClick={() => setMobileOpen(false)}
-                  className="mobile-nav-item flex items-center gap-2 mt-2 bg-[#FFD700]/10 text-[#FFD700] border border-[#FFD700]/30"
-                >
-                  <FaHeadset /> Online Support
-                </Link>
-              )}
+              <Link
+                href="/contact"
+                onClick={() => setMobileOpen(false)}
+                className="mobile-nav-item flex items-center gap-2 mt-2 bg-[#FFD700]/10 text-[#FFD700] border border-[#FFD700]/30"
+              >
+                <FaHeadset /> Online Support
+              </Link>
             </nav>
           </div>
         )}
