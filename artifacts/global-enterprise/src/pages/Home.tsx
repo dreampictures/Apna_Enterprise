@@ -197,9 +197,9 @@ export default function Home() {
         className="bg-[#030918] relative flex items-center lg:h-[460px] overflow-hidden py-12 lg:py-0"
         style={{
           backgroundImage: "url('/assets/home/hero-office.png')",
-          backgroundPosition: "center",
+          backgroundPosition: "right center",
           backgroundRepeat: "no-repeat",
-          backgroundSize: "contain",
+          backgroundSize: "cover",
           backgroundColor: "#030918",
         }}
       >
