@@ -120,35 +120,34 @@ export default function Contact() {
               <p className="text-[0.95rem] leading-relaxed text-blue-100/80 max-w-md mx-auto lg:mx-0">
                 Have a question, need support, or want to work with us? We're just a message away.
               </p>
-            </div>
-            
-            {/* Right Features */}
-            <div className="flex flex-wrap lg:flex-nowrap justify-center gap-8 lg:gap-12">
-              <div className="contact-hero-feature">
-                <div className="contact-hero-feature-icon">
-                  <FaHeadset />
+              {/* Support highlights below the hero copy */}
+              <div className="flex flex-wrap justify-center lg:justify-start gap-8 lg:gap-12 mt-8">
+                <div className="contact-hero-feature">
+                  <div className="contact-hero-feature-icon">
+                    <FaHeadset />
+                  </div>
+                  <div>
+                    <div className="contact-hero-feature-title">Quick Response</div>
+                    <div className="contact-hero-feature-desc">We usually reply<br/>within 24 hours</div>
+                  </div>
                 </div>
-                <div>
-                  <div className="contact-hero-feature-title">Quick Response</div>
-                  <div className="contact-hero-feature-desc">We usually reply<br/>within 24 hours</div>
+                <div className="contact-hero-feature">
+                  <div className="contact-hero-feature-icon">
+                    <FaUsers />
+                  </div>
+                  <div>
+                    <div className="contact-hero-feature-title">Dedicated Support</div>
+                    <div className="contact-hero-feature-desc">Real people,<br/>real solutions</div>
+                  </div>
                 </div>
-              </div>
-              <div className="contact-hero-feature">
-                <div className="contact-hero-feature-icon">
-                  <FaUsers />
-                </div>
-                <div>
-                  <div className="contact-hero-feature-title">Dedicated Support</div>
-                  <div className="contact-hero-feature-desc">Real people,<br/>real solutions</div>
-                </div>
-              </div>
-              <div className="contact-hero-feature">
-                <div className="contact-hero-feature-icon">
-                  <FaShieldAlt />
-                </div>
-                <div>
-                  <div className="contact-hero-feature-title">Trusted & Secure</div>
-                  <div className="contact-hero-feature-desc">Your information<br/>is always safe</div>
+                <div className="contact-hero-feature">
+                  <div className="contact-hero-feature-icon">
+                    <FaShieldAlt />
+                  </div>
+                  <div>
+                    <div className="contact-hero-feature-title">Trusted & Secure</div>
+                    <div className="contact-hero-feature-desc">Your information<br/>is always safe</div>
+                  </div>
                 </div>
               </div>
             </div>
