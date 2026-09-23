@@ -1,6 +1,6 @@
 import { Link, useLocation } from "wouter";
 import {
-  FaBuilding, FaBars, FaTimes, FaEnvelope, FaSearch, FaHeadset,
+  FaBuilding, FaBars, FaTimes, FaEnvelope, FaSearch, FaHeadset, FaArrowRight,
   FaMapMarkerAlt, FaPhoneAlt, FaClock, FaFacebookF, FaInstagram,
   FaYoutube, FaWhatsapp, FaHeart, FaArrowUp
 } from "react-icons/fa";
@@ -14,9 +14,47 @@ const GOLD = "#D4A017";
 const GOLD_LIGHT = "#F2C14E";
 const APP_VERSION = "1.0.9";
 
+type SupportReply = {
+  question: string;
+  answer: string;
+  href: string;
+  action: string;
+};
+
+const supportReplies: SupportReply[] = [
+  {
+    question: "How do I apply for a service?",
+    answer: "Open the Apply page, choose your service, and submit your details. Our team will contact you within 24 hours.",
+    href: "/apply",
+    action: "Start an application",
+  },
+  {
+    question: "How can I track my application?",
+    answer: "Use your application reference number on the Track page to check the latest status.",
+    href: "/track",
+    action: "Track an application",
+  },
+  {
+    question: "What documents do I need?",
+    answer: "Document requirements vary by service. Browse the Services page or contact our team for guidance.",
+    href: "/services",
+    action: "Browse services",
+  },
+  {
+    question: "I need help with PDF tools",
+    answer: "You can compress PDFs, compress images, convert images to PDF, and merge or edit PDF files directly in your browser.",
+    href: "/pdf-compressor",
+    action: "Open PDF tools",
+  },
+];
+
 export default function Layout({ children }: { children: React.ReactNode }) {
-  const [location] = useLocation();
+  const [location, setLocation] = useLocation();
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [searchOpen, setSearchOpen] = useState(false);
+  const [supportOpen, setSupportOpen] = useState(false);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [supportReply, setSupportReply] = useState<SupportReply | null>(null);
   const { t, lang, setLang } = useT();
 
   const isHome = location === "/";
@@ -30,6 +68,42 @@ export default function Layout({ children }: { children: React.ReactNode }) {
     { href: "/pdf-compressor", label: "PDF Compressor" },
     { href: "/contact", label: t.nav_contact },
   ];
+
+  const searchItems = [
+    { href: "/", label: t.nav_home, description: "Our services and latest highlights", keywords: "home apna enterprise" },
+    { href: "/services", label: t.nav_services, description: "Travel, documents, forms, printing and more", keywords: "services travel document online forms printing finance insurance parcel" },
+    { href: "/apply", label: t.nav_apply, description: "Submit a service application online", keywords: "apply application request service" },
+    { href: "/updates", label: t.nav_updates, description: "Latest news and announcements", keywords: "updates news announcements" },
+    { href: "/track", label: "Track", description: "Check your application status", keywords: "track status reference application" },
+    { href: "/pdf-compressor", label: "PDF Compressor", description: "Compress, convert, merge and edit files", keywords: "pdf compress image convert merge edit tools" },
+    { href: "/contact", label: t.nav_contact, description: "Get in touch with our support team", keywords: "contact support phone email location" },
+  ];
+
+  const filteredSearchItems = searchItems.filter((item) => {
+    const query = searchTerm.trim().toLowerCase();
+    if (!query) return true;
+    return `${item.label} ${item.description} ${item.keywords}`.toLowerCase().includes(query);
+  });
+
+  const openSearch = () => {
+    setSearchOpen(true);
+    setSupportOpen(false);
+    setSupportReply(null);
+    setMobileOpen(false);
+  };
+
+  const openSupport = () => {
+    setSupportOpen(true);
+    setSearchOpen(false);
+    setSupportReply(null);
+    setMobileOpen(false);
+  };
+
+  const goToSearchResult = (href: string) => {
+    setSearchOpen(false);
+    setSearchTerm("");
+    setLocation(href);
+  };
 
   return (
     <div className="min-h-[100dvh] flex flex-col font-sans">
@@ -123,17 +197,32 @@ export default function Layout({ children }: { children: React.ReactNode }) {
               </button>
 
               <div className="flex items-center gap-3 ml-1 border-l border-white/10 pl-3 h-8">
-                <button className="text-white/80 hover:text-[#F2C14E] transition" aria-label="Search">
+                <button
+                  className="text-white/80 hover:text-[#F2C14E] transition"
+                  aria-label="Search"
+                  onClick={openSearch}
+                >
                   <FaSearch className="text-lg" />
                 </button>
-                <Link href="/contact" className="bg-[#FFD700] hover:bg-[#F2C14E] text-[#1a1200] font-bold flex items-center gap-2 rounded-md px-3 py-2 text-xs transition" style={{ textDecoration: 'none' }}>
+                <button
+                  type="button"
+                  onClick={openSupport}
+                  className="bg-[#FFD700] hover:bg-[#F2C14E] text-[#1a1200] font-bold flex items-center gap-2 rounded-md px-3 py-2 text-xs transition"
+                >
                   <FaHeadset className="text-base" /> Online Support
-                </Link>
+                </button>
               </div>
             </nav>
 
             {/* ── Mobile right: lang toggle + hamburger ── */}
             <div className="xl:hidden flex items-center gap-2">
+              <button
+                onClick={openSearch}
+                className="p-2 text-white/80 hover:text-[#F2C14E] transition"
+                aria-label="Search"
+              >
+                <FaSearch className="text-base" />
+              </button>
               <button
                 onClick={() => setLang(lang === "en" ? "pa" : "en")}
                 className="text-xs font-bold rounded-lg px-2 py-1.5 transition-all duration-200 select-none"
@@ -189,14 +278,109 @@ export default function Layout({ children }: { children: React.ReactNode }) {
                   {item.label}
                 </Link>
               ))}
-              <Link
-                href="/contact"
-                onClick={() => setMobileOpen(false)}
-                className="mobile-nav-item flex items-center gap-2 mt-2 bg-[#FFD700]/10 text-[#FFD700] border border-[#FFD700]/30"
+              <button
+                type="button"
+                onClick={openSupport}
+                className="mobile-nav-item flex items-center gap-2 mt-2 bg-[#FFD700]/10 text-[#FFD700] border border-[#FFD700]/30 text-left w-full"
               >
                 <FaHeadset /> Online Support
-              </Link>
+              </button>
             </nav>
+          </div>
+        )}
+
+        {searchOpen && (
+          <div className="navbar-popover navbar-search-popover" role="dialog" aria-label="Site search">
+            <div className="navbar-popover-header">
+              <div>
+                <span className="navbar-popover-eyebrow">FIND YOUR WAY</span>
+                <h2>Search Apna Enterprise</h2>
+              </div>
+              <button type="button" onClick={() => setSearchOpen(false)} aria-label="Close search">
+                <FaTimes />
+              </button>
+            </div>
+            <div className="navbar-search-field">
+              <FaSearch aria-hidden="true" />
+              <input
+                autoFocus
+                value={searchTerm}
+                onChange={(event) => setSearchTerm(event.target.value)}
+                onKeyDown={(event) => {
+                  if (event.key === "Enter" && filteredSearchItems[0]) {
+                    goToSearchResult(filteredSearchItems[0].href);
+                  }
+                }}
+                placeholder="Search services, pages or help..."
+                aria-label="Search services, pages or help"
+              />
+              {searchTerm && (
+                <button type="button" onClick={() => setSearchTerm("")} aria-label="Clear search">
+                  <FaTimes />
+                </button>
+              )}
+            </div>
+            <div className="navbar-search-results">
+              {filteredSearchItems.length > 0 ? filteredSearchItems.map((item) => (
+                <button
+                  type="button"
+                  key={item.href}
+                  className="navbar-search-result"
+                  onClick={() => goToSearchResult(item.href)}
+                >
+                  <span>
+                    <strong>{item.label}</strong>
+                    <small>{item.description}</small>
+                  </span>
+                  <FaArrowRight aria-hidden="true" />
+                </button>
+              )) : (
+                <p className="navbar-empty-state">No matching page found. Try “apply”, “track”, “PDF” or “support”.</p>
+              )}
+            </div>
+          </div>
+        )}
+
+        {supportOpen && (
+          <div className="navbar-popover navbar-support-popover" role="dialog" aria-label="Quick support">
+            <div className="navbar-popover-header">
+              <div>
+                <span className="navbar-popover-eyebrow">QUICK SUPPORT</span>
+                <h2>{supportReply ? "Here is the answer" : "How can we help?"}</h2>
+              </div>
+              <button type="button" onClick={() => setSupportOpen(false)} aria-label="Close support">
+                <FaTimes />
+              </button>
+            </div>
+
+            {supportReply ? (
+              <div className="navbar-support-answer">
+                <p>{supportReply.answer}</p>
+                <div className="navbar-support-answer-actions">
+                  <button type="button" onClick={() => setSupportReply(null)} className="navbar-support-back">
+                    Back to quick replies
+                  </button>
+                  <button type="button" onClick={() => { setSupportOpen(false); setSupportReply(null); setLocation(supportReply.href); }} className="navbar-support-action">
+                    {supportReply.action} <FaArrowRight />
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <>
+                <p className="navbar-support-intro">Choose a question for an instant answer.</p>
+                <div className="navbar-support-replies">
+                  {supportReplies.map((reply) => (
+                    <button type="button" key={reply.question} onClick={() => setSupportReply(reply)}>
+                      <span>{reply.question}</span>
+                      <FaArrowRight aria-hidden="true" />
+                    </button>
+                  ))}
+                </div>
+                <button type="button" className="navbar-support-contact" onClick={() => { setSupportOpen(false); setLocation("/contact"); }}>
+                  Need something else? Contact our team <FaArrowRight />
+                </button>
+              </>
+            )}
           </div>
         )}
       </header>
