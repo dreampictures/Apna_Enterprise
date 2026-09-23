@@ -3042,12 +3042,15 @@
 .pdf-tools-hero-image-wrapper {
   position: relative;
   display: flex;
+  width: 100%;
   justify-content: center;
   align-items: center;
 }
 
 .pdf-tools-hero-image {
-  max-width: 100%;
+  display: block;
+  width: 100%;
+  max-width: none;
   height: auto;
   max-height: 320px;
   object-fit: contain;
