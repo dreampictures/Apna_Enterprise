@@ -99,6 +99,13 @@ export default function Contact() {
       
       {/* ── Contact Hero ── */}
       <section className="contact-hero pt-14 pb-20 px-4">
+        <img
+          src="/assets/contact/hero-contact.png"
+          alt=""
+          aria-hidden="true"
+          className="contact-hero-image"
+          onError={(event) => { event.currentTarget.style.visibility = "hidden"; }}
+        />
         <div className="container mx-auto max-w-6xl relative z-10">
           <div className="flex flex-col lg:flex-row justify-between items-center gap-12">
             
