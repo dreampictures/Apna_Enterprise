@@ -1103,9 +1103,15 @@ export default function DocumentTools() {
 
       {/* Hero Section */}
       <section className="pdf-tools-hero">
+        <img
+          src={currentHero.image}
+          alt=""
+          aria-hidden="true"
+          className="pdf-tools-hero-background"
+        />
         <div className="container mx-auto px-4 lg:px-8">
           <div className="pdf-tools-hero-content">
-            <div>
+            <div className="pdf-tools-hero-copy">
               <div className="pdf-tools-hero-eyebrow">{currentHero.eyebrow}</div>
               <h1 className="pdf-tools-hero-title" dangerouslySetInnerHTML={{ __html: currentHero.title }} />
               <p className="pdf-tools-hero-desc">{currentHero.desc}</p>
@@ -1122,9 +1128,6 @@ export default function DocumentTools() {
                   </div>
                 ))}
               </div>
-            </div>
-            <div className="pdf-tools-hero-image-wrapper hidden md:flex">
-              <img src={currentHero.image} alt="" className="pdf-tools-hero-image" />
             </div>
           </div>
         </div>
