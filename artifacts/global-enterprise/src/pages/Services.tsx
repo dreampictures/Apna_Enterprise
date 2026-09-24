@@ -20,7 +20,7 @@ const COMING_SOON_SERVICES = new Set([
 ]);
 
 const CATEGORY_COPY: Record<string, string> = {
-  travel: "Book flights, trains and buses with ease.",
+  travel: "Flight, train, bus and visa guidance for your travel needs.",
   documents: "Apply and manage important documents quickly.",
   forms: "Fill and submit online forms with expert guidance.",
   digital: "High quality printing, scanning and digital work.",
@@ -30,8 +30,8 @@ const CATEGORY_COPY: Record<string, string> = {
 };
 
 const CATEGORY_SHORT_NAMES: Record<string, string[]> = {
-  travel: ["Air Ticket", "Train Ticket", "Bus Ticket"],
-  documents: ["PAN Card", "Aadhaar Update", "Voter Card"],
+  travel: ["Air Ticket", "Train Ticket", "Bus Ticket", "Visa Consultation"],
+  documents: ["PAN Card", "Aadhaar Update", "Voter Card", "Kisan ID"],
   forms: ["Job Forms", "College Admission", "School Admission"],
   digital: ["Document Scanning", "Printing", "Website Design"],
   financial: ["AEPS Payment", "Online Payments"],

@@ -30,6 +30,47 @@ const yesNoDocs = ["Aadhaar card copy", "Passport-size photos (2)", "Signature"]
 const identityAddressDocs = ["Aadhaar / identity proof", "Address proof", "Passport-size photo"];
 
 export const SERVICE_FORM_CONFIG: Record<string, ServiceFormConfig> = {
+  "Kisan ID Registration": {
+    intro: "Choose the kind of Kisan ID help you need. Do not enter Aadhaar numbers or OTPs in this form.",
+    fields: [
+      {
+        id: "requestType",
+        label: "Kisan ID request",
+        kind: "select",
+        required: true,
+        options: [
+          { value: "new-registration", label: "New registration" },
+          { value: "update-details", label: "Update farmer details" },
+          { value: "check-status", label: "Check registration status" },
+        ],
+      },
+      { id: "district", label: "District", kind: "text", required: true, placeholder: "Your district" },
+      { id: "village", label: "Village / area", kind: "text", required: true, placeholder: "Your village or area" },
+      { id: "notes", label: "Additional details", kind: "textarea", placeholder: "Tell us what help you need" },
+    ],
+  },
+  "Visa Consultation": {
+    intro: "Share your destination and travel purpose so our team can guide you on common visa steps and documents. Visa decisions are made by the relevant authorities.",
+    fields: [
+      { id: "destinationCountry", label: "Destination country", kind: "text", required: true, placeholder: "Country you plan to visit" },
+      {
+        id: "visaPurpose",
+        label: "Visa purpose",
+        kind: "select",
+        required: true,
+        options: [
+          { value: "tourism", label: "Tourism / visit" },
+          { value: "study", label: "Study" },
+          { value: "work", label: "Work" },
+          { value: "business", label: "Business" },
+          { value: "family", label: "Family visit" },
+          { value: "other", label: "Other" },
+        ],
+      },
+      { id: "expectedTravelDate", label: "Expected travel date", kind: "date" },
+      { id: "notes", label: "Questions or other details", kind: "textarea", placeholder: "What would you like guidance about?" },
+    ],
+  },
   "Air Ticket Booking": {
     intro: "Tell us your route and travel plan. We will check availability and call you with the final fare.",
     fields: [

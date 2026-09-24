@@ -32,6 +32,11 @@ export const SERVICE_CATEGORIES: ServiceCategory[] = [
         name: "Bus Ticket Booking",
         description: "Bus ticket booking assistance for local, interstate, and long-distance journeys with route and fare guidance.",
       },
+      {
+        id: "Visa Consultation",
+        name: "Visa Consultation",
+        description: "Consultation on visa options, document checklists, and application steps for your destination and travel purpose. Final decisions are made by the relevant embassy or consulate.",
+      },
     ],
   },
   {
@@ -53,6 +58,11 @@ export const SERVICE_CATEGORIES: ServiceCategory[] = [
         id: "Voter Card Apply",
         name: "Voter Card Apply",
         description: "New voter ID registration, name/address correction, and constituency transfers.",
+      },
+      {
+        id: "Kisan ID Registration",
+        name: "Kisan ID Registration",
+        description: "Assistance with the Government of India farmer registration initiative, including guidance on registration steps and required details. Registration and approval are handled by the relevant government authority.",
       },
       {
         id: "Passport Apply",
