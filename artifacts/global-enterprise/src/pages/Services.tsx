@@ -1,19 +1,15 @@
 import { useState, useMemo } from "react";
 import { Link, useLocation } from "wouter";
 import Seo from "@/components/Seo";
+import WalkInServiceDialog from "@/components/WalkInServiceDialog";
 import {
   FaSearch, FaTimes, FaArrowRight,
   FaHeadset, FaUsers, FaCheckCircle, FaClock, FaBox,
 } from "react-icons/fa";
 import { Button } from "@/components/ui/button";
-import { SERVICE_CATEGORIES } from "@/lib/services";
+import { SERVICE_CATEGORIES, WALK_IN_SERVICE_IDS } from "@/lib/services";
 import { FaWalking } from "react-icons/fa";
 import { useT } from "@/i18n";
-
-const WALKIN_SERVICES = new Set([
-  "AEPS (Aadhaar Enabled Payment System)",
-  "Online Payments",
-]);
 
 const COMING_SOON_SERVICES = new Set([
   "GST Registration",
@@ -59,6 +55,7 @@ const serviceImagePath = (serviceId: string) =>
 export default function Services() {
   const [search, setSearch] = useState("");
   const [activeCategory, setActiveCategory] = useState<string | null>(null);
+  const [walkInDialogOpen, setWalkInDialogOpen] = useState(false);
   const [, navigate] = useLocation();
   const { t } = useT();
 
@@ -252,24 +249,32 @@ export default function Services() {
 
           <div className="services-page__service-grid services-page__service-grid--directory">
             {visibleServices.map(({ service, category }) => {
+              const isComingSoon = COMING_SOON_SERVICES.has(service.id);
+              const isWalkIn = WALK_IN_SERVICE_IDS.has(service.id);
+
               return (
                 <article
                   key={service.id}
                   className={`services-page__service-card services-page__service-card--${category.id}`}
-                  role={COMING_SOON_SERVICES.has(service.id) ? undefined : "link"}
-                  tabIndex={COMING_SOON_SERVICES.has(service.id) ? undefined : 0}
+                  role={isComingSoon ? undefined : isWalkIn ? "button" : "link"}
+                  tabIndex={isComingSoon ? undefined : 0}
+                  aria-haspopup={isWalkIn ? "dialog" : undefined}
                   onClick={() => {
-                    if (!COMING_SOON_SERVICES.has(service.id)) {
-                      navigate(`/apply?service=${encodeURIComponent(service.id)}`);
+                    if (isComingSoon) return;
+                    if (isWalkIn) {
+                      setWalkInDialogOpen(true);
+                      return;
                     }
+                    navigate(`/apply?service=${encodeURIComponent(service.id)}`);
                   }}
                   onKeyDown={(event) => {
-                    if (
-                      !COMING_SOON_SERVICES.has(service.id) &&
-                      (event.key === "Enter" || event.key === " ")
-                    ) {
+                    if (!isComingSoon && (event.key === "Enter" || event.key === " ")) {
                       event.preventDefault();
-                      navigate(`/apply?service=${encodeURIComponent(service.id)}`);
+                      if (isWalkIn) {
+                        setWalkInDialogOpen(true);
+                      } else {
+                        navigate(`/apply?service=${encodeURIComponent(service.id)}`);
+                      }
                     }
                   }}
                 >
@@ -293,7 +298,7 @@ export default function Services() {
                         <FaClock />
                         {t.services_coming_soon}
                       </div>
-                    ) : WALKIN_SERVICES.has(service.id) ? (
+                    ) : WALK_IN_SERVICE_IDS.has(service.id) ? (
                       <div className="services-page__status">
                         <FaWalking />
                         {t.services_walkin}
@@ -327,6 +332,11 @@ export default function Services() {
           </div>
         </div>
       </section>
+
+      <WalkInServiceDialog
+        open={walkInDialogOpen}
+        onOpenChange={setWalkInDialogOpen}
+      />
 
       <section className="services-page__stats" aria-label="Service highlights">
         <div className="container mx-auto px-4 lg:px-8">

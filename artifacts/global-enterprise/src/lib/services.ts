@@ -218,6 +218,11 @@ export const SERVICE_CATEGORIES: ServiceCategory[] = [
   },
 ];
 
+export const WALK_IN_SERVICE_IDS = new Set([
+  "AEPS (Aadhaar Enabled Payment System)",
+  "Online Payments",
+]);
+
 export const ALL_SERVICE_IDS = SERVICE_CATEGORIES.flatMap((cat) =>
   cat.services.map((s) => s.id)
 ) as [string, ...string[]];

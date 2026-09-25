@@ -63,6 +63,10 @@ export interface Translations {
   services_available: (n: number) => string;
   services_coming_soon: string;
   services_walkin: string;
+  services_walkin_dialog_title: string;
+  services_walkin_dialog_description: string;
+  services_walkin_dialog_contact: string;
+  services_walkin_dialog_close: string;
   services_apply: string;
   services_more: (n: number) => string;
 
@@ -322,6 +326,10 @@ const en: Translations = {
   services_available: (n) => `${n} service${n !== 1 ? "s" : ""} available`,
   services_coming_soon: "Coming Soon",
   services_walkin: "Walk-in / Visit Us",
+  services_walkin_dialog_title: "Available at Our Centre",
+  services_walkin_dialog_description: "This service is available in person at our centre. Please visit us to receive it, or contact our team if you need help.",
+  services_walkin_dialog_contact: "Contact Us",
+  services_walkin_dialog_close: "Close",
   services_apply: "Apply Now",
   services_more: (n) => `+${n} more`,
 
@@ -573,6 +581,10 @@ const pa: Translations = {
   services_available: (n) => `${n} ਸੇਵਾ${n !== 1 ? "ਵਾਂ" : ""} ਉਪਲਬਧ`,
   services_coming_soon: "ਜਲਦੀ ਆ ਰਿਹਾ ਹੈ",
   services_walkin: "ਸਿੱਧੇ ਆਓ",
+  services_walkin_dialog_title: "ਸਾਡੇ ਸੈਂਟਰ 'ਤੇ ਆ ਕੇ ਸੇਵਾ ਲਵੋ",
+  services_walkin_dialog_description: "ਇਹ ਸੇਵਾ ਸਾਡੇ ਸੈਂਟਰ 'ਤੇ ਆ ਕੇ ਮਿਲ ਸਕਦੀ ਹੈ। ਸੇਵਾ ਲੈਣ ਲਈ ਸੈਂਟਰ ਆਓ ਜਾਂ ਮਦਦ ਲਈ ਸਾਡੀ ਟੀਮ ਨਾਲ ਸੰਪਰਕ ਕਰੋ।",
+  services_walkin_dialog_contact: "ਸੰਪਰਕ ਕਰੋ",
+  services_walkin_dialog_close: "ਬੰਦ ਕਰੋ",
   services_apply: "ਅਰਜ਼ੀ ਦਿਓ",
   services_more: (n) => `+${n} ਹੋਰ`,
 

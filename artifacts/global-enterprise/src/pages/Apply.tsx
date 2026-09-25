@@ -3,7 +3,7 @@ import Seo from "@/components/Seo";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { useSearch, Link } from "wouter";
+import { useSearch, useLocation, Link } from "wouter";
 import { useCreateApplication, type CreateApplicationBody } from "@workspace/api-client-react";
 import { Button } from "@/components/ui/button";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
@@ -17,9 +17,10 @@ import {
   FaLaptop, FaPhone, FaSearch, FaShieldAlt, FaStar, FaThLarge,
   FaUser, FaUsers,
 } from "react-icons/fa";
-import { SERVICE_CATEGORIES, ALL_SERVICE_IDS } from "@/lib/services";
+import { SERVICE_CATEGORIES, ALL_SERVICE_IDS, WALK_IN_SERVICE_IDS } from "@/lib/services";
 import { getServiceFormConfig, type ServiceField } from "@/lib/service-application-fields";
 import { useT } from "@/i18n";
+import WalkInServiceDialog from "@/components/WalkInServiceDialog";
 
 const GOLD = "#D4A017";
 const GOLD_LIGHT = "#F2C14E";
@@ -58,6 +59,8 @@ type ReceiptData = {
 
 const isValidService = (s: string | null): s is FormValues["service"] =>
   !!s && (ALL_SERVICE_IDS as readonly string[]).includes(s);
+const isWalkInService = (s: string | null | undefined) =>
+  !!s && WALK_IN_SERVICE_IDS.has(s);
 
 function formatCurrency(amount: number): string {
   return `₹${amount.toLocaleString("en-IN", {
@@ -68,10 +71,13 @@ function formatCurrency(amount: number): string {
 
 export default function Apply() {
   const search = useSearch();
+  const [, navigate] = useLocation();
   const params = new URLSearchParams(search);
   const preSelectedService = params.get("service");
+  const isWalkInPreselected = isWalkInService(preSelectedService);
   const { t } = useT();
 
+  const [walkInDialogOpen, setWalkInDialogOpen] = useState(isWalkInPreselected);
   const [submitted, setSubmitted] = useState(params.get("payment") === "success");
   const [submittedService, setSubmittedService] = useState("your application");
   const [trackingNumber, setTrackingNumber] = useState(params.get("tracking") ?? "");
@@ -144,7 +150,7 @@ export default function Apply() {
       name: "",
       phone: "",
       email: "",
-      service: isValidService(preSelectedService) ? preSelectedService : undefined,
+      service: isValidService(preSelectedService) && !isWalkInPreselected ? preSelectedService : undefined,
       details: {},
       message: "",
       callbackRequested: false,
@@ -152,6 +158,12 @@ export default function Apply() {
   });
 
   useEffect(() => {
+    if (isWalkInService(preSelectedService)) {
+      setWalkInDialogOpen(true);
+      form.resetField("service");
+      form.setValue("details", {});
+      return;
+    }
     if (isValidService(preSelectedService)) {
       form.setValue("service", preSelectedService);
     }
@@ -190,6 +202,11 @@ export default function Apply() {
   }, [paymentSucceeded, trackingNumber]);
 
   async function onSubmit(values: FormValues) {
+    if (WALK_IN_SERVICE_IDS.has(values.service)) {
+      setWalkInDialogOpen(true);
+      return;
+    }
+
     createApplication.mutate(
       {
         data: {
@@ -462,8 +479,24 @@ export default function Apply() {
     category.services.slice(0, 1).map((service) => ({ ...service, category: category.name }))
   );
 
+  if (isWalkInPreselected) {
+    return (
+      <WalkInServiceDialog
+        open={walkInDialogOpen}
+        onOpenChange={(open) => {
+          setWalkInDialogOpen(open);
+          if (!open) navigate("/services");
+        }}
+      />
+    );
+  }
+
   return (
     <div className="apply-page flex flex-col min-h-full">
+      <WalkInServiceDialog
+        open={walkInDialogOpen}
+        onOpenChange={setWalkInDialogOpen}
+      />
       <Seo
         title="Apply for a Service — Quick & Easy Application"
         description="Apply online for any service at Apna Enterprise Firozepur. Fill in your details, choose your service, and we'll get back to you on WhatsApp promptly."
@@ -611,6 +644,13 @@ export default function Apply() {
                             <FormLabel>{t.apply_service}</FormLabel>
                             <Select
                               onValueChange={(value) => {
+                                if (WALK_IN_SERVICE_IDS.has(value)) {
+                                  setWalkInDialogOpen(true);
+                                  form.setValue("service", "" as FormValues["service"]);
+                                  form.setValue("details", {});
+                                  form.clearErrors("service");
+                                  return;
+                                }
                                 field.onChange(value);
                                 form.setValue("details", {}, { shouldValidate: true });
                               }}
